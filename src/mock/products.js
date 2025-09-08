@@ -1,0 +1,48 @@
+// Definir primero las empresas y sus marcas asociadas
+export const empresas = [
+  {
+    id: "AUTOLLANTA",
+    nombre: "AUTOLLANTA",
+    descripcion: "Especialistas en neumáticos de alta calidad",
+    logo: "/enterprises/AutollantaLogo.png",
+    color: "#0056b3",
+    marcas: ["Fortune", "Roadcruza"],
+    products: 210,
+  },
+  {
+    id: "MAXXIMUNDO",
+    nombre: "MAXXIMUNDO",
+    descripcion: "Neumáticos y lubricantes de calidad superior",
+    logo: "/enterprises/MaxximundoLogo.png",
+    color: "#28a745",
+    marcas: ["Maxxis", "Shell", "Roadcruza", "Aplus"],
+    products: 312,
+  },
+  {
+    id: "STOX",
+    nombre: "STOX",
+    descripcion: "Neumáticos de la mejor calidad",
+    logo: "/enterprises/StoxLogo.png",
+    color: "#dc3545",
+    marcas: ["CST", "Farroad", "Ansu", "Bayi-Rubber"],
+    products: 240,
+  },
+  {
+    id: "AUTOMAX",
+    nombre: "AUTOMAX",
+    descripcion: "Neumáticos de las mejores marcas",
+    logo: "/enterprises/AutomaxLogo.png",
+    color: "#fd7e14",
+    marcas: ["Cost"],
+    products: 200,
+  },
+  {
+    id: "IKONIX",
+    nombre: "IKONIX",
+    descripcion: "Herramientas profesionales",
+    logo: "/enterprises/IkonixLogo.png",
+    color: "#6610f2",
+    marcas: ["Uyustools", "FSL"],
+    products: 347,
+  },
+];
