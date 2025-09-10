@@ -11,6 +11,7 @@ import RenderIcon from "../../components/ui/RenderIcon";
 import { api_order_createOrder } from "../../api/order/apiOrder";
 import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import PageContainer from "../../components/layout/PageContainer";
+import { baseLinkImages } from "../../constants/links";
 
 const PageTitle = styled.div`
   display: flex;
@@ -78,6 +79,21 @@ const ItemImage = styled.img`
   object-fit: cover;
   border-radius: 4px;
   background-color: ${({ theme }) => theme.colors.white};
+`;
+
+const ImagePlaceholder = styled.div`
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 10px;
+  border-radius: 4px;
+  border: 2px dashed ${({ theme }) => theme.colors.border};
 `;
 
 const ItemDetails = styled.div`
@@ -468,7 +484,6 @@ const CartItem = ({
   );
 
   const subTotal = priceWithIVA * item.quantity;
-  const isOverStock = item.quantity > maxStock;
 
   const handleItemClick = () => {
     navigate(`/productos/${item.id}`, {
@@ -480,17 +495,58 @@ const CartItem = ({
     });
   };
 
+  // Componente para manejar la imagen con fallback
+  const ProductImageWithFallback = ({ src, alt }) => {
+    const [imageError, setImageError] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
+
+    const handleImageLoad = () => {
+      setImageLoading(false);
+      setImageError(false);
+    };
+
+    const handleImageError = () => {
+      setImageLoading(false);
+      setImageError(true);
+    };
+
+    const imageSrc = `${baseLinkImages}${src}`;
+    if (imageError || !src) {
+      return (
+        <ImagePlaceholder>
+          <div>
+            <div>Imagen no disponible</div>
+          </div>
+        </ImagePlaceholder>
+      );
+    }
+
+
+    return (
+      <>
+        {imageLoading && (
+          <ImagePlaceholder>
+            <div>Cargando...</div>
+          </ImagePlaceholder>
+        )}
+        <ItemImage
+          src={imageSrc}
+          alt={alt}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          style={{ display: imageLoading ? "none" : "block" }}
+        />
+      </>
+    );
+  };
+
   return (
     <CartItemContainer>
-      <ItemImage src={item?.image} alt={item?.name} />
+      <ProductImageWithFallback src={item?.image} alt={item?.name} />
 
       <ItemDetails>
         <ItemName onClick={handleItemClick}>{item?.name}</ItemName>
         <ItemBrand>{item?.brand}</ItemBrand>
-
-        {isOverStock && (
-          <StockWarning>⚠️ Stock disponible: {maxStock}</StockWarning>
-        )}
 
         <ItemQuantityControl>
           <QuantityButton
@@ -503,7 +559,7 @@ const CartItem = ({
           <QuantityInput
             type="number"
             min="1"
-            max={maxStock}
+            max={5000}
             value={item.quantity}
             onChange={(e) => {
               const newQuantity = parseInt(e.target.value) || 1;
@@ -512,14 +568,14 @@ const CartItem = ({
           />
           <QuantityButton
             onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-            disabled={item.quantity >= maxStock}
+            disabled={item.quantity >= 5000}
             text={"+"}
             size="small"
           />
         </ItemQuantityControl>
 
         <StockInfo>
-          {maxStock > 0 ? `${maxStock} disponibles` : "Sin stock"}
+          {maxStock > 0 ? `${maxStock} disponibles` : "Stock a consultar"}
         </StockInfo>
       </ItemDetails>
 
@@ -759,34 +815,16 @@ const Carrito = () => {
     const cartItem = cart.find((item) => item.id === id);
     if (!cartItem) return;
 
-    // Obtener el stock máximo del producto
-    const maxStock = cartItem?.stock || 0;
-
-    // Limitar la cantidad al stock disponible
-    const validQuantity = Math.min(newQuantity, maxStock);
-
-    // Actualizar la cantidad
-    updateQuantity(id, validQuantity);
-
-    // Mostrar mensaje si se intenta exceder el stock
-    if (newQuantity > maxStock) {
-      toast.warning(
-        `Solo hay ${maxStock} unidades disponibles de este producto`
-      );
-    }
+    // Actualizar la cantidad sin restricciones de stock
+    updateQuantity(id, newQuantity);
   };
 
-  const hasInsufficientStock = cart.some(
-    (item) => item.quantity > (item?.stock || 0)
-  );
+  // Eliminamos las validaciones de stock que bloquean el checkout
+  const hasInsufficientStock = false;
 
-  // Función para verificar stock insuficiente por empresa
+  // Función para verificar stock insuficiente por empresa (siempre retorna false)
   const hasInsufficientStockForCompany = (company) => {
-    if (!groupedCart[company]) return false;
-
-    return groupedCart[company].items.some(
-      (item) => item.quantity > (item?.stock || 0)
-    );
+    return false;
   };
   const handleCheckoutAll = async () => {
     // Verificar que todas las empresas tienen direcciones seleccionadas
@@ -794,12 +832,6 @@ const Carrito = () => {
       toast.error(
         "Por favor, selecciona direcciones de envío y facturación para todas las empresas"
       );
-      return;
-    }
-
-    // Verificar stock
-    if (hasInsufficientStock) {
-      toast.error("Algunos productos no tienen stock suficiente");
       return;
     }
 
@@ -847,11 +879,6 @@ const Carrito = () => {
     // Verificar direcciones
     if (!companyData.shippingAddressId || !companyData.billingAddressId) {
       throw new Error("Faltan direcciones para esta empresa");
-    }
-
-    // Verificar stock
-    if (hasInsufficientStockForCompany(company)) {
-      throw new Error("Algunos productos no tienen stock suficiente");
     }
 
     // Preparar orden para esta empresa
@@ -979,12 +1006,6 @@ const Carrito = () => {
     <PageContainer>
       <PageTitle>
         <h1>Carrito de compras</h1>
-        {hasInsufficientStock && (
-          <StockAlertBanner>
-            ⚠️ Algunos productos en tu carrito no tienen stock suficiente. Por
-            favor ajusta las cantidades.
-          </StockAlertBanner>
-        )}
       </PageTitle>
 
       {/* Pestañas de empresas */}
@@ -1298,7 +1319,7 @@ const Carrito = () => {
                 setIsCheckoutAll(true);
                 setShowConfirmModal(true);
               }}
-              disabled={!isAllAddressesSelected() || hasInsufficientStock}
+              disabled={!isAllAddressesSelected()}
             />
           )}
           <Button
@@ -1392,11 +1413,7 @@ const Carrito = () => {
                   backgroundColor={theme.colors.primary}
                   style={{ width: "100%" }}
                   onClick={() => handleCompanyCheckoutClick(company)}
-                  disabled={
-                    !data.shippingAddressId ||
-                    !data.billingAddressId ||
-                    hasInsufficientStockForCompany(company)
-                  }
+                  disabled={!data.shippingAddressId || !data.billingAddressId}
                 />
               </CompanySummary>
             );

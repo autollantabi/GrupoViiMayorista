@@ -932,7 +932,7 @@ const ProductCard = ({
                 size="small"
                 onClick={handleViewDetails}
               />
-              {isClient && !isVisualizacion && product.stock > 0 && (
+              {isClient && !isVisualizacion && (
                 <Button
                   text={isAddingToCart ? "Agregando..." : "Agregar al carrito"}
                   variant="solid"

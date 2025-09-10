@@ -299,6 +299,22 @@ const MainImage = styled.img`
   display: block;
 `;
 
+const ImagePlaceholder = styled.div`
+  width: 100%;
+  max-width: 550px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1rem;
+  text-align: center;
+  padding: 40px;
+  border-radius: 8px;
+  border: 2px dashed ${({ theme }) => theme.colors.border};
+`;
+
 const ZoomWindow = styled.div`
   position: fixed;
   /* Eliminar right: -100% para que no esté fijo */
@@ -382,6 +398,8 @@ const DetalleProducto = () => {
   const imageContainerRef = useRef(null);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const prevUrl = location.state?.prevUrl;
 
@@ -566,12 +584,46 @@ const DetalleProducto = () => {
     return Math.max(0, product.stock - currentInCart);
   }, [product, currentInCart]);
 
-  // Ajustar la cantidad si excede el stock disponible
-  useEffect(() => {
-    if (quantity > availableStock) {
-      setQuantity(Math.max(1, availableStock));
+  // Funciones para manejar la imagen
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Componente para manejar la imagen con fallback
+  const ProductImageWithFallback = ({ src, alt }) => {
+    if (imageError || !src) {
+      return (
+        <ImagePlaceholder>
+          <div>
+            <div>Imagen no disponible</div>
+          </div>
+        </ImagePlaceholder>
+      );
     }
-  }, [availableStock]);
+
+    return (
+      <>
+        {imageLoading && (
+          <ImagePlaceholder>
+            <div>Cargando...</div>
+          </ImagePlaceholder>
+        )}
+        <MainImage
+          src={src}
+          alt={alt}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          style={{ display: imageLoading ? "none" : "block" }}
+        />
+      </>
+    );
+  };
 
   useEffect(() => {
     const cargarProducto = async () => {
@@ -596,7 +648,7 @@ const DetalleProducto = () => {
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    const max = availableStock > 100 ? 5000 : availableStock;
+    const max = 5000; // Eliminar restricción de stock
     if (!isNaN(value) && value > 0 && value <= max) {
       setQuantity(value);
     }
@@ -609,13 +661,13 @@ const DetalleProducto = () => {
   };
 
   const increaseQuantity = () => {
-    if (quantity < availableStock) {
+    if (quantity < 5000) { // Eliminar restricción de stock
       setQuantity(quantity + 1);
     }
   };
 
   const handleAddToCart = () => {
-    if (quantity <= availableStock && !isAddingToCart) {
+    if (!isAddingToCart) {
       setIsAddingToCart(true);
       addToCart(product, quantity);
       // Mostrar confirmación
@@ -625,8 +677,6 @@ const DetalleProducto = () => {
       setTimeout(() => {
         setIsAddingToCart(false);
       }, 1000);
-    } else if (quantity > availableStock) {
-      toast.error(`Solo hay ${availableStock} unidades disponibles`);
     }
   };
 
@@ -662,7 +712,7 @@ const DetalleProducto = () => {
             onMouseLeave={handleMouseLeave}
             onMouseMove={handleMouseMove}
           >
-            <MainImage src={product.image} alt={product.name} />
+            <ProductImageWithFallback src={product.image} alt={product.name} />
 
             {/* Ventana de zoom */}
             <ZoomWindow
@@ -686,22 +736,6 @@ const DetalleProducto = () => {
         </ImageSection>
 
         <InfoSection>
-          {/* Botón de contacto para productos sin stock */}
-          {availableStock <= 0 && (
-            <Button
-              variant="solid"
-              size="small"
-              onClick={handleOpenContactModal}
-              leftIconName="FaHeadset"
-              iconSize={20}
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "auto",
-              }}
-            />
-          )}
           {/* Mostrar categorías desde filtersByType de forma amigable */}
           <Category>
             {product.filtersByType &&
@@ -737,19 +771,19 @@ const DetalleProducto = () => {
           </PriceContainer>
 
           {/* Nuevo indicador de stock posicionado debajo del precio */}
-          <StockIndicator $inStock={availableStock > 0}>
-            <StockBadge $inStock={availableStock > 0}>
-              {availableStock > 0 ? "DISPONIBLE" : "AGOTADO"}
+          <StockIndicator $inStock={product.stock > 0}>
+            <StockBadge $inStock={product.stock > 0}>
+              {product.stock > 0 ? "DISPONIBLE" : "CONSULTAR STOCK"}
             </StockBadge>
-            <StockMessage $inStock={availableStock > 0}>
-              {availableStock > 0 ? (
+            <StockMessage $inStock={product.stock > 0}>
+              {product.stock > 0 ? (
                 <>
-                  {availableStock < 100 && `${availableStock}`}{" "}
-                  {availableStock === 1
+                  {product.stock < 100 && `${product.stock}`}{" "}
+                  {product.stock === 1
                     ? "unidad disponible"
-                    : availableStock < 100
+                    : product.stock < 100
                     ? "unidades disponibles"
-                    : ""}
+                    : "Stock disponible"}
                   {currentInCart > 0 && (
                     <span
                       style={{
@@ -762,10 +796,8 @@ const DetalleProducto = () => {
                     </span>
                   )}
                 </>
-              ) : currentInCart > 0 ? (
-                "Producto ya en tu carrito (sin stock adicional)"
               ) : (
-                "Producto temporalmente sin stock. Si desea comprobar el stock, por favor, contacte con nosotros."
+                "Stock a consultar. Puedes agregar al carrito y confirmaremos disponibilidad."
               )}
             </StockMessage>
           </StockIndicator>
@@ -803,14 +835,13 @@ const DetalleProducto = () => {
                   <QuantityInput
                     type="number"
                     min="1"
-                    max={availableStock > 100 ? 5000 : availableStock}
+                    max={5000}
                     value={quantity}
                     onChange={handleQuantityChange}
-                    disabled={availableStock <= 0}
                   />
                   <QuantityButton
                     onClick={increaseQuantity}
-                    disabled={quantity >= availableStock}
+                    disabled={quantity >= 5000}
                     text={"+"}
                   />
                 </QuantitySelector>
@@ -832,15 +863,11 @@ const DetalleProducto = () => {
                 text={
                   isAddingToCart
                     ? "Agregando..."
-                    : availableStock > 0
-                    ? `Agregar ${quantity} al carrito`
-                    : currentInCart > 0
-                    ? "Producto ya en carrito"
-                    : "Sin stock disponible"
+                    : `Agregar ${quantity} al carrito`
                 }
                 variant="solid"
                 onClick={handleAddToCart}
-                disabled={availableStock <= 0 || isAddingToCart}
+                disabled={isAddingToCart}
                 backgroundColor={({ theme }) => theme.colors.primary}
                 size="medium"
                 style={{

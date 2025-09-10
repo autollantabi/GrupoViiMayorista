@@ -1,1 +1,1 @@
-export const baseLinkImages = "https://d2j42udzjdoanx.cloudfront.net/";
+export const baseLinkImages = import.meta.env.VITE_API_IMAGES_URL;
