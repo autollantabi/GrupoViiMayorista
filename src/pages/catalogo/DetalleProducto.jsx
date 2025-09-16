@@ -325,10 +325,11 @@ const ZoomWindow = styled.div`
   box-shadow: 0 4px 10px ${({ theme }) => theme.colors.shadow};
   overflow: hidden;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transition: opacity 0.3s;
+  transition: opacity 0.2s ease-in-out;
   pointer-events: none;
   z-index: 5000;
   border: 1px solid ${({ theme }) => theme.colors.border};
+  visibility: ${({ $visible }) => ($visible ? 'visible' : 'hidden')};
 
   @media (max-width: 992px) {
     display: none; // Ocultar en dispositivos móviles/tablets
@@ -400,6 +401,7 @@ const DetalleProducto = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const hoverTimeoutRef = useRef(null);
 
   const prevUrl = location.state?.prevUrl;
 
@@ -515,17 +517,38 @@ const DetalleProducto = () => {
 
   // Funciones para manejar el zoom
   const handleMouseEnter = () => {
+    // Limpiar cualquier timeout pendiente
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
     setIsHovering(true);
   };
 
   const handleMouseLeave = () => {
-    setIsHovering(false);
+    // Usar timeout para evitar parpadeos cuando el mouse pasa sobre la ventana de zoom
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovering(false);
+    }, 100); // 100ms de delay
   };
 
   const handleMouseMove = (e) => {
     if (imageContainerRef.current) {
       const { left, top, width, height } =
         imageContainerRef.current.getBoundingClientRect();
+
+      // Verificar si el mouse está realmente dentro del área de la imagen
+      const isInsideImage = 
+        e.clientX >= left && 
+        e.clientX <= left + width && 
+        e.clientY >= top && 
+        e.clientY <= top + height;
+
+      if (!isInsideImage) {
+        // Si el mouse no está dentro de la imagen, ocultar el zoom
+        setIsHovering(false);
+        return;
+      }
 
       // Calcular la posición relativa del cursor dentro de la imagen (0-1)
       const x = Math.min(Math.max((e.clientX - left) / width, 0), 1);
@@ -641,6 +664,48 @@ const DetalleProducto = () => {
       cargarProducto();
     }
   }, [id, empresaId]);
+
+  // Limpiar timeout al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Efecto para manejar el mouse global y detectar cuando sale del área
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (imageContainerRef.current && isHovering) {
+        const { left, top, width, height } =
+          imageContainerRef.current.getBoundingClientRect();
+
+        // Verificar si el mouse está fuera del área de la imagen
+        const isOutsideImage = 
+          e.clientX < left || 
+          e.clientX > left + width || 
+          e.clientY < top || 
+          e.clientY > top + height;
+
+        if (isOutsideImage) {
+          // Limpiar timeout existente
+          if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+          }
+          // Ocultar zoom inmediatamente
+          setIsHovering(false);
+        }
+      }
+    };
+
+    // Agregar listener global
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
+  }, [isHovering]);
 
   if (!product) {
     return <div>Cargando...</div>;
