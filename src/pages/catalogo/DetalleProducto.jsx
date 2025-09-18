@@ -10,6 +10,8 @@ import { useProductCatalog } from "../../context/ProductCatalogContext";
 import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import PageContainer from "../../components/layout/PageContainer";
 import ContactModal from "../../components/ui/ContactModal";
+import SEO from "../../components/seo/SEO";
+import { useProductStructuredData } from "../../hooks/useStructuredData";
 
 const ProductLayout = styled.div`
   display: grid;
@@ -391,6 +393,9 @@ const DetalleProducto = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // Intentar obtener el producto del estado de navegación primero
   const [product, setProduct] = useState(location.state?.product || null);
+  
+  // SEO y datos estructurados
+  const structuredData = useProductStructuredData(product);
 
   const empresaId = location.state?.empresaId || null;
 
@@ -766,9 +771,19 @@ const DetalleProducto = () => {
   };
 
   return (
-    <PageContainer>
-      {renderBreadcrumbs()}
-      <ProductLayout>
+    <>
+      <SEO
+        title={product?.name || "Producto"}
+        description={product?.description || `Producto ${product?.name} de la marca ${product?.brand}. Precio: $${priceWithIVA?.toFixed(2)}. Stock disponible.`}
+        keywords={`${product?.name}, ${product?.brand}, ${product?.empresa}, neumáticos, repuestos automotrices, ${product?.filtersByType ? Object.values(product.filtersByType).flat().join(", ") : ""}`}
+        image={product?.image}
+        url={`https://viicommerce.com/productos/${product?.id}`}
+        type="product"
+        structuredData={structuredData}
+      />
+      <PageContainer>
+        {renderBreadcrumbs()}
+        <ProductLayout>
         <ImageSection>
           {/* Contenedor principal de la imagen con eventos de mouse */}
           <MainImageContainer
@@ -974,14 +989,15 @@ const DetalleProducto = () => {
         </InfoSection>
       </ProductLayout>
 
-      {/* Modal de contacto */}
-      <ContactModal
-        isOpen={isContactModalOpen}
-        onClose={handleCloseContactModal}
-        title="Cualquier duda, no dude en contactarnos"
-        selectedCompany={product?.empresaId}
-      />
-    </PageContainer>
+        {/* Modal de contacto */}
+        <ContactModal
+          isOpen={isContactModalOpen}
+          onClose={handleCloseContactModal}
+          title="Cualquier duda, no dude en contactarnos"
+          selectedCompany={product?.empresaId}
+        />
+      </PageContainer>
+    </>
   );
 };
 

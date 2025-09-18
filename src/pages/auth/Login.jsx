@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../../constants/routes";
 import styled from "styled-components";
 import PageContainer from "../../components/layout/PageContainer";
+import SEO from "../../components/seo/SEO";
 
 const LoginCard = styled(FlexBoxComponent)`
   border: 1px solid ${({ theme }) => theme.colors.border};
@@ -233,8 +234,15 @@ const Login = () => {
   };
 
   return (
-    <StyledPageContainer>
-      <LoginCard flexDirection="column" alignItems="center">
+    <>
+      <SEO
+        title="Iniciar Sesión - ViiCommerce"
+        description="Inicia sesión en ViiCommerce para acceder a nuestro catálogo de neumáticos, lubricantes y herramientas en Cuenca, Ecuador. Precios mayoristas y envío a todo el Ecuador."
+        keywords="login, iniciar sesión, ViiCommerce, neumáticos, llantas, lubricantes, herramientas, Cuenca, Ecuador"
+        url="https://viicommerce.com/auth/login"
+      />
+      <StyledPageContainer>
+        <LoginCard flexDirection="column" alignItems="center">
         <LoginTitle>Bienvenido a MISTOX</LoginTitle>
         <LoginSubtitle>Iniciar Sesión</LoginSubtitle>
 
@@ -287,8 +295,9 @@ const Login = () => {
             />
           </RegisterContainer>
         </LoginForm>
-      </LoginCard>
-    </StyledPageContainer>
+        </LoginCard>
+      </StyledPageContainer>
+    </>
   );
 };
 

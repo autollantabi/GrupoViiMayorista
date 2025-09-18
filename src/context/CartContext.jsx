@@ -83,6 +83,7 @@ export function CartProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await api_cart_getCarrito(user.ACCOUNT_USER);
+      console.log(response);
 
       if (response.success && response.data && response.data.length > 0) {
         // Guardar todos los cartIds por empresa
@@ -102,6 +103,7 @@ export function CartProvider({ children }) {
                 item.PRODUCT_CODE,
                 enterprise
               );
+              console.log(productResponse);
               
               if (productResponse.success && productResponse.data) {
                 const product = productResponse.data;

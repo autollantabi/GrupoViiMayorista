@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://viicommerce.com/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /coordinadora/
+Disallow: /api/
+Disallow: /auth/
+
+# Allow important pages
+Allow: /
+Allow: /catalogo/
+Allow: /productos/
+Allow: /carrito
+Allow: /mis-pedidos
+Allow: /perfil
+Allow: /busqueda
+
+# Allow specific product categories
+Allow: /catalogo/llantas
+Allow: /catalogo/lubricantes
+Allow: /catalogo/herramientas

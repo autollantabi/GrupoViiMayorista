@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { ThemeProvider } from "styled-components";
 import { BrowserRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AppThemeProvider, useAppTheme } from "./context/AppThemeContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
@@ -10,19 +11,21 @@ import { ProductCatalogProvider } from "./context/ProductCatalogContext.jsx";
 
 function Root() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <ProductCatalogProvider>
-            <AppThemeProvider>
-              <ThemeWrapper>
-                <App />
-              </ThemeWrapper>
-            </AppThemeProvider>
-          </ProductCatalogProvider>
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <ProductCatalogProvider>
+              <AppThemeProvider>
+                <ThemeWrapper>
+                  <App />
+                </ThemeWrapper>
+              </AppThemeProvider>
+            </ProductCatalogProvider>
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 
