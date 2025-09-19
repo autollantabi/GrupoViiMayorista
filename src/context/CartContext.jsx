@@ -103,6 +103,8 @@ export function CartProvider({ children }) {
                 item.PRODUCT_CODE,
                 enterprise
               );
+
+              console.log("🔍 Respuesta de la API Carrito:", productResponse);
               
               if (productResponse.success && productResponse.data) {
                 const product = productResponse.data;
