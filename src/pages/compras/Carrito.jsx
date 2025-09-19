@@ -724,7 +724,7 @@ const Carrito = () => {
     const groupByCompany = () => {
       const grouped = {};
 
-      console.log(cart);
+      console.log("🔍 Carrito a agrupar:", cart);
 
       cart.forEach((item) => {
         const company = item.empresaId || "Sin empresa";
@@ -1027,7 +1027,6 @@ const Carrito = () => {
         <div>
           {/* Mostrar productos solo de la empresa seleccionada */}
           <CartItemsList>
-            {console.log(groupedCart[selectedCompany]?.items)}	
             {selectedCompany &&
               groupedCart[selectedCompany]?.items.map((item) => (
                 <CartItem

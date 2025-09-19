@@ -83,7 +83,6 @@ export function CartProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await api_cart_getCarrito(user.ACCOUNT_USER);
-      console.log(response);
 
       if (response.success && response.data && response.data.length > 0) {
         // Guardar todos los cartIds por empresa
@@ -103,7 +102,6 @@ export function CartProvider({ children }) {
                 item.PRODUCT_CODE,
                 enterprise
               );
-              console.log(productResponse);
               
               if (productResponse.success && productResponse.data) {
                 const product = productResponse.data;
@@ -228,13 +226,15 @@ export function CartProvider({ children }) {
             PRODUCTOS: productos,
           };
 
-          await api_cart_updateCarrito(cartId, carritoData);
+          console.log("🔍 Carrito a sincronizar:", carritoData);
+
+          const response = await api_cart_updateCarrito(cartId, carritoData);
           
-          // if (response.success) {
-          //   console.log(`✅ Carrito sincronizado exitosamente para ${enterprise}`);
-          // } else {
-          //   console.error(`❌ Error en respuesta de API para ${enterprise}:`, response);
-          // }
+          if (response.success) {
+            console.log(`✅ Carrito sincronizado exitosamente para ${enterprise}`);
+          } else {
+            console.error(`❌ Error en respuesta de API para ${enterprise}:`, response);
+          }
         } catch (error) {
           console.error(
             `❌ Error al sincronizar carrito de ${enterprise} con API:`,
@@ -335,30 +335,70 @@ export function CartProvider({ children }) {
   };
 
   // Eliminar producto del carrito
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const removeFromCart = async (productId) => {
+    const newCart = cart.filter((item) => item.id !== productId);
+    setCart(newCart);
+    
+    // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
+    if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
+      try {
+        await syncCartWithAPI(newCart);
+        console.log("✅ Producto eliminado del carrito y sincronizado con la API");
+      } catch (error) {
+        console.error("❌ Error al sincronizar eliminación con la API:", error);
+      }
+    }
   };
 
   // Actualizar cantidad de un producto
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
 
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
+    const newCart = cart.map((item) =>
+      item.id === productId ? { ...item, quantity: newQuantity } : item
     );
+    setCart(newCart);
+
+    
+    // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
+    if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
+      try {
+        await syncCartWithAPI(newCart);
+        console.log("✅ Cantidad actualizada y sincronizada con la API");
+      } catch (error) {
+        console.error("❌ Error al sincronizar actualización de cantidad con la API:", error);
+      }
+    }
   };
 
   // Limpiar todo el carrito
-  const clearCart = () => {
+  const clearCart = async () => {
     setCart([]);
+    
+    // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
+    if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
+      try {
+        await syncCartWithAPI([]);
+        console.log("✅ Carrito limpiado y sincronizado con la API");
+      } catch (error) {
+        console.error("❌ Error al sincronizar limpieza del carrito con la API:", error);
+      }
+    }
   };
 
-  const removeItemsByCompany = (companyId) => {
-    setCart((prevCart) =>
-      prevCart.filter((item) => item.empresaId !== companyId)
-    );
+  const removeItemsByCompany = async (companyId) => {
+    const newCart = cart.filter((item) => item.empresaId !== companyId);
+    setCart(newCart);
+    
+    // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
+    if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
+      try {
+        await syncCartWithAPI(newCart);
+        console.log(`✅ Productos de la empresa ${companyId} eliminados y sincronizados con la API`);
+      } catch (error) {
+        console.error("❌ Error al sincronizar eliminación por empresa con la API:", error);
+      }
+    }
   };
 
   const value = {
