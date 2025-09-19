@@ -5,6 +5,7 @@ import {
   api_products_searchProducts,
 } from "../api/products/apiProducts";
 import { PRODUCT_LINE_CONFIG } from "../constants/productLineConfig";
+import { baseLinkImages } from "../constants/links";
 
 const ProductCatalogContext = createContext();
 export const useProductCatalog = () => useContext(ProductCatalogContext);
@@ -44,9 +45,7 @@ export const ProductCatalogProvider = ({ children }) => {
       let imageUrl = "https://via.placeholder.com/300x300?text=Sin+Imagen";
       if (item.DMA_RUTAIMAGEN) {
         try {
-          imageUrl = `${import.meta.env.VITE_API_IMAGES_URL}${
-            item.DMA_RUTAIMAGEN
-          }`;
+          imageUrl = `${baseLinkImages}${item.DMA_RUTAIMAGEN}`;
         } catch (e) {
           // Intentionally ignore image URL errors
         }
@@ -106,6 +105,8 @@ export const ProductCatalogProvider = ({ children }) => {
         value: empresaName,
       });
 
+      
+
       if (resp.success) {
         const productos = (resp.data || [])
           .map(mapApiProductToAppFormat)
@@ -130,6 +131,7 @@ export const ProductCatalogProvider = ({ children }) => {
   const loadProductByCodigo = async (codigo, empresaId) => {
     try {
       const resp = await api_products_getProductByCodigo(codigo, empresaId);
+      
       if (resp.success && resp.data) {
         return mapApiProductToAppFormat(resp.data);
       }
