@@ -6,7 +6,8 @@
   "scripts": {
     "pm2Dev": "pm2 delete PMayoristaDev || true && pm2 start npm --name 'PMayoristaDev' -- run dev && pm2 log 'PMayoristaDev'",
     "dev": "vite --host --port 4200",
-    "build": "vite build"
+    "build": "vite build",
+    "install:legacy": "npm install --legacy-peer-deps"
   },
   "dependencies": {
     "@date-io/date-fns": "^3.2.1",
