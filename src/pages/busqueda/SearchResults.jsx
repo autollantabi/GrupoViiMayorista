@@ -168,7 +168,7 @@ const FiltersModalOverlay = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
-  display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
+  display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -231,23 +231,31 @@ const CloseFiltersButton = styled.button`
 `;
 
 const FiltersBar = styled.div`
-  background: linear-gradient(135deg, ${({ theme }) => theme.colors.surface} 0%, ${({ theme }) => theme.colors.background} 100%);
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => theme.colors.surface} 0%,
+    ${({ theme }) => theme.colors.background} 100%
+  );
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 20px;
   box-shadow: 0 8px 25px ${({ theme }) => theme.colors.shadow};
   border: 1px solid ${({ theme }) => `${theme.colors.border}40`};
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, ${({ theme }) => theme.colors.primary}, ${({ theme }) => theme.colors.primaryLight});
+    background: linear-gradient(
+      90deg,
+      ${({ theme }) => theme.colors.primary},
+      ${({ theme }) => theme.colors.primaryLight}
+    );
   }
 
   @media (max-width: 768px) {
@@ -259,45 +267,32 @@ const FiltersContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
+  z-index: 1;
 `;
 
 const FiltersHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-direction: row;
-  gap: 35px;
+  flex-direction: column;
+  gap: 20px;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 20px;
-    align-items: stretch;
+    gap: 16px;
   }
 
   @media (max-width: 480px) {
-    gap: 16px;
+    gap: 14px;
   }
 `;
 
 const FiltersTitle = styled.h3`
   margin: 0;
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid ${({ theme }) => `${theme.colors.primary}20`};
 
-  svg {
-    color: ${({ theme }) => theme.colors.primary};
-    background: ${({ theme }) => `${theme.colors.primary}15`};
-    padding: 8px;
-    border-radius: 10px;
-    font-size: 1.1rem;
-  }
 
   @media (max-width: 768px) {
     font-size: 1.2rem;
@@ -315,14 +310,19 @@ const FiltersTitle = styled.h3`
 `;
 
 const FiltersControls = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
-  align-items: start;
+  align-items: flex-end;
+
+  @media (max-width: 1024px) {
+    gap: 16px;
+  }
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 16px;
+    align-items: stretch;
   }
 
   @media (max-width: 480px) {
@@ -340,33 +340,26 @@ const FilterGroup = styled.div`
   border: 1px solid ${({ theme }) => `${theme.colors.border}30`};
   transition: all 0.3s ease;
   position: relative;
+  min-width: 200px;
+  flex: 1;
+  z-index: 1;
 
   &:hover {
     border-color: ${({ theme }) => `${theme.colors.primary}40`};
     box-shadow: 0 4px 15px ${({ theme }) => `${theme.colors.primary}15`};
     transform: translateY(-2px);
+    z-index: 10;
   }
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: ${({ theme }) => theme.colors.primary};
-    border-radius: 12px 12px 0 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover::before {
-    opacity: 1;
+  @media (max-width: 1024px) {
+    min-width: 180px;
   }
 
   @media (max-width: 768px) {
     padding: 14px;
     gap: 6px;
+    min-width: auto;
+    flex: none;
   }
 
   @media (max-width: 480px) {
@@ -376,7 +369,11 @@ const FilterGroup = styled.div`
 `;
 
 const RestrictedProductsNotice = styled.div`
-  background: linear-gradient(135deg, ${({ theme }) => `${theme.colors.primary}08`} 0%, ${({ theme }) => `${theme.colors.primary}12`} 100%);
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => `${theme.colors.primary}08`} 0%,
+    ${({ theme }) => `${theme.colors.primary}12`} 100%
+  );
   border: 1px solid ${({ theme }) => `${theme.colors.primary}30`};
   border-radius: 12px;
   padding: 16px 18px;
@@ -391,7 +388,7 @@ const RestrictedProductsNotice = styled.div`
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -622,7 +619,7 @@ const SearchResults = () => {
   const [searchInput, setSearchInput] = useState(query); // Estado para el input de búsqueda
   const [productsPerPage, setProductsPerPage] = useState(12); // Estado para productos por página
   const [currentLimit, setCurrentLimit] = useState(12); // Estado para el límite actual
-  
+
   // Estado para modal de filtros móviles
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
 
@@ -885,13 +882,8 @@ const SearchResults = () => {
     <PageContainer
       backButtonText="Inicio"
       backButtonOnClick={handleNavigate}
-      style={{
-        padding: window.innerWidth <= 768 ? "16px" : 
-                window.innerWidth <= 480 ? "12px" : "24px"
-      }}
     >
       <PageHeader>
-
         <div
           style={{
             display: "flex",
@@ -979,12 +971,14 @@ const SearchResults = () => {
           <MobileFiltersButton onClick={openFiltersModal}>
             <RenderIcon name="FaFilter" size={16} />
             <span>Filtros y Ordenamiento</span>
-            <span style={{ 
-              backgroundColor: 'rgba(255,255,255,0.2)', 
-              padding: '2px 8px', 
-              borderRadius: '12px',
-              fontSize: '0.8rem'
-            }}>
+            <span
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                fontSize: "0.8rem",
+              }}
+            >
               {filteredResults.length}
             </span>
           </MobileFiltersButton>
@@ -994,23 +988,21 @@ const SearchResults = () => {
             <FiltersContent>
               <FiltersHeader>
                 <FiltersTitle>
-                  <RenderIcon name="FaFilter" size={18} />
                   Filtros y Ordenamiento
                 </FiltersTitle>
-                
+
                 {/* Mostrar aviso si hay productos restringidos */}
-                {results &&
-                  results.some((product) => !product.hasAccess) && (
-                    <RestrictedProductsNotice>
-                      <RenderIcon name="FaInfoCircle" size={16} />
-                      <span>
-                        Algunos productos requieren autorización especial.
-                        Los filtros se aplican solo a productos accesibles,
-                        mientras que los productos restringidos aparecen al
-                        final de la lista.
-                      </span>
-                    </RestrictedProductsNotice>
-                  )}
+                {results && results.some((product) => !product.hasAccess) && (
+                  <RestrictedProductsNotice>
+                    <RenderIcon name="FaInfoCircle" size={16} />
+                    <span>
+                      Algunos productos requieren autorización especial. Los
+                      filtros se aplican solo a productos accesibles, mientras
+                      que los productos restringidos aparecen al final de la
+                      lista.
+                    </span>
+                  </RestrictedProductsNotice>
+                )}
 
                 <FiltersControls>
                   <FilterGroup>
@@ -1019,7 +1011,7 @@ const SearchResults = () => {
                       value={priceRange}
                       onChange={handlePriceRangeChange}
                       placeholder="Seleccionar precio"
-                      width="180px"
+                      width="100%"
                       label="Rango de Precio"
                       name="priceRange"
                     />
@@ -1031,7 +1023,7 @@ const SearchResults = () => {
                       value={sortOption}
                       onChange={handleSortChange}
                       placeholder="Ordenar por..."
-                      width="180px"
+                      width="100%"
                       label="Ordenar por"
                       name="sortOption"
                     />
@@ -1050,7 +1042,7 @@ const SearchResults = () => {
                       onChange={handleItemsPerPageChange}
                       label="Productos por página"
                       placeholder="Seleccionar cantidad"
-                      width="180px"
+                      width="100%"
                       name="itemsPerPage"
                     />
                   </FilterGroup>
@@ -1069,16 +1061,20 @@ const SearchResults = () => {
                 padding: "0 4px",
               }}
             >
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "8px"
-              }}>
-                <span style={{
-                  fontSize: window.innerWidth <= 480 ? "0.8rem" : "0.9rem"
-                }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: window.innerWidth <= 480 ? "0.8rem" : "0.9rem",
+                  }}
+                >
                   Mostrando {indexOfFirstProduct + 1}-
                   {Math.min(indexOfLastProduct, filteredResults.length)} de{" "}
                   {filteredResults.length} productos
@@ -1090,7 +1086,9 @@ const SearchResults = () => {
           <ProductsGrid>
             {currentProducts.map((product, index) => (
               <ProductCard
-                key={`${product.empresaId}-${product.id}-${indexOfFirstProduct + index}`}
+                key={`${product.empresaId}-${product.id}-${
+                  indexOfFirstProduct + index
+                }`}
                 product={product}
                 lineConfig={
                   PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
@@ -1102,7 +1100,7 @@ const SearchResults = () => {
                 currentFilters={{
                   searchTerm: query,
                   sortBy: sortOption,
-                  priceRange: priceRange
+                  priceRange: priceRange,
                 }}
                 currentSearch={query}
                 currentSort={sortOption}
@@ -1130,12 +1128,13 @@ const SearchResults = () => {
               {/* Generar botones de página */}
               {[...Array(totalPages)].map((_, index) => {
                 const pageNumber = index + 1;
-                
+
                 // Mostrar máximo 5 botones de página
                 if (
                   pageNumber === 1 || // Primera página
                   pageNumber === totalPages || // Última página
-                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) // Páginas cercanas a la actual
+                  (pageNumber >= currentPage - 1 &&
+                    pageNumber <= currentPage + 1) // Páginas cercanas a la actual
                 ) {
                   return (
                     <PageButton
@@ -1148,7 +1147,8 @@ const SearchResults = () => {
                   );
                 } else if (
                   (pageNumber === 2 && currentPage > 3) || // Mostrar puntos suspensivos después de la primera página
-                  (pageNumber === totalPages - 1 && currentPage < totalPages - 2) // Mostrar puntos suspensivos antes de la última página
+                  (pageNumber === totalPages - 1 &&
+                    currentPage < totalPages - 2) // Mostrar puntos suspensivos antes de la última página
                 ) {
                   return <span key={`dots-${pageNumber}`}>...</span>;
                 }
@@ -1194,7 +1194,10 @@ const SearchResults = () => {
       )}
 
       {/* Modal de filtros para móviles */}
-      <FiltersModalOverlay $isOpen={isFiltersModalOpen} onClick={closeFiltersModal}>
+      <FiltersModalOverlay
+        $isOpen={isFiltersModalOpen}
+        onClick={closeFiltersModal}
+      >
         <FiltersModalContent onClick={(e) => e.stopPropagation()}>
           <FiltersModalHeader>
             <FiltersModalTitle>Filtros y Ordenamiento</FiltersModalTitle>
@@ -1202,31 +1205,31 @@ const SearchResults = () => {
               <RenderIcon name="FaTimes" size={20} />
             </CloseFiltersButton>
           </FiltersModalHeader>
-          
+
           {/* Contenido del modal */}
-          <div style={{ padding: '0' }}>
+          <div style={{ padding: "0" }}>
             {/* Mostrar aviso si hay productos restringidos */}
-            {results &&
-              results.some((product) => !product.hasAccess) && (
-                <RestrictedProductsNotice>
-                  <RenderIcon name="FaInfoCircle" size={16} />
-                  <span>
-                    Algunos productos requieren autorización especial.
-                    Los filtros se aplican solo a productos accesibles,
-                    mientras que los productos restringidos aparecen al
-                    final de la lista.
-                  </span>
-                </RestrictedProductsNotice>
-              )}
+            {results && results.some((product) => !product.hasAccess) && (
+              <RestrictedProductsNotice>
+                <RenderIcon name="FaInfoCircle" size={16} />
+                <span>
+                  Algunos productos requieren autorización especial. Los filtros
+                  se aplican solo a productos accesibles, mientras que los
+                  productos restringidos aparecen al final de la lista.
+                </span>
+              </RestrictedProductsNotice>
+            )}
 
             {/* Controles de filtros */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '20px',
-              marginTop: '20px',
-              marginBottom: '20px'
-            }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                marginTop: "20px",
+                marginBottom: "20px",
+              }}
+            >
               <div>
                 <FilterLabel>Rango de Precio</FilterLabel>
                 <Select
@@ -1272,8 +1275,6 @@ const SearchResults = () => {
                 />
               </div>
             </div>
-
-
           </div>
         </FiltersModalContent>
       </FiltersModalOverlay>
