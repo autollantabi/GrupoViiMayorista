@@ -1209,7 +1209,7 @@ const FilterSidebar = React.memo(
                       value={selectedRinProp}
                       onChange={(e) => handleRinChange(e.target.value)}
                       placeholder="Rin"
-                      width="90px"
+                      width="120px"
                       withSearch
                       disabled={false}
                     />
@@ -1221,7 +1221,7 @@ const FilterSidebar = React.memo(
                       value={selectedAnchoProp}
                       onChange={(e) => handleAnchoChange(e.target.value)}
                       placeholder="Ancho"
-                      width="90px"
+                      width="120px"
                       disabled={!selectedRinProp}
                     />
                     {neumaticosFilters.altoOptions.length > 0 && (
@@ -1232,8 +1232,8 @@ const FilterSidebar = React.memo(
                         }))}
                         value={selectedAltoProp}
                         onChange={(e) => handleAltoChange(e.target.value)}
-                        placeholder="Alto"
-                        width="90px"
+                        placeholder="Alto/Serie"
+                        width="120px"
                         disabled={!selectedAnchoProp}
                       />
                     )}
@@ -1428,11 +1428,13 @@ const FilterSidebar = React.memo(
             {/* Contenido del modal optimizado para móviles */}
             <div style={{ padding: "0" }}>
               {/* Botón de Limpiar Filtros */}
-              <div style={{ 
-                display: "flex", 
-                marginBottom: "20px",
-                padding: "0 16px"
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  marginBottom: "20px",
+                  padding: "0 16px",
+                }}
+              >
                 <Button
                   text="Limpiar Filtros"
                   variant="outlined"
@@ -1466,16 +1468,27 @@ const FilterSidebar = React.memo(
                       style={{
                         padding: "8px 12px",
                         marginBottom: "8px",
-                        backgroundColor: lineaNegocio === line ? theme.colors.primary : theme.colors.surface,
-                        color: lineaNegocio === line ? theme.colors.white : theme.colors.text,
+                        backgroundColor:
+                          lineaNegocio === line
+                            ? theme.colors.primary
+                            : theme.colors.surface,
+                        color:
+                          lineaNegocio === line
+                            ? theme.colors.white
+                            : theme.colors.text,
                         border: "1px solid",
-                        borderColor: lineaNegocio === line ? theme.colors.primary : theme.colors.border,
+                        borderColor:
+                          lineaNegocio === line
+                            ? theme.colors.primary
+                            : theme.colors.border,
                         borderRadius: "4px",
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                         fontSize: "0.9rem",
                       }}
-                      onClick={() => onBusinessLineChange && onBusinessLineChange(line)}
+                      onClick={() =>
+                        onBusinessLineChange && onBusinessLineChange(line)
+                      }
                     >
                       {line}
                     </div>
@@ -1490,9 +1503,21 @@ const FilterSidebar = React.memo(
                     <RenderIcon name="FaRuler" size={18} />
                     Filtrar por medidas
                   </MobileSectionTitle>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
                     <div>
-                      <div style={{ marginBottom: "8px", fontSize: "0.9rem", color: theme.colors.textLight }}>
+                      <div
+                        style={{
+                          marginBottom: "8px",
+                          fontSize: "0.9rem",
+                          color: theme.colors.textLight,
+                        }}
+                      >
                         Rin:
                       </div>
                       <Select
@@ -1508,14 +1533,22 @@ const FilterSidebar = React.memo(
                       />
                     </div>
                     <div>
-                      <div style={{ marginBottom: "8px", fontSize: "0.9rem", color: theme.colors.textLight }}>
+                      <div
+                        style={{
+                          marginBottom: "8px",
+                          fontSize: "0.9rem",
+                          color: theme.colors.textLight,
+                        }}
+                      >
                         Ancho:
                       </div>
                       <Select
-                        options={neumaticosFilters.anchoOptions.map((ancho) => ({
-                          label: ancho,
-                          value: ancho,
-                        }))}
+                        options={neumaticosFilters.anchoOptions.map(
+                          (ancho) => ({
+                            label: ancho,
+                            value: ancho,
+                          })
+                        )}
                         value={selectedAnchoProp}
                         onChange={(e) => handleAnchoChange(e.target.value)}
                         placeholder="Ancho"
@@ -1526,14 +1559,22 @@ const FilterSidebar = React.memo(
                     </div>
                     {neumaticosFilters.altoOptions.length > 0 && (
                       <div>
-                        <div style={{ marginBottom: "8px", fontSize: "0.9rem", color: theme.colors.textLight }}>
+                        <div
+                          style={{
+                            marginBottom: "8px",
+                            fontSize: "0.9rem",
+                            color: theme.colors.textLight,
+                          }}
+                        >
                           Alto:
                         </div>
                         <Select
-                          options={neumaticosFilters.altoOptions.map((alto) => ({
-                            label: alto,
-                            value: alto,
-                          }))}
+                          options={neumaticosFilters.altoOptions.map(
+                            (alto) => ({
+                              label: alto,
+                              value: alto,
+                            })
+                          )}
                           value={selectedAltoProp}
                           onChange={(e) => handleAltoChange(e.target.value)}
                           placeholder="Alto"
@@ -1559,28 +1600,39 @@ const FilterSidebar = React.memo(
                       <Input
                         placeholder="Buscar marcas..."
                         value={searchTerms["marcas"] || ""}
-                        onChange={(e) => handleSearchChange("marcas", e.target.value)}
+                        onChange={(e) =>
+                          handleSearchChange("marcas", e.target.value)
+                        }
                         leftIconName="FaSearch"
                         fullWidth={true}
                       />
                     </div>
                   )}
-                  <div style={{ 
-                    display: "flex", 
-                    flexWrap: "wrap", 
-                    gap: "8px",
-                    maxHeight: "200px",
-                    overflowY: "auto"
-                  }}>
-                    {getFilteredItems(availableFiltersWithStatus.brands, "marcas").map((brandItem, index) => (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {getFilteredItems(
+                      availableFiltersWithStatus.brands,
+                      "marcas"
+                    ).map((brandItem, index) => (
                       <div
                         key={`brand-${brandItem.value}-${index}`}
                         style={{
                           padding: "6px 12px",
                           borderRadius: "16px",
                           fontSize: "0.85rem",
-                          cursor: brandItem.disabled ? "not-allowed" : "pointer",
-                          backgroundColor: selectedBrands.includes(brandItem.value)
+                          cursor: brandItem.disabled
+                            ? "not-allowed"
+                            : "pointer",
+                          backgroundColor: selectedBrands.includes(
+                            brandItem.value
+                          )
                             ? theme.colors.primary
                             : brandItem.disabled
                             ? theme.colors.border
@@ -1599,7 +1651,10 @@ const FilterSidebar = React.memo(
                           opacity: brandItem.disabled ? 0.6 : 1,
                           transition: "all 0.2s ease",
                         }}
-                        onClick={() => !brandItem.disabled && handleBrandChange(brandItem.value)}
+                        onClick={() =>
+                          !brandItem.disabled &&
+                          handleBrandChange(brandItem.value)
+                        }
                       >
                         {brandItem.value}
                       </div>
@@ -1634,13 +1689,15 @@ const FilterSidebar = React.memo(
                           />
                         </div>
                       )}
-                      <div style={{ 
-                        display: "flex", 
-                        flexWrap: "wrap", 
-                        gap: "8px",
-                        maxHeight: "200px",
-                        overflowY: "auto"
-                      }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                          maxHeight: "200px",
+                          overflowY: "auto",
+                        }}
+                      >
                         {getFilteredItems(filterItems, filterType).map(
                           (filterItem, index) => (
                             <div
@@ -1699,7 +1756,13 @@ const FilterSidebar = React.memo(
                 </MobileSectionTitle>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: "120px" }}>
-                    <div style={{ marginBottom: "8px", fontSize: "0.9rem", color: theme.colors.textLight }}>
+                    <div
+                      style={{
+                        marginBottom: "8px",
+                        fontSize: "0.9rem",
+                        color: theme.colors.textLight,
+                      }}
+                    >
                       Desde:
                     </div>
                     <Select
@@ -1712,7 +1775,13 @@ const FilterSidebar = React.memo(
                     />
                   </div>
                   <div style={{ flex: 1, minWidth: "120px" }}>
-                    <div style={{ marginBottom: "8px", fontSize: "0.9rem", color: theme.colors.textLight }}>
+                    <div
+                      style={{
+                        marginBottom: "8px",
+                        fontSize: "0.9rem",
+                        color: theme.colors.textLight,
+                      }}
+                    >
                       Hasta:
                     </div>
                     <Select
@@ -1726,8 +1795,6 @@ const FilterSidebar = React.memo(
                   </div>
                 </div>
               </MobileFilterSection>
-
-
             </div>
           </ModalContent>
         </ModalOverlay>

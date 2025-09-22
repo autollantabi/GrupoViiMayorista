@@ -331,7 +331,7 @@ const ZoomWindow = styled.div`
   pointer-events: none;
   z-index: 5000;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  visibility: ${({ $visible }) => ($visible ? 'visible' : 'hidden')};
+  visibility: ${({ $visible }) => ($visible ? "visible" : "hidden")};
 
   @media (max-width: 992px) {
     display: none; // Ocultar en dispositivos móviles/tablets
@@ -371,7 +371,7 @@ const renderSpecifications = (product) => {
 
             return (
               <SpecRow key={specConfig.field}>
-                <SpecLabel>{specConfig.label}</SpecLabel>
+                <SpecLabel>{specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label}</SpecLabel>
                 <SpecValue>{value}</SpecValue>
               </SpecRow>
             );
@@ -393,7 +393,7 @@ const DetalleProducto = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // Intentar obtener el producto del estado de navegación primero
   const [product, setProduct] = useState(location.state?.product || null);
-  
+
   // SEO y datos estructurados
   const structuredData = useProductStructuredData(product);
 
@@ -543,10 +543,10 @@ const DetalleProducto = () => {
         imageContainerRef.current.getBoundingClientRect();
 
       // Verificar si el mouse está realmente dentro del área de la imagen
-      const isInsideImage = 
-        e.clientX >= left && 
-        e.clientX <= left + width && 
-        e.clientY >= top && 
+      const isInsideImage =
+        e.clientX >= left &&
+        e.clientX <= left + width &&
+        e.clientY >= top &&
         e.clientY <= top + height;
 
       if (!isInsideImage) {
@@ -687,10 +687,10 @@ const DetalleProducto = () => {
           imageContainerRef.current.getBoundingClientRect();
 
         // Verificar si el mouse está fuera del área de la imagen
-        const isOutsideImage = 
-          e.clientX < left || 
-          e.clientX > left + width || 
-          e.clientY < top || 
+        const isOutsideImage =
+          e.clientX < left ||
+          e.clientX > left + width ||
+          e.clientY < top ||
           e.clientY > top + height;
 
         if (isOutsideImage) {
@@ -705,10 +705,10 @@ const DetalleProducto = () => {
     };
 
     // Agregar listener global
-    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener("mousemove", handleGlobalMouseMove);
 
     return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
     };
   }, [isHovering]);
 
@@ -731,7 +731,8 @@ const DetalleProducto = () => {
   };
 
   const increaseQuantity = () => {
-    if (quantity < 5000) { // Eliminar restricción de stock
+    if (quantity < 5000) {
+      // Eliminar restricción de stock
       setQuantity(quantity + 1);
     }
   };
@@ -774,8 +775,19 @@ const DetalleProducto = () => {
     <>
       <SEO
         title={product?.name || "Producto"}
-        description={product?.description || `Producto ${product?.name} de la marca ${product?.brand}. Precio: $${priceWithIVA?.toFixed(2)}. Stock disponible.`}
-        keywords={`${product?.name}, ${product?.brand}, ${product?.empresa}, neumáticos, repuestos automotrices, ${product?.filtersByType ? Object.values(product.filtersByType).flat().join(", ") : ""}`}
+        description={
+          product?.description ||
+          `Producto ${product?.name} de la marca ${
+            product?.brand
+          }. Precio: $${priceWithIVA?.toFixed(2)}. Stock disponible.`
+        }
+        keywords={`${product?.name}, ${product?.brand}, ${
+          product?.empresa
+        }, neumáticos, repuestos automotrices, ${
+          product?.filtersByType
+            ? Object.values(product.filtersByType).flat().join(", ")
+            : ""
+        }`}
         image={product?.image}
         url={`https://viicommerce.com/productos/${product?.id}`}
         type="product"
@@ -784,210 +796,213 @@ const DetalleProducto = () => {
       <PageContainer>
         {renderBreadcrumbs()}
         <ProductLayout>
-        <ImageSection>
-          {/* Contenedor principal de la imagen con eventos de mouse */}
-          <MainImageContainer
-            ref={imageContainerRef}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onMouseMove={handleMouseMove}
-          >
-            <ProductImageWithFallback src={product.image} alt={product.name} />
-
-            {/* Ventana de zoom */}
-            <ZoomWindow
-              $visible={isHovering}
-              style={{
-                left: `${zoomPosition.x}px`,
-                top: `${zoomPosition.y}px`,
-                transform: "none", // Eliminar cualquier transformación predeterminada
-              }}
+          <ImageSection>
+            {/* Contenedor principal de la imagen con eventos de mouse */}
+            <MainImageContainer
+              ref={imageContainerRef}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onMouseMove={handleMouseMove}
             >
-              <ZoomedImage
+              <ProductImageWithFallback
                 src={product.image}
-                style={{
-                  transform: `translate(-${mousePosition.x * 80}%, -${
-                    mousePosition.y * 75
-                  }%)`,
-                }}
+                alt={product.name}
               />
-            </ZoomWindow>
-          </MainImageContainer>
-        </ImageSection>
 
-        <InfoSection>
-          {/* Mostrar categorías desde filtersByType de forma amigable */}
-          <Category>
-            {product.filtersByType &&
-            Object.keys(product.filtersByType).length > 0
-              ? Object.values(product.filtersByType)
-                  .flat() // Aplanar el array de arrays
-                  .join(", ")
-              : "Producto sin categoría"}
-          </Category>
-          <ProductTitle>{product.name}</ProductTitle>
+              {/* Ventana de zoom */}
+              <ZoomWindow
+                $visible={isHovering}
+                style={{
+                  left: `${zoomPosition.x}px`,
+                  top: `${zoomPosition.y}px`,
+                  transform: "none", // Eliminar cualquier transformación predeterminada
+                }}
+              >
+                <ZoomedImage
+                  src={product.image}
+                  style={{
+                    transform: `translate(-${mousePosition.x * 80}%, -${
+                      mousePosition.y * 75
+                    }%)`,
+                  }}
+                />
+              </ZoomWindow>
+            </MainImageContainer>
+          </ImageSection>
 
-          {/* Precio en la parte superior */}
-          <PriceContainer>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: "5px",
-                alignItems: "flex-end",
-              }}
-            >
-              <CurrentPrice>${(priceWithIVA || 0).toFixed(2)}</CurrentPrice>
-              <IVAIndicator>IVA incluido</IVAIndicator>
-            </div>
-            {product.discount > 0 && (
-              <>
-                {product.discount > 0 && product.price != null && (
-                  <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
-                )}
-                <Discount>-{product.discount}%</Discount>
-              </>
-            )}
-          </PriceContainer>
+          <InfoSection>
+            {/* Mostrar categorías desde filtersByType de forma amigable */}
+            <Category>
+              {product.filtersByType &&
+              Object.keys(product.filtersByType).length > 0
+                ? Object.values(product.filtersByType)
+                    .flat() // Aplanar el array de arrays
+                    .join(", ")
+                : "Producto sin categoría"}
+            </Category>
+            <ProductTitle>{product.name}</ProductTitle>
 
-          {/* Nuevo indicador de stock posicionado debajo del precio */}
-          <StockIndicator $inStock={product.stock > 0}>
-            <StockBadge $inStock={product.stock > 0}>
-              {product.stock > 0 ? "DISPONIBLE" : "CONSULTAR STOCK"}
-            </StockBadge>
-            <StockMessage $inStock={product.stock > 0}>
-              {product.stock > 0 ? (
-                <>
-                  {product.stock < 100 && `${product.stock}`}{" "}
-                  {product.stock === 1
-                    ? "unidad disponible"
-                    : product.stock < 100
-                    ? "unidades disponibles"
-                    : "Stock disponible"}
-                  {currentInCart > 0 && (
-                    <span
-                      style={{
-                        marginLeft: "5px",
-                        fontSize: "0.85em",
-                        opacity: 0.9,
-                      }}
-                    >
-                      (Ya tienes {currentInCart} en el carrito)
-                    </span>
-                  )}
-                </>
-              ) : (
-                "Stock a consultar. Puedes agregar al carrito y confirmaremos disponibilidad."
-              )}
-            </StockMessage>
-          </StockIndicator>
-          {/* Sección de cantidad y botón en la misma línea */}
-          {isClient && !isVisualizacion && (
-            <div
-              style={{
-                marginTop: "10px",
-                marginBottom: "20px",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: "20px",
-                flexWrap: "wrap",
-              }}
-            >
-              {/* Controles de cantidad */}
+            {/* Precio en la parte superior */}
+            <PriceContainer>
               <div
                 style={{
                   display: "flex",
                   flexDirection: "row",
-                  alignItems: "center",
-                  gap: "12px",
+                  gap: "5px",
+                  alignItems: "flex-end",
                 }}
               >
-                <div style={{ fontWeight: "500", minWidth: "80px" }}>
-                  Cantidad:
-                </div>
-                <QuantitySelector>
-                  <QuantityButton
-                    onClick={decreaseQuantity}
-                    disabled={quantity <= 1}
-                    text={"-"}
-                  />
-                  <QuantityInput
-                    type="number"
-                    min="1"
-                    max={5000}
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                  />
-                  <QuantityButton
-                    onClick={increaseQuantity}
-                    disabled={quantity >= 5000}
-                    text={"+"}
-                  />
-                </QuantitySelector>
-                {currentInCart > 0 && (
-                  <span
-                    style={{
-                      fontSize: "0.85em",
-                      color: "#666",
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {currentInCart} en carrito
-                  </span>
-                )}
+                <CurrentPrice>${(priceWithIVA || 0).toFixed(2)}</CurrentPrice>
+                <IVAIndicator>IVA incluido</IVAIndicator>
               </div>
+              {product.discount > 0 && (
+                <>
+                  {product.discount > 0 && product.price != null && (
+                    <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
+                  )}
+                  <Discount>-{product.discount}%</Discount>
+                </>
+              )}
+            </PriceContainer>
 
-              {/* Botón de agregar al carrito */}
-              <Button
-                text={
-                  isAddingToCart
-                    ? "Agregando..."
-                    : `Agregar ${quantity} al carrito`
-                }
-                variant="solid"
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                backgroundColor={({ theme }) => theme.colors.primary}
-                size="medium"
+            {/* Nuevo indicador de stock posicionado debajo del precio */}
+            <StockIndicator $inStock={product.stock > 0}>
+              <StockBadge $inStock={product.stock > 0}>
+                {product.stock > 0 ? "DISPONIBLE" : "CONSULTAR STOCK"}
+              </StockBadge>
+              <StockMessage $inStock={product.stock > 0}>
+                {product.stock > 0 ? (
+                  <>
+                    {product.stock < 100 && `${product.stock}`}{" "}
+                    {product.stock === 1
+                      ? "unidad disponible"
+                      : product.stock < 100
+                      ? "unidades disponibles"
+                      : "Stock disponible"}
+                    {currentInCart > 0 && (
+                      <span
+                        style={{
+                          marginLeft: "5px",
+                          fontSize: "0.85em",
+                          opacity: 0.9,
+                        }}
+                      >
+                        (Ya tienes {currentInCart} en el carrito)
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  "Stock a consultar. Puedes agregar al carrito y confirmaremos disponibilidad."
+                )}
+              </StockMessage>
+            </StockIndicator>
+            {/* Sección de cantidad y botón en la misma línea */}
+            {isClient && !isVisualizacion && (
+              <div
                 style={{
-                  minWidth: "180px",
-                  maxWidth: "250px",
+                  marginTop: "10px",
+                  marginBottom: "20px",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: "20px",
+                  flexWrap: "wrap",
                 }}
-              />
-            </div>
-          )}
-
-          <Description>
-            {/* Información de marca y empresa */}
-            <div
-              style={{
-                marginTop: "16px",
-                paddingTop: "16px",
-                borderTop: "1px solid #e0e0e0",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ marginBottom: "10px", fontSize: "1.1em" }}>
-                  Descripción
-                </span>
+              >
+                {/* Controles de cantidad */}
                 <div
                   style={{
-                    color: "#666",
-                    fontSize: "0.85em",
-                    marginBottom: "10px",
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "12px",
                   }}
                 >
-                  Marca: {product.brand} · Empresa:{" "}
-                  {product.empresa || product.empresaId}
+                  <div style={{ fontWeight: "500", minWidth: "80px" }}>
+                    Cantidad:
+                  </div>
+                  <QuantitySelector>
+                    <QuantityButton
+                      onClick={decreaseQuantity}
+                      disabled={quantity <= 1}
+                      text={"-"}
+                    />
+                    <QuantityInput
+                      type="number"
+                      min="1"
+                      max={5000}
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                    />
+                    <QuantityButton
+                      onClick={increaseQuantity}
+                      disabled={quantity >= 5000}
+                      text={"+"}
+                    />
+                  </QuantitySelector>
+                  {currentInCart > 0 && (
+                    <span
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#666",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      {currentInCart} en carrito
+                    </span>
+                  )}
                 </div>
-                <span style={{ color: "#666" }}>{product.description}</span>
+
+                {/* Botón de agregar al carrito */}
+                <Button
+                  text={
+                    isAddingToCart
+                      ? "Agregando..."
+                      : `Agregar ${quantity} al carrito`
+                  }
+                  variant="solid"
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  backgroundColor={({ theme }) => theme.colors.primary}
+                  size="medium"
+                  style={{
+                    minWidth: "180px",
+                    maxWidth: "250px",
+                  }}
+                />
               </div>
-            </div>
-          </Description>
-          {renderSpecifications(product)}
-        </InfoSection>
-      </ProductLayout>
+            )}
+
+            <Description>
+              {/* Información de marca y empresa */}
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid #e0e0e0",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ marginBottom: "10px", fontSize: "1.1em" }}>
+                    Descripción
+                  </span>
+                  <div
+                    style={{
+                      color: "#666",
+                      fontSize: "0.85em",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Marca: {product.brand} · Empresa:{" "}
+                    {product.empresa || product.empresaId}
+                  </div>
+                  <span style={{ color: "#666" }}>{product.description}</span>
+                </div>
+              </div>
+            </Description>
+            {renderSpecifications(product)}
+          </InfoSection>
+        </ProductLayout>
 
         {/* Modal de contacto */}
         <ContactModal

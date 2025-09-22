@@ -310,7 +310,9 @@ export default function Header() {
   return (
     <>
       <HeaderContainer>
-        <Logo onClick={handleGoToHome}>VII COMMERCE</Logo>
+        <Logo onClick={handleGoToHome}>
+          <RenderIcon name="FaHome" size={18} />
+        </Logo>
 
         <RightSection>
           <DesktopOnlySection>

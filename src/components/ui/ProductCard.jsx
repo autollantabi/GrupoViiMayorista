@@ -755,7 +755,7 @@ const ProductCard = ({
 
     const specsText = config.specs
       .slice(0, 3)
-      .map((spec) => `${spec.label}: ${product.specs[spec.field]}`)
+      .map((spec) => `${spec.label === "Serie" ? "Alto/Serie" : spec.label}: ${product.specs[spec.field]}`)
       .join(" • ");
 
     return (
