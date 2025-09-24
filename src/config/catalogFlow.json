@@ -1,0 +1,30 @@
+{
+  "LLANTAS": {
+    "name": "Llantas",
+    "displayName": "Neumáticos",
+    "steps": []
+  },
+  "LLANTAS MOTO": {
+    "name": "Llantas Moto",
+    "displayName": "Neumáticos Moto",
+    "steps": []
+  },
+  "LUBRICANTES": {
+    "name": "Lubricantes",
+    "displayName": "Lubricantes",
+    "steps": []
+  },
+  "HERRAMIENTAS": {
+    "name": "Herramientas",
+    "displayName": "Herramientas",
+    "steps": [
+      {
+        "id": "grupo",
+        "name": "Grupo",
+        "displayName": "Selecciona un grupo",
+        "description": "Elige el grupo de herramientas que necesitas",
+        "nextStep": null
+      }
+    ]
+  }
+}

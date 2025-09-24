@@ -97,17 +97,27 @@ export default function Sidebar({ onToggleSidebar }) {
           label: "Catálogos",
           icon: "ShoppingBag",
           iconLibrary: 7,
-          items: empresas.map((empresa) => ({
-            path: `/catalogo/${empresa.id}`,
-            label: empresa.nombre,
-            onClick: onToggleSidebar,
-            icon: "Tag",
-            iconLibrary: 7,
-            disabled: !userAccess.includes(empresa.id),
-            badge: !userAccess.includes(empresa.id)
-              ? { text: "Solicitar", variant: "new" }
-              : null,
-          })),
+          items: [
+            {
+              path: "/catalogo",
+              label: "Catálogo Nuevo",
+              onClick: onToggleSidebar,
+              icon: "Sparkles",
+              iconLibrary: 7,
+              badge: { text: "Nuevo", variant: "new" },
+            },
+            ...empresas.map((empresa) => ({
+              path: `/catalogo/${empresa.id}`,
+              label: empresa.nombre,
+              onClick: onToggleSidebar,
+              icon: "Tag",
+              iconLibrary: 7,
+              disabled: !userAccess.includes(empresa.id),
+              badge: !userAccess.includes(empresa.id)
+                ? { text: "Solicitar", variant: "new" }
+                : null,
+            })),
+          ],
         },
         {
           type: "link",

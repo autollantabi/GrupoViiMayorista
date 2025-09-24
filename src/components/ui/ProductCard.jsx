@@ -41,7 +41,7 @@ const StyledCard = styled.div`
       $restricted
         ? `0 1px 4px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
         : `0 1px 6px ${theme.colors.shadow}`};
-    
+
     &:hover {
       transform: ${({ $restricted }) =>
         $restricted ? "none" : "translateY(-2px)"};
@@ -58,7 +58,7 @@ const StyledCard = styled.div`
       $restricted
         ? `0 1px 3px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
         : `0 1px 4px ${theme.colors.shadow}`};
-    
+
     &:hover {
       transform: ${({ $restricted }) =>
         $restricted ? "none" : "translateY(-1px)"};
@@ -175,7 +175,7 @@ const LockIcon = styled.div`
   @media (max-width: 768px) {
     width: 36px;
     height: 36px;
-    
+
     svg {
       width: 14px;
       height: 14px;
@@ -185,7 +185,7 @@ const LockIcon = styled.div`
   @media (max-width: 480px) {
     width: 32px;
     height: 32px;
-    
+
     svg {
       width: 12px;
       height: 12px;
@@ -755,7 +755,12 @@ const ProductCard = ({
 
     const specsText = config.specs
       .slice(0, 3)
-      .map((spec) => `${spec.label === "Serie" ? "Alto/Serie" : spec.label}: ${product.specs[spec.field]}`)
+      .map(
+        (spec) =>
+          `${spec.label}: ${
+            product.specs[spec.field]
+          }`
+      )
       .join(" • ");
 
     return (
@@ -778,20 +783,36 @@ const ProductCard = ({
     // Detectar si estamos en móvil
     const isMobile = window.innerWidth <= 768;
     const isSmallMobile = window.innerWidth <= 480;
-    
+
     if (product.stock > 0) {
       if (product.stock >= 100) {
         return (
           <StockIcon $inStock={true}>
-            {isSmallMobile ? "+100 unid." : isMobile ? "+100 unid." : "+100 unid."}
+            {isSmallMobile
+              ? "+100 unid."
+              : isMobile
+              ? "+100 unid."
+              : "+100 unid."}
           </StockIcon>
         );
       } else {
-        const stockText = isSmallMobile ? "unid." : isMobile ? "unid." : "unid.";
-        return <span>{product.stock} {stockText}</span>;
+        const stockText = isSmallMobile
+          ? "unid."
+          : isMobile
+          ? "unid."
+          : "unid.";
+        return (
+          <span>
+            {product.stock} {stockText}
+          </span>
+        );
       }
     } else {
-      const noStockText = isSmallMobile ? "sin stock" : isMobile ? "sin stock" : "sin stock";
+      const noStockText = isSmallMobile
+        ? "sin stock"
+        : isMobile
+        ? "sin stock"
+        : "sin stock";
       return <StockIcon $inStock={false}>{noStockText}</StockIcon>;
     }
   };

@@ -1,7 +1,7 @@
 import "react-toastify/dist/ReactToastify.css";
 
-import { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import {
   adminRoutes,
   ecommerceRoutes,
@@ -56,12 +56,32 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+// Componente interno para detectar cambios de ruta y limpiar localStorage
+function RouteHandler() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Limpiar localStorage del catálogo cuando se navega fuera de las rutas del catálogo
+    const isCatalogRoute =
+      location.pathname.startsWith("/catalogo") ||
+      location.pathname.startsWith("/busqueda");
+
+    if (!isCatalogRoute) {
+      localStorage.removeItem("catalogState");
+      localStorage.removeItem("selectedProduct");
+    }
+  }, [location.pathname]);
+
+  return null; // Este componente no renderiza nada, solo maneja efectos
+}
+
 const App = () => {
   const { isAuthenticated } = useAuth();
 
   return (
     <>
       <GlobalStyle />
+      <RouteHandler />
 
       <Routes>
         {/* Rutas públicas con layout limpio */}

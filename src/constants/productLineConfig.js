@@ -21,12 +21,6 @@ export const PRODUCT_LINE_CONFIG = {
   LLANTAS: {
     specs: [
       {
-        field: "rin",
-        label: "Rin",
-        defaultValue: "-",
-        transform: (item) => item.DMA_RIN,
-      },
-      {
         field: "ancho",
         label: "Ancho",
         defaultValue: "-",
@@ -34,9 +28,15 @@ export const PRODUCT_LINE_CONFIG = {
       },
       {
         field: "serie",
-        label: "Serie",
+        label: "Alto/Serie",
         defaultValue: "",
         transform: (item) => item.DMA_SERIE,
+      },
+      {
+        field: "rin",
+        label: "Rin",
+        defaultValue: "-",
+        transform: (item) => item.DMA_RIN,
       },
       {
         field: "medida",

@@ -3,7 +3,7 @@ import { ROUTES } from "../constants/routes";
 import { ROLES } from "../constants/roles";
 import NotFound from "../pages/NotFound";
 // Importaciones de páginas ecommerce
-import Catalogo from "../pages/catalogo/Catalogo";
+import Catalog from "../pages/catalogo/Catalog";
 import DetalleProducto from "../pages/catalogo/DetalleProducto";
 import Carrito from "../pages/compras/Carrito";
 import MisPedidos from "../pages/compras/MisPedidos";
@@ -31,7 +31,7 @@ export const ecommerceRoutes = [
   },
   {
     path: ROUTES.ECOMMERCE.CATALOGO,
-    element: <Catalogo />,
+    element: <Catalog />,
     allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
   },
   {

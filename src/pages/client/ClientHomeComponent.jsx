@@ -40,6 +40,44 @@ const WelcomeSubtitle = styled.p`
   }
 `;
 
+const NewCatalogSection = styled.div`
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.primaryLight} 100%);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
+`;
+
+const NewCatalogTitle = styled.h3`
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+`;
+
+const NewCatalogDescription = styled.p`
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+`;
+
+const NewCatalogButton = styled(Button)`
+  background: white;
+  color: ${({ theme }) => theme.colors.primary};
+  border: 2px solid white;
+  font-weight: 600;
+  padding: 12px 24px;
+  font-size: 1rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+`;
+
 const CompaniesSection = styled.div`
   margin-top: 1rem;
 `;
@@ -230,6 +268,8 @@ const ClientHomeComponent = () => {
         </WelcomeSubtitle>
       </WelcomeSection>
 
+     
+
       <CompaniesSection>
         <CompaniesGrid>
           {empresas.map((empresa) => {
@@ -256,11 +296,14 @@ const ClientHomeComponent = () => {
                 </CardBody>
                 <CardFooter>
                   <ProductCount>{productCount} productos</ProductCount>
-                  <Button
-                    size="small"
-                    text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}
-                    variant={hasAccess ? "solid" : "outlined"}
-                  />
+                  <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+                    <Button
+                      size="small"
+                      text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}
+                      variant={hasAccess ? "solid" : "outlined"}
+                      onClick={() => handleCardClick(empresa)}
+                    />
+                  </div>
                 </CardFooter>
               </CompanyCard>
             );
