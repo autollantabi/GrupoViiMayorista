@@ -121,6 +121,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       DMA_SUBGRUPO: "Subgrupo",
       DMA_GRUPO: "Grupo",
       DMA_SAE: "Viscosidad SAE",
+      DMA_ISOVG: "Viscosidad ISOVG",
     };
     return names[filterField] || filterField;
   };
@@ -485,6 +486,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       LUBRICANTES: [
         "DMA_MARCA", 
         "DMA_SAE",
+        "DMA_ISOVG",
         "DMA_APLICACION",
         "DMA_TIPO", 
         "DMA_MODELO",
