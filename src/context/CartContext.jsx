@@ -212,6 +212,13 @@ export function CartProvider({ children }) {
       });
     });
 
+    // Incluir todas las empresas que tenían cartIds, incluso si ahora están vacías
+    Object.keys(cartIds).forEach((enterprise) => {
+      if (!productsByEnterprise[enterprise]) {
+        productsByEnterprise[enterprise] = []; // Array vacío para empresas sin productos
+      }
+    });
+
     // Sincronizar cada carrito por empresa
     const syncPromises = Object.entries(productsByEnterprise).map(
       async ([enterprise, productos]) => {
@@ -248,6 +255,20 @@ export function CartProvider({ children }) {
     );
 
     await Promise.all(syncPromises);
+
+    // Limpiar cartIds de empresas que ya no tienen productos
+    const newCartIds = { ...cartIds };
+    Object.keys(newCartIds).forEach((enterprise) => {
+      if (!productsByEnterprise[enterprise] || productsByEnterprise[enterprise].length === 0) {
+        delete newCartIds[enterprise];
+        console.log(`🗑️ CartId eliminado para empresa vacía: ${enterprise}`);
+      }
+    });
+    
+    // Solo actualizar si hay cambios
+    if (Object.keys(newCartIds).length !== Object.keys(cartIds).length) {
+      setCartIds(newCartIds);
+    }
   };
 
   useEffect(() => {
