@@ -19,8 +19,8 @@ const ProductGridContainer = styled.div`
 
 const GridHeader = styled.div`
   display: flex;
-    justify-content: space-between;
-    align-items: center;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
@@ -197,8 +197,7 @@ const PaginationButton = styled.button`
   border-radius: 6px;
   background: ${({ $isActive, theme }) =>
     $isActive ? theme.colors.primary : theme.colors.surface};
-  color: ${({ $isActive, theme }) =>
-    $isActive ? '#fff' : theme.colors.text};
+  color: ${({ $isActive, theme }) => ($isActive ? "#fff" : theme.colors.text)};
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -289,11 +288,29 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
         break;
       case "default":
       default:
-        // Mantener orden original (destacados primero)
+        // Ordenar por DMA_INDICE_CLASIFICACION (A, B, C)
         filtered.sort((a, b) => {
-          if (a.destacado && !b.destacado) return -1;
-          if (!a.destacado && b.destacado) return 1;
-          return 0;
+          const getClassificationOrder = (classification) => {
+            switch (classification) {
+              case "A":
+                return 1;
+              case "B":
+                return 2;
+              case "C":
+                return 3;
+              default:
+                return 4; // Para valores no definidos, van al final
+            }
+          };
+
+          const orderA = getClassificationOrder(
+            a.originalData.DMA_INDICE_CLASIFICACION
+          );
+          const orderB = getClassificationOrder(
+            b.originalData.DMA_INDICE_CLASIFICACION
+          );
+
+          return orderA - orderB;
         });
         break;
     }
@@ -369,7 +386,11 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
 
     // Solo cambiar página si el valor es un número válido
     const pageNum = parseInt(value);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= processedProducts.totalPages) {
+    if (
+      !isNaN(pageNum) &&
+      pageNum >= 1 &&
+      pageNum <= processedProducts.totalPages
+    ) {
       setCurrentPage(pageNum);
     }
   };
@@ -511,9 +532,7 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
                 marginTop: "16px",
               }}
             >
-              <span style={{ color: '#666', fontSize: '14px' }}>
-                Ir a:
-              </span>
+              <span style={{ color: "#666", fontSize: "14px" }}>Ir a:</span>
               <PaginationInput
                 type="number"
                 min="1"
@@ -534,7 +553,5 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
     </ProductGridContainer>
   );
 };
-
-
 
 export default ProductGridView;

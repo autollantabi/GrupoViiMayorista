@@ -192,7 +192,8 @@ const LoadingText = styled.p`
 
 const Catalog = () => {
   const { empresaName } = useParams();
-  const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } = useProductCatalog();
+  const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
+    useProductCatalog();
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Funciones para manejar localStorage del producto seleccionado
@@ -244,7 +245,10 @@ const Catalog = () => {
     goToAdditionalFilter,
     handleSearchChange,
     goToFilterStep,
-  } = useCatalogFlow(empresaName, empresaName ? catalogByEmpresa[empresaName] : null);
+  } = useCatalogFlow(
+    empresaName,
+    empresaName ? catalogByEmpresa[empresaName] : null
+  );
 
   const handleLineaSelect = (linea) => {
     selectLinea(linea);
@@ -334,13 +338,14 @@ const Catalog = () => {
           <WelcomeScreen>
             <WelcomeHeader>
               <WelcomeTitle>
-                {empresaName ? `Catálogo de ${empresaName}` : "Bienvenido al Catálogo"}
+                {empresaName
+                  ? `Catálogo de ${empresaName}`
+                  : "Bienvenido al Catálogo"}
               </WelcomeTitle>
               <WelcomeDescription>
-                {empresaName 
+                {empresaName
                   ? `Explora los productos disponibles de ${empresaName}. Selecciona una línea de negocio para comenzar.`
-                  : "Explora nuestra amplia gama de productos de alta calidad. Selecciona una línea de negocio para comenzar a filtrar productos."
-                }
+                  : "Explora nuestra amplia gama de productos de alta calidad. Selecciona una línea de negocio para comenzar a filtrar productos."}
               </WelcomeDescription>
             </WelcomeHeader>
 
@@ -351,7 +356,9 @@ const Catalog = () => {
                   size={30}
                   style={{ animation: "spin 1s linear infinite" }}
                 />
-                <LoadingText>Cargando líneas de negocio disponibles...</LoadingText>
+                <LoadingText>
+                  Cargando líneas de negocio disponibles...
+                </LoadingText>
               </LoadingContainer>
             ) : availableLines.length > 0 ? (
               <LinesGrid>
