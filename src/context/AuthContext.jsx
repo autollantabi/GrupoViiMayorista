@@ -6,7 +6,10 @@ import { ROLES } from "../constants/roles";
 import { api_auth_login, api_auth_logout } from "../api/auth/apiLogin";
 import { api_auth_me } from "../api/auth/apiAuth";
 
-import { api_users_create, api_users_getByAccount } from "../api/users/apiUsers";
+import {
+  api_users_create,
+  api_users_getByAccount,
+} from "../api/users/apiUsers";
 import {
   api_resetPassword_requestPasswordReset,
   api_resetPassword_verifyResetCode,
@@ -23,6 +26,7 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isVisualizacion, setIsVisualizacion] = useState(false);
+  const [isReencaucheUser, setIsReencaucheUser] = useState(false);
   const navigate = useNavigate();
 
   // Función auxiliar para enmascarar el email
@@ -82,6 +86,8 @@ export function AuthProvider({ children }) {
       return ROUTES.COORDINADOR.PEDIDOS;
     } else if (user.ROLE_NAME === ROLES.ADMIN) {
       return ROUTES.ADMIN.DASHBOARD_ADMIN;
+    } else if (user.ROLE_NAME === ROLES.REENCAUCHE_USER) {
+      return ROUTES.REENCAUCHE.HOME;
     } else {
       return ROUTES.ECOMMERCE.HOME;
     }
@@ -119,6 +125,7 @@ export function AuthProvider({ children }) {
         setIsAuthenticated(true);
         setIsClient(userData.ROLE_NAME === ROLES.CLIENTE);
         setIsVisualizacion(userData.ROLE_NAME === ROLES.VISUALIZACION);
+        setIsReencaucheUser(userData.ROLE_NAME === ROLES.REENCAUCHE_USER);
 
         // Redireccionar según el rol del usuario
         let redirectPath = getHomeRouteByRole(userData);
@@ -384,6 +391,9 @@ export function AuthProvider({ children }) {
           setUser(response.user);
           setIsClient(response.user.ROLE_NAME === ROLES.CLIENTE);
           setIsVisualizacion(response.user.ROLE_NAME === ROLES.VISUALIZACION);
+          setIsReencaucheUser(
+            response.user.ROLE_NAME === ROLES.REENCAUCHE_USER
+          );
           setIsAuthenticated(true);
           localStorage.setItem("auth", "true");
         } else {
@@ -418,6 +428,7 @@ export function AuthProvider({ children }) {
         isAuthenticated,
         isClient,
         isVisualizacion,
+        isReencaucheUser,
         // Registro
         verifyIdentification,
         registerUser,

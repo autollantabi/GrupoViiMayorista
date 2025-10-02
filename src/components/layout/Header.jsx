@@ -249,8 +249,20 @@ const MobileMenuContent = styled.div`
   padding: 1rem 0;
 `;
 
+const UserEmail = styled.div`
+  padding: 1rem 1.5rem;
+  background-color: ${({ theme }) => theme.colors.background};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 0.9rem;
+  font-weight: 500;
+  word-break: break-all;
+  overflow-wrap: break-word;
+`;
+
 export default function Header() {
-  const { user, isClient, isVisualizacion, logout } = useAuth();
+  const { user, isClient, isVisualizacion, isReencaucheUser, logout } =
+    useAuth();
   const { itemCount } = useCart();
   const { isDarkMode, toggleTheme } = useAppTheme();
   const navigate = useNavigate();
@@ -316,13 +328,15 @@ export default function Header() {
 
         <RightSection>
           <DesktopOnlySection>
-            <IconButton
-              leftIconName="FaSearch"
-              iconSize={18}
-              onClick={handleSearchAllCompanies}
-            />
+            {!isReencaucheUser && (
+              <IconButton
+                leftIconName="FaSearch"
+                iconSize={18}
+                onClick={handleSearchAllCompanies}
+              />
+            )}
 
-            {isClient && !isVisualizacion && (
+            {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
                 text={itemCount > 0 && <CartCount>{itemCount}</CartCount>}
                 leftIconName={"FaShoppingCart"}
@@ -339,12 +353,14 @@ export default function Header() {
               />
 
               <UserMenuDropdown $isOpen={isUserMenuOpen}>
-                <UserMenuItem onClick={handleProfile}>
-                  <RenderIcon name="FaUser" size={16} />
-                  Perfil
-                </UserMenuItem>
+                {!isReencaucheUser && (
+                  <UserMenuItem onClick={handleProfile}>
+                    <RenderIcon name="FaUser" size={16} />
+                    Perfil
+                  </UserMenuItem>
+                )}
 
-                {isClient && !isVisualizacion && (
+                {isClient && !isVisualizacion && !isReencaucheUser && (
                   <UserMenuItem onClick={handleOrderHistory}>
                     <RenderIcon name="FaHistory" size={16} />
                     Mis Pedidos
@@ -377,7 +393,7 @@ export default function Header() {
           </DesktopOnlySection>
 
           <MobileOnlySection>
-            {isClient && !isVisualizacion && (
+            {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
                 text={itemCount > 0 && <CartCount>{itemCount}</CartCount>}
                 leftIconName={"FaShoppingCart"}
@@ -404,18 +420,24 @@ export default function Header() {
           </CloseButton>
         </MobileMenuHeader>
 
+        <UserEmail>{user?.EMAIL || "Usuario"}</UserEmail>
+
         <MobileMenuContent>
-          <UserMenuItem onClick={handleSearchAllCompanies}>
-            <RenderIcon name="FaSearch" size={16} />
-            Buscar en todas las empresas
-          </UserMenuItem>
+          {!isReencaucheUser && (
+            <UserMenuItem onClick={handleSearchAllCompanies}>
+              <RenderIcon name="FaSearch" size={16} />
+              Buscar en todas las empresas
+            </UserMenuItem>
+          )}
 
-          <UserMenuItem onClick={handleProfile}>
-            <RenderIcon name="FaUser" size={16} />
-            Perfil
-          </UserMenuItem>
+          {!isReencaucheUser && (
+            <UserMenuItem onClick={handleProfile}>
+              <RenderIcon name="FaUser" size={16} />
+              Perfil
+            </UserMenuItem>
+          )}
 
-          {isClient && !isVisualizacion && (
+          {isClient && !isVisualizacion && !isReencaucheUser && (
             <>
               {/* <UserMenuItem onClick={handleGoToCart}>
                 <RenderIcon name="FaShoppingCart" size={16} />

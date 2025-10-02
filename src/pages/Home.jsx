@@ -6,15 +6,19 @@ import { ROUTES } from "../constants/routes";
 import UsersAdministration from "./admin/UsersAdministration";
 import CoordinadorHomeComponent from "./coordinadora/CoordinadorHomeComponent";
 import ClientHomeComponent from "./client/ClientHomeComponent";
+import ReencaucheHome from "./reencauche/ReencaucheHome";
 import SEO from "../components/seo/SEO";
-import { useOrganizationStructuredData, useWebsiteStructuredData } from "../hooks/useStructuredData";
+import {
+  useOrganizationStructuredData,
+  useWebsiteStructuredData,
+} from "../hooks/useStructuredData";
 
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const organizationData = useOrganizationStructuredData();
   const websiteData = useWebsiteStructuredData();
-  
+
   useEffect(() => {
     // Redirección automática en el Home según el rol
     if (user) {
@@ -22,6 +26,8 @@ const Home = () => {
         navigate(ROUTES.ADMIN.DASHBOARD_ADMIN, { replace: true });
       } else if (user.ROLE_NAME === ROLES.COORDINADOR) {
         navigate(ROUTES.COORDINADOR.PEDIDOS, { replace: true });
+      } else if (user.ROLE_NAME === ROLES.REENCAUCHE_USER) {
+        navigate(ROUTES.REENCAUCHE.HOME, { replace: true });
       } else {
         navigate(ROUTES.ECOMMERCE.HOME, { replace: true });
       }
@@ -42,12 +48,14 @@ const Home = () => {
       </>
     );
   }
-  
+
   switch (user.ROLE_NAME) {
     case ROLES.ADMIN:
       return <UsersAdministration />;
     case ROLES.COORDINADOR:
       return <CoordinadorHomeComponent />;
+    case ROLES.REENCAUCHE_USER:
+      return <ReencaucheHome />;
     default:
       return <ClientHomeComponent />;
   }

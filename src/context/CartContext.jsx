@@ -19,6 +19,7 @@ export function CartProvider({ children }) {
   const [cartTotal, setCartTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [cartIds, setCartIds] = useState({}); // Múltiples cartIds por empresa
+
   const { user, isClient, isVisualizacion } = useAuth(); // Obtener el usuario actual
 
   const calculateCartTotal = (cart) => {
@@ -75,7 +76,7 @@ export function CartProvider({ children }) {
   };
 
   // Función para cargar el carrito desde la API
-  const loadCartFromAPI = async () => {    
+  const loadCartFromAPI = async () => {
     if (!user?.ACCOUNT_USER) {
       return;
     }
@@ -83,32 +84,28 @@ export function CartProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await api_cart_getCarrito(user.ACCOUNT_USER);
-      console.log("🔍 Respuesta de la API:", response);
 
       if (response.success && response.data && response.data.length > 0) {
-        // Guardar todos los cartIds por empresa
-        const newCartIds = {};
+        // Guardar todos los cartIds por empresa (mantener todos los existentes)
+        const newCartIds = { ...cartIds }; // Mantener cartIds existentes
         let allCartItems = [];
 
         // Procesar todos los carritos de todas las empresas
         for (const cartData of response.data) {
           const enterprise = cartData.CABECERA.ENTERPRISE;
           newCartIds[enterprise] = cartData.CABECERA.ID_SHOPPING_CART_HEADER;
-          
+
           // Obtener información completa de cada producto en este carrito
           const cartItemsPromises = cartData.DETALLE.map(async (item) => {
             try {
-              
               const productResponse = await api_products_getProductByCodigo(
                 item.PRODUCT_CODE,
                 enterprise
               );
 
-              console.log("🔍 Respuesta de la API Carrito:", productResponse);
-              
               if (productResponse.success && productResponse.data) {
                 const product = productResponse.data;
-                
+
                 const cartItem = {
                   id: item.PRODUCT_CODE,
                   quantity: item.QUANTITY,
@@ -121,7 +118,7 @@ export function CartProvider({ children }) {
                   discount: product.DMA_DESCUENTO_PROMOCIONAL || 0, // No hay campo de descuento en la respuesta
                   iva: TAXES.IVA_PERCENTAGE, // Usar IVA por defecto
                 };
-                
+
                 return cartItem;
               } else {
                 // Si no se puede obtener la información del producto, usar datos básicos
@@ -163,22 +160,17 @@ export function CartProvider({ children }) {
           allCartItems = [...allCartItems, ...cartItems];
         }
 
+        // Actualizar cartIds siempre (mantener todos los existentes)
         setCartIds(newCartIds);
         setCart(allCartItems);
       } else {
-        // Si no hay carrito en la API, mantener el carrito local como respaldo
-        const savedCart = localStorage.getItem("cart");
-        if (savedCart) {
-          setCart(JSON.parse(savedCart));
-        }
+        // Si no hay carrito en la API, mantener cartIds existentes pero limpiar productos
+        setCart([]);
       }
     } catch (error) {
-      console.error("❌ Error al cargar el carrito desde la API:", error);
-      // En caso de error, usar el carrito local como respaldo
-      const savedCart = localStorage.getItem("cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
+      // En caso de error, limpiar productos pero mantener cartIds existentes
+      setCart([]);
+      // NO limpiar cartIds, mantenerlos para futuras operaciones
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +185,6 @@ export function CartProvider({ children }) {
 
   // Función para sincronizar el carrito con la API
   const syncCartWithAPI = async (newCart) => {
-
     if (!user?.ACCOUNT_USER) {
       return;
     }
@@ -224,11 +215,6 @@ export function CartProvider({ children }) {
       async ([enterprise, productos]) => {
         const cartId = cartIds[enterprise];
 
-        // Si no hay cartId para esta empresa, significa que es un carrito nuevo
-        if (!cartId) {
-          return;
-        }
-
         try {
           const carritoData = {
             ENTERPRISE: enterprise,
@@ -236,14 +222,21 @@ export function CartProvider({ children }) {
             PRODUCTOS: productos,
           };
 
-          console.log("🔍 Carrito a sincronizar:", carritoData);
+          let response;
+          if (!cartId) {
+            // Si no hay cartId para esta empresa, no podemos sincronizar
 
-          const response = await api_cart_updateCarrito(cartId, carritoData);
-          
-          if (response.success) {
-            console.log(`✅ Carrito sincronizado exitosamente para ${enterprise}`);
+            return; // Saltar esta empresa
           } else {
-            console.error(`❌ Error en respuesta de API para ${enterprise}:`, response);
+            // Si ya existe cartId, actualizar el carrito existente
+            response = await api_cart_updateCarrito(cartId, carritoData);
+          }
+
+          if (!response.success) {
+            console.error(
+              `❌ Error en respuesta de API para ${enterprise}:`,
+              response
+            );
           }
         } catch (error) {
           console.error(
@@ -256,37 +249,17 @@ export function CartProvider({ children }) {
 
     await Promise.all(syncPromises);
 
-    // Limpiar cartIds de empresas que ya no tienen productos
-    const newCartIds = { ...cartIds };
-    Object.keys(newCartIds).forEach((enterprise) => {
-      if (!productsByEnterprise[enterprise] || productsByEnterprise[enterprise].length === 0) {
-        delete newCartIds[enterprise];
-        console.log(`🗑️ CartId eliminado para empresa vacía: ${enterprise}`);
-      }
-    });
-    
-    // Solo actualizar si hay cambios
-    if (Object.keys(newCartIds).length !== Object.keys(cartIds).length) {
-      setCartIds(newCartIds);
-    }
+    // NO limpiar cartIds, mantener todos los existentes para futuras operaciones
   };
 
   useEffect(() => {
-    // Guardar carrito en localStorage como respaldo
-    localStorage.setItem("cart", JSON.stringify(cart));
-
-    // Actualizar el total del carrito
-    const total = cart.reduce((sum, item) => {
-      const itemPrice = item.price * (1 - (item.discount || 0) / 100);
-      return sum + itemPrice * item.quantity;
-    }, 0);
-
+    // Actualizar el total del carrito usando la función de cálculo completa
+    const total = calculateCartTotal(cart);
     setCartTotal(total);
   }, [cart]);
 
   // Sincronizar automáticamente con la API cuando cambie el carrito
   useEffect(() => {
-
     // Solo sincronizar si tenemos un usuario y cartIds cargados
     if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
       // Usar un debounce para evitar demasiadas llamadas a la API
@@ -301,21 +274,7 @@ export function CartProvider({ children }) {
   }, [cart, cartIds, user?.ACCOUNT_USER]);
 
   // Agregar producto al carrito con verificación de rol
-  const addToCart = (product, quantity = 1) => {
-    const dataToSave = {
-      id: product.id,
-      name: product.name,
-      discount: product.discount || 0,
-      price: product.price,
-      image: product.image,
-      empresaId: product.empresaId,
-      stock: product.stock || 0,
-      quantity: quantity,
-      brand: product.brand || "Sin marca",
-      iva: product.iva || TAXES.IVA_PERCENTAGE,
-      promotionalDiscount: product.promotionalDiscount || 0,
-    };
-
+  const addToCart = async (product, quantity = 1) => {
     // Si el usuario es admin, coordinadora o visualización, no permitir añadir al carrito
     if (!isClient || isVisualizacion) {
       console.warn(
@@ -327,47 +286,138 @@ export function CartProvider({ children }) {
       };
     }
 
-    setCart((prevCart) => {
-      
-      // Buscar si el producto ya está en el carrito
-      const existingProductIndex = prevCart.findIndex(
-        (item) => item.id === dataToSave.id
+    try {
+      // Obtener información completa del producto desde la API
+      const enterprise = product.empresaId || user?.ENTERPRISE || "MAXXIMUNDO";
+      const productResponse = await api_products_getProductByCodigo(
+        product.id,
+        enterprise
       );
 
-      let newCart;
-      if (existingProductIndex >= 0) {
-        // Si el producto ya existe, crear una nueva copia del carrito
-        const updatedCart = [...prevCart];
-        // Actualizar solo la cantidad del producto existente
-        updatedCart[existingProductIndex] = {
-          ...updatedCart[existingProductIndex],
-          quantity: updatedCart[existingProductIndex].quantity + quantity,
+      let productData = product; // Usar datos del producto si no se puede obtener de la API
+
+      if (productResponse.success && productResponse.data) {
+        const apiProduct = productResponse.data;
+        productData = {
+          id: product.id,
+          name: apiProduct.DMA_NOMBREITEM || product.name,
+          discount: product.discount || 0,
+          price: apiProduct.DMA_COSTO || product.price,
+          image: apiProduct.DMA_RUTAIMAGEN || product.image,
+          empresaId: enterprise,
+          stock: apiProduct.DMA_STOCK || product.stock || 0,
+          brand: apiProduct.DMA_MARCA || product.brand || "Sin marca",
+          iva: product.iva || TAXES.IVA_PERCENTAGE,
+          promotionalDiscount:
+            apiProduct.DMA_DESCUENTO_PROMOCIONAL ||
+            product.promotionalDiscount ||
+            0,
         };
-        newCart = updatedCart;
       } else {
-        // Si es un producto nuevo, añadirlo al carrito
-        newCart = [...prevCart, { ...dataToSave, quantity }];
+        console.warn(
+          `⚠️ No se pudo obtener información completa del producto ${product.id}, usando datos disponibles`
+        );
       }
 
-      return newCart;
-    });
+      const dataToSave = {
+        ...productData,
+        quantity: quantity,
+      };
 
-    return {
-      success: true,
-      message: "Producto añadido al carrito",
-    };
+      setCart((prevCart) => {
+        // Buscar si el producto ya está en el carrito
+        const existingProductIndex = prevCart.findIndex(
+          (item) => item.id === dataToSave.id
+        );
+
+        let newCart;
+        if (existingProductIndex >= 0) {
+          // Si el producto ya existe, crear una nueva copia del carrito
+          const updatedCart = [...prevCart];
+          // Actualizar la cantidad y también refrescar los datos del producto
+          updatedCart[existingProductIndex] = {
+            ...dataToSave,
+            quantity: updatedCart[existingProductIndex].quantity + quantity,
+          };
+          newCart = updatedCart;
+        } else {
+          // Si es un producto nuevo, añadirlo al carrito
+          newCart = [...prevCart, dataToSave];
+        }
+
+        // Sincronizar inmediatamente con la API solo si hay cartIds disponibles
+        setTimeout(() => {
+          if (Object.keys(cartIds).length > 0) {
+            syncCartWithAPI(newCart);
+          }
+        }, 100); // Pequeño delay para asegurar que el estado se actualice
+
+        return newCart;
+      });
+
+      return {
+        success: true,
+        message: "Producto añadido al carrito",
+      };
+    } catch (error) {
+      console.error("❌ Error al obtener información del producto:", error);
+
+      // En caso de error, usar los datos del producto disponibles
+      const dataToSave = {
+        id: product.id,
+        name: product.name,
+        discount: product.discount || 0,
+        price: product.price,
+        image: product.image,
+        empresaId: product.empresaId,
+        stock: product.stock || 0,
+        quantity: quantity,
+        brand: product.brand || "Sin marca",
+        iva: product.iva || TAXES.IVA_PERCENTAGE,
+        promotionalDiscount: product.promotionalDiscount || 0,
+      };
+
+      setCart((prevCart) => {
+        // Buscar si el producto ya está en el carrito
+        const existingProductIndex = prevCart.findIndex(
+          (item) => item.id === dataToSave.id
+        );
+
+        let newCart;
+        if (existingProductIndex >= 0) {
+          // Si el producto ya existe, crear una nueva copia del carrito
+          const updatedCart = [...prevCart];
+          // Actualizar solo la cantidad del producto existente
+          updatedCart[existingProductIndex] = {
+            ...updatedCart[existingProductIndex],
+            quantity: updatedCart[existingProductIndex].quantity + quantity,
+          };
+          newCart = updatedCart;
+        } else {
+          // Si es un producto nuevo, añadirlo al carrito
+          newCart = [...prevCart, { ...dataToSave, quantity }];
+        }
+
+        return newCart;
+      });
+
+      return {
+        success: true,
+        message: "Producto añadido al carrito (información limitada)",
+      };
+    }
   };
 
   // Eliminar producto del carrito
   const removeFromCart = async (productId) => {
     const newCart = cart.filter((item) => item.id !== productId);
+
     setCart(newCart);
-    
+
     // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
     if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
       try {
         await syncCartWithAPI(newCart);
-        console.log("✅ Producto eliminado del carrito y sincronizado con la API");
       } catch (error) {
         console.error("❌ Error al sincronizar eliminación con la API:", error);
       }
@@ -383,14 +433,15 @@ export function CartProvider({ children }) {
     );
     setCart(newCart);
 
-    
     // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
     if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
       try {
         await syncCartWithAPI(newCart);
-        console.log("✅ Cantidad actualizada y sincronizada con la API");
       } catch (error) {
-        console.error("❌ Error al sincronizar actualización de cantidad con la API:", error);
+        console.error(
+          "❌ Error al sincronizar actualización de cantidad con la API:",
+          error
+        );
       }
     }
   };
@@ -398,14 +449,17 @@ export function CartProvider({ children }) {
   // Limpiar todo el carrito
   const clearCart = async () => {
     setCart([]);
-    
+    // NO limpiar cartIds, mantenerlos para futuras operaciones
+
     // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
     if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
       try {
         await syncCartWithAPI([]);
-        console.log("✅ Carrito limpiado y sincronizado con la API");
       } catch (error) {
-        console.error("❌ Error al sincronizar limpieza del carrito con la API:", error);
+        console.error(
+          "❌ Error al sincronizar limpieza del carrito con la API:",
+          error
+        );
       }
     }
   };
@@ -413,15 +467,24 @@ export function CartProvider({ children }) {
   const removeItemsByCompany = async (companyId) => {
     const newCart = cart.filter((item) => item.empresaId !== companyId);
     setCart(newCart);
-    
+
     // Sincronizar inmediatamente con la API si tenemos usuario y cartIds
     if (Object.keys(cartIds).length > 0 && user?.ACCOUNT_USER) {
       try {
         await syncCartWithAPI(newCart);
-        console.log(`✅ Productos de la empresa ${companyId} eliminados y sincronizados con la API`);
       } catch (error) {
-        console.error("❌ Error al sincronizar eliminación por empresa con la API:", error);
+        console.error(
+          "❌ Error al sincronizar eliminación por empresa con la API:",
+          error
+        );
       }
+    }
+  };
+
+  // Función para forzar la recarga del carrito desde la API
+  const reloadCartFromAPI = async () => {
+    if (user?.ACCOUNT_USER) {
+      await loadCartFromAPI();
     }
   };
 
@@ -436,6 +499,7 @@ export function CartProvider({ children }) {
     clearCart,
     removeItemsByCompany,
     loadCartFromAPI,
+    reloadCartFromAPI,
     syncCartWithAPI,
     cartIds,
     itemCount: cart.reduce((count, item) => count + item.quantity, 0),

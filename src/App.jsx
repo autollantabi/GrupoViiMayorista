@@ -6,6 +6,7 @@ import {
   adminRoutes,
   ecommerceRoutes,
   coordinadorRoutes,
+  reencaucheRoutes,
   publicRoutes,
 } from "./routes/routes";
 import { createGlobalStyle } from "styled-components";
@@ -105,6 +106,7 @@ const App = () => {
                 ROLES.ADMIN,
                 ROLES.COORDINADOR,
                 ROLES.VISUALIZACION,
+                ROLES.REENCAUCHE_USER,
               ]}
             />
           }
@@ -146,6 +148,20 @@ const App = () => {
           {coordinadorRoutes.map((route, idx) => (
             <Route
               key={`coord-${idx}`}
+              path={route.path}
+              element={
+                <ProtectedRoute
+                  element={route.element}
+                  allowedRoles={route.allowedRoles}
+                />
+              }
+            />
+          ))}
+
+          {/* Rutas de reencauche */}
+          {reencaucheRoutes.map((route, idx) => (
+            <Route
+              key={`reencauche-${idx}`}
               path={route.path}
               element={
                 <ProtectedRoute

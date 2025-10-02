@@ -12,21 +12,14 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
   const [editingFilter, setEditingFilter] = useState(null);
 
   const { products, loading } = useProductCatalog();
-  
+
   // Usar productos de empresa si están disponibles, sino usar todos los productos
   const productsToUse = empresaProducts || products;
 
-  // Funciones para manejar localStorage
+  // Funciones para manejar localStorage del catálogo (sin conflictos con carrito)
   const saveToLocalStorage = useCallback((state) => {
     try {
-      // Solo guardar si no hay conflicto con el carrito
-      const cartState = localStorage.getItem("cart");
-      if (!cartState) {
-        localStorage.setItem("catalogState", JSON.stringify(state));
-      } else {
-        // Guardar con un prefijo diferente para evitar conflictos
-        localStorage.setItem("catalogState", JSON.stringify(state));
-      }
+      localStorage.setItem("catalogState", JSON.stringify(state));
     } catch (error) {
       console.warn("Error saving to localStorage:", error);
     }
@@ -34,8 +27,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
 
   const loadFromLocalStorage = useCallback(() => {
     try {
-      // Intentar cargar desde catalogState primero, luego catalogState
-      const saved = localStorage.getItem("catalogState") || localStorage.getItem("catalogState");
+      const saved = localStorage.getItem("catalogState");
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
       console.warn("Error loading from localStorage:", error);
@@ -316,9 +308,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
     // Eliminar duplicados basándose en el ID
     const uniqueProducts = filtered.reduce((acc, current) => {
       const identifier = current.id;
-      if (
-        !acc.find((product) => product.id === identifier)
-      ) {
+      if (!acc.find((product) => product.id === identifier)) {
         acc.push(current);
       }
       return acc;
@@ -484,11 +474,11 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
         "DMA_CLASIFICACION",
       ],
       LUBRICANTES: [
-        "DMA_MARCA", 
+        "DMA_MARCA",
         "DMA_SAE",
         "DMA_ISOVG",
         "DMA_APLICACION",
-        "DMA_TIPO", 
+        "DMA_TIPO",
         "DMA_MODELO",
       ],
       HERRAMIENTAS: ["DMA_MARCA", "DMA_SUBGRUPO"],
@@ -498,7 +488,6 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
     const additionalFilterOptions = [];
 
     console.log(filters);
-    
 
     // Obtener productos base filtrados solo por el flujo principal (sin filtros adicionales)
     let baseFilteredProducts = productsToUse.filter(
@@ -508,7 +497,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
     // Aplicar solo los filtros del flujo principal (no los adicionales)
     Object.entries(selectedValues).forEach(([filterKey, filterValue]) => {
       const filterField = getFilterField(filterKey);
-      if (filterField) {        
+      if (filterField) {
         baseFilteredProducts = baseFilteredProducts.filter(
           (product) => product.originalData?.[filterField] === filterValue
         );
@@ -539,7 +528,8 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
                 otherFilterKey !== filterField
               ) {
                 filteredForCount = filteredForCount.filter(
-                  (product) => product.originalData?.[otherFilterKey] === otherFilterValue
+                  (product) =>
+                    product.originalData?.[otherFilterKey] === otherFilterValue
                 );
               }
             }

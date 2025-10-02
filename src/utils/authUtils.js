@@ -6,7 +6,7 @@ export const performLogout = async () => {
   eliminarTokens();
   localStorage.removeItem("user");
   localStorage.removeItem("auth");
-  localStorage.removeItem("cart");
+  // Ya no se usa localStorage para el carrito, se maneja desde la API
 
   return { success: true };
 };

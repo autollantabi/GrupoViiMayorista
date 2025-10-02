@@ -521,7 +521,6 @@ const CartItem = ({
       );
     }
 
-
     return (
       <>
         {imageLoading && (
@@ -724,8 +723,6 @@ const Carrito = () => {
     const groupByCompany = () => {
       const grouped = {};
 
-      console.log("🔍 Carrito a agrupar:", cart);
-
       cart.forEach((item) => {
         const company = item.empresaId || "Sin empresa";
 
@@ -743,6 +740,15 @@ const Carrito = () => {
 
         grouped[company].items.push(item);
         grouped[company].total += item.price * item.quantity;
+      });
+
+      // Ordenar productos alfabéticamente por nombre dentro de cada empresa
+      Object.keys(grouped).forEach((company) => {
+        grouped[company].items.sort((a, b) => {
+          const nameA = (a.name || "").toLowerCase();
+          const nameB = (b.name || "").toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
       });
 
       // Asignar direcciones predeterminadas solo para empresas nuevas o sin dirección seleccionada

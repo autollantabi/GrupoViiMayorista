@@ -7,6 +7,8 @@ import Button from "../../components/ui/Button";
 import { api_products_getInfoProductos } from "../../api/products/apiProducts";
 import PageContainer from "../../components/layout/PageContainer";
 import RenderLoader from "../../components/ui/RenderLoader";
+import RenderIcon from "../../components/ui/RenderIcon";
+import { ROUTES } from "../../constants/routes";
 
 const WelcomeSection = styled.div`
   text-align: center;
@@ -43,7 +45,11 @@ const WelcomeSubtitle = styled.p`
 const NewCatalogSection = styled.div`
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, ${({ theme }) => theme.colors.primary} 0%, ${({ theme }) => theme.colors.primaryLight} 100%);
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => theme.colors.primary} 0%,
+    ${({ theme }) => theme.colors.primaryLight} 100%
+  );
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
@@ -70,7 +76,7 @@ const NewCatalogButton = styled(Button)`
   font-weight: 600;
   padding: 12px 24px;
   font-size: 1rem;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.9);
     transform: translateY(-2px);
@@ -178,6 +184,65 @@ const CompanyDescription = styled.p`
   line-height: 1.5;
 `;
 
+// Estilos para la sección de Reencauche
+const ReencaucheSection = styled.div`
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => theme.colors.success}15,
+    ${({ theme }) => theme.colors.success}25
+  );
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.success}30;
+  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
+`;
+
+const ReencaucheHeader = styled.div`
+  text-align: center;
+  margin-bottom: 1.5rem;
+`;
+
+const ReencaucheTitle = styled.h3`
+  color: ${({ theme }) => theme.colors.success};
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const ReencaucheDescription = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+`;
+
+const ReencaucheActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+`;
+
+const ReencaucheButton = styled(Button)`
+  background: ${({ theme }) => theme.colors.success};
+  color: white;
+  border: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) =>
+      theme.colors.successDark || theme.colors.success};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${({ theme }) => theme.colors.success}40;
+  }
+`;
+
 const ClientHomeComponent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -187,11 +252,11 @@ const ClientHomeComponent = () => {
   // Función para formatear el nombre en modo título (cada palabra con mayúscula)
   const formatNameToTitle = (name) => {
     if (!name) return "Cliente";
-    
+
     return name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   useEffect(() => {
@@ -268,7 +333,27 @@ const ClientHomeComponent = () => {
         </WelcomeSubtitle>
       </WelcomeSection>
 
-     
+      {/* Sección de Reencauche */}
+      {/* <ReencaucheSection>
+        <ReencaucheHeader>
+          <ReencaucheTitle>
+            <RenderIcon name="FaTicketAlt" size={24} />
+            Sistema de Bonos
+          </ReencaucheTitle>
+          <ReencaucheDescription>
+            Gestiona los bonos de neumáticos de tus clientes de manera fácil y
+            eficiente. Registra bonos por CI/RUC y mantén un control completo.
+          </ReencaucheDescription>
+        </ReencaucheHeader>
+
+        <ReencaucheActions>
+          <ReencaucheButton
+            text="Acceder al Sistema de Bonos"
+            leftIconName="FaTicketAlt"
+            onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE)}
+          />
+        </ReencaucheActions>
+      </ReencaucheSection> */}
 
       <CompaniesSection>
         <CompaniesGrid>
@@ -296,7 +381,13 @@ const ClientHomeComponent = () => {
                 </CardBody>
                 <CardFooter>
                   <ProductCount>{productCount} productos</ProductCount>
-                  <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      flexDirection: "column",
+                    }}
+                  >
                     <Button
                       size="small"
                       text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}

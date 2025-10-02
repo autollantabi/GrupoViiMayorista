@@ -9,7 +9,8 @@ export const ROUTES = {
     USER_ADMIN: "/admin/usuarios",
     COORDINADOR_ADMIN: "/admin/coordinadores",
     // Otras rutas de admin...
-  },  COORDINADOR: {
+  },
+  COORDINADOR: {
     PEDIDOS: "/coordinadora",
     DETALLE_PEDIDO: "/coordinadora/pedidos/:orderId",
     EDITAR_PEDIDO: "/coordinadora/pedidos/:orderId/editar",
@@ -25,6 +26,13 @@ export const ROUTES = {
     DETALLE_PEDIDO: "/mis-pedidos/:orderId",
     PERFIL: "/perfil",
     SEARCH: "/busqueda",
+    REENCAUCHE: "/reencauche",
+  },
+  REENCAUCHE: {
+    HOME: "/reencauche/home",
+    CLIENTES: "/reencauchador/bonos",
+    ACTIVACION: "/reencauche/activacion",
+    VERIFICAR: "/reencauche/verificacion",
   },
   PUBLIC: {
     NOT_FOUND: "/404",

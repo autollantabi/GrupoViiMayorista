@@ -20,6 +20,12 @@ import CoordinadorHomeComponent from "../pages/coordinadora/CoordinadorHomeCompo
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import CoordinadorAdminComponent from "../pages/admin/CoordinadorAdminComponent";
 import AdminDashboardComponent from "../pages/admin/AdminDashboardComponent";
+// Importaciones de páginas de reencauche
+import ReencaucheHome from "../pages/reencauche/ReencaucheHome";
+import ClientesReencauche from "../pages/reencauche/ClientesReencauche";
+import BonosActivados from "../pages/reencauche/BonosActivados";
+import ActivacionBonos from "../pages/reencauche/ActivacionBonos";
+import VerificarBono from "../pages/reencauche/VerificarBono";
 
 // Rutas de E-commerce (accesibles para todos los usuarios autenticados)
 export const ecommerceRoutes = [
@@ -27,17 +33,32 @@ export const ecommerceRoutes = [
     path: ROUTES.ECOMMERCE.HOME,
     element: <ClientHomeComponent />,
     exact: true,
-    allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
   },
   {
     path: ROUTES.ECOMMERCE.CATALOGO,
     element: <Catalog />,
-    allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
   },
   {
     path: ROUTES.ECOMMERCE.DETALLE_PRODUCTO,
     element: <DetalleProducto />,
-    allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
   },
   {
     path: ROUTES.ECOMMERCE.CARRITO,
@@ -57,12 +78,37 @@ export const ecommerceRoutes = [
   {
     path: ROUTES.ECOMMERCE.PERFIL,
     element: <Perfil />,
-    allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
   },
   {
     path: ROUTES.ECOMMERCE.SEARCH,
     element: <SearchResults />,
-    allowedRoles: [ROLES.CLIENTE, ROLES.ADMIN, ROLES.COORDINADOR, ROLES.VISUALIZACION],
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.REENCAUCHE,
+    element: <ClientesReencauche />,
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
+  },
+  {
+    path: ROUTES.REENCAUCHE.VERIFICAR,
+    element: <VerificarBono />,
+    allowedRoles: [ROLES.CLIENTE, ROLES.REENCAUCHE_USER],
   },
 ];
 
@@ -105,7 +151,32 @@ export const coordinadorRoutes = [
   },
   // Otras rutas para coordinadora...
 ];
-// Rutas para coordinadora
+
+// Rutas para usuarios de reencauche
+export const reencaucheRoutes = [
+  {
+    path: ROUTES.REENCAUCHE.HOME,
+    element: <ReencaucheHome />,
+    allowedRoles: [ROLES.REENCAUCHE_USER],
+  },
+  {
+    path: ROUTES.REENCAUCHE.CLIENTES,
+    element: <BonosActivados />,
+    allowedRoles: [ROLES.REENCAUCHE_USER],
+  },
+  {
+    path: ROUTES.REENCAUCHE.ACTIVACION,
+    element: <ActivacionBonos />,
+    allowedRoles: [ROLES.REENCAUCHE_USER],
+  },
+  {
+    path: ROUTES.REENCAUCHE.VERIFICAR,
+    element: <VerificarBono />,
+    allowedRoles: [ROLES.CLIENTE, ROLES.REENCAUCHE_USER],
+  },
+];
+
+// Rutas públicas (no requieren autenticación)
 export const publicRoutes = [
   {
     path: ROUTES.AUTH.LOGIN,
