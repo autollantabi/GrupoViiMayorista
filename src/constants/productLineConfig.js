@@ -42,7 +42,7 @@ export const PRODUCT_LINE_CONFIG = {
         field: "medida",
         label: "Medida",
         defaultValue: "N/A",
-        transform: (item) => `${item.DMA_ANCHO || ""}R${item.DMA_RIN || ""}`,
+        transform: (item) => `${item.DMA_ANCHO || ""}/${item.DMA_SERIE || ""}`,
       },
       {
         field: "indiceVelocidad",
