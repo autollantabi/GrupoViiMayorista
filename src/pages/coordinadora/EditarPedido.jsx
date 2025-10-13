@@ -398,7 +398,7 @@ const EditarPedidoCoordinador = () => {
     };
 
     // En un caso real, aquí harías una llamada a la API
-    console.log("Pedido actualizado:", updatedPedido);
+    // console.log("Pedido actualizado:", updatedPedido);
     alert(
       "Pedido actualizado correctamente. El cliente recibirá una notificación para revisar los cambios."
     );

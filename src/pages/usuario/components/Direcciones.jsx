@@ -20,6 +20,11 @@ const Card = styled.div`
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -27,6 +32,11 @@ const CardTitle = styled.h2`
   margin-top: 0;
   margin-bottom: 24px;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
 `;
 
 const Form = styled.form`
@@ -39,8 +49,9 @@ const FormGroup = styled.div`
   display: flex;
   gap: 16px;
 
-  @media (max-width: 576px) {
+  @media (max-width: 768px) {
     flex-direction: column;
+    gap: 12px;
   }
 `;
 
@@ -53,6 +64,15 @@ const FormActions = styled.div`
   justify-content: flex-end;
   margin-top: 2px;
   gap: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+    gap: 12px;
+
+    button {
+      width: 100%;
+    }
+  }
 `;
 
 const AddressCard = styled.div`
@@ -62,6 +82,11 @@ const AddressCard = styled.div`
   margin-bottom: 16px;
   position: relative;
   background-color: ${({ theme }) => theme.colors.background};
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
 `;
 
 const AddressCardHeader = styled.div`
@@ -69,33 +94,81 @@ const AddressCardHeader = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+  }
 `;
 
 const AddressName = styled.h3`
   margin: 0;
   font-size: 1rem;
   color: ${({ theme }) => theme.colors.text};
+  flex: 1;
+  word-break: break-word;
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    width: 100%;
+  }
 `;
 
 const AddressActions = styled.div`
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const ActionButton = styled(Button)`
   display: flex;
   align-items: center;
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.primary};
+  justify-content: center;
+  background: ${({ theme, $variant }) =>
+    $variant === "primary" ? theme.colors.primary : "transparent"};
+  border: 1px solid
+    ${({ theme, $variant }) =>
+      $variant === "primary" ? theme.colors.primary : theme.colors.primary};
+  color: ${({ theme, $variant }) =>
+    $variant === "primary" ? "#fff" : theme.colors.primary};
   cursor: pointer;
-  font-size: 0.9rem;
-  padding: 4px 8px;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
 
   &:hover {
-    text-decoration: underline;
-    background-color: ${({ theme }) => `${theme.colors.primary}15`}33;
-    border-radius: 4px;
+    background: ${({ theme, $variant }) =>
+      $variant === "primary"
+        ? theme.colors.primaryDark || theme.colors.primary
+        : `${theme.colors.primary}15`};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    white-space: normal;
+    text-align: center;
+    width: 100%;
   }
 `;
 
@@ -103,6 +176,11 @@ const AddressDetails = styled.div`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.text};
   line-height: 1.5;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
 `;
 
 const DefaultBadge = styled.span`
@@ -115,6 +193,14 @@ const DefaultBadge = styled.span`
   border-radius: 12px;
   font-size: 0.8rem;
   margin-left: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    margin-left: 6px;
+    display: inline-block;
+    margin-top: 4px;
+  }
 `;
 
 const CompanyFilter = styled.div`
@@ -122,11 +208,22 @@ const CompanyFilter = styled.div`
   align-items: center;
   margin-bottom: 20px;
   gap: 12px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
 `;
 
 const CompanyFilterLabel = styled.label`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const SapBadge = styled.span`
@@ -138,6 +235,12 @@ const SapBadge = styled.span`
   border-radius: 12px;
   font-size: 0.8rem;
   margin-left: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    margin-left: 6px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -147,18 +250,32 @@ const EmptyState = styled.div`
   background-color: ${({ theme }) => theme.colors.background};
   border-radius: 8px;
   border: 1px dashed ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    font-size: 0.9rem;
+  }
 `;
 
 const AddressFormContainer = styled.div`
   padding: 16px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 `;
 
 const FormTitle = styled.h3`
   margin: 0 0 16px 0;
   font-size: 1.1rem;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
 `;
 
 const TypeFilterButton = styled(Button)`
@@ -180,6 +297,13 @@ const TypeFilterButton = styled(Button)`
     background: ${({ theme, $active }) =>
       !$active ? "rgba(33, 150, 243, 0.05)" : `${theme.colors.primary}15`};
   }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
 `;
 
 const TypeBadge = styled.span`
@@ -193,6 +317,13 @@ const TypeBadge = styled.span`
   font-size: 0.75rem;
   margin-left: 8px;
   font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    margin-left: 6px;
+    margin-top: 4px;
+  }
 `;
 
 const InfoMessage = styled.div`
@@ -206,6 +337,68 @@ const InfoMessage = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+`;
+
+const FilterContainer = styled.div`
+  display: flex;
+  flex-direction: ${({ $showForm }) => ($showForm ? "column" : "row")};
+  justify-content: space-between;
+  align-items: ${({ $showForm }) => ($showForm ? "stretch" : "center")};
+  margin-bottom: 10px;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+`;
+
+const TypeFilterContainer = styled.div`
+  margin-bottom: 16px;
+  margin-left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const TypeFilterLabel = styled.span`
+  margin-right: 4px;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+
+    button {
+      flex: 1;
+      min-width: calc(33.333% - 4px);
+    }
+  }
 `;
 
 const Direcciones = () => {
@@ -548,16 +741,10 @@ const Direcciones = () => {
         </InfoMessage>
 
         {/* Selector de empresa para filtrar direcciones */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: showAddressForm ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: "stretch",
-            marginBottom: "10px",
-          }}
-        >
-          <CompanyFilter>
+        <FilterContainer $showForm={showAddressForm}>
+          <CompanyFilter
+            style={{ marginBottom: showAddressForm ? "0" : "20px" }}
+          >
             <CompanyFilterLabel>Ver direcciones para:</CompanyFilterLabel>
             <Select
               value={selectedEmpresa}
@@ -677,35 +864,29 @@ const Direcciones = () => {
               onClick={handleAddNewAddress}
             />
           )}
-        </div>
+        </FilterContainer>
 
         {/* Selector de tipo de dirección */}
-        <div style={{ marginBottom: "16px", marginLeft: "12px" }}>
-          <span
-            style={{
-              marginRight: "12px",
-              fontSize: "0.9rem",
-              color: theme.colors.textLight,
-            }}
-          >
-            Filtrar por tipo:
-          </span>
-          <TypeFilterButton
-            $active={addressTypeFilter === "all"}
-            onClick={() => setAddressTypeFilter("all")}
-            text="Todas"
-          />
-          <TypeFilterButton
-            $active={addressTypeFilter === "B"}
-            onClick={() => setAddressTypeFilter("B")}
-            text="Facturación "
-          />
-          <TypeFilterButton
-            $active={addressTypeFilter === "S"}
-            onClick={() => setAddressTypeFilter("S")}
-            text="Envío"
-          />
-        </div>
+        <TypeFilterContainer>
+          <TypeFilterLabel>Filtrar por tipo:</TypeFilterLabel>
+          <ButtonGroup>
+            <TypeFilterButton
+              $active={addressTypeFilter === "all"}
+              onClick={() => setAddressTypeFilter("all")}
+              text="Todas"
+            />
+            <TypeFilterButton
+              $active={addressTypeFilter === "B"}
+              onClick={() => setAddressTypeFilter("B")}
+              text="Facturación "
+            />
+            <TypeFilterButton
+              $active={addressTypeFilter === "S"}
+              onClick={() => setAddressTypeFilter("S")}
+              text="Envío"
+            />
+          </ButtonGroup>
+        </TypeFilterContainer>
 
         {filteredAddresses.length > 0 ? (
           filteredAddresses.map((address) => (
@@ -741,10 +922,11 @@ const Direcciones = () => {
                       size="small"
                       leftIconName="FaCheck"
                       text="Establecer predeterminada"
+                      $variant="primary"
                     />
                   )}
 
-                  {address.ORIGIN === "SAP" && (
+                  {/* {address.ORIGIN === "SAP" && (
                     <ActionButton
                       onClick={() =>
                         toast.info(
@@ -755,7 +937,7 @@ const Direcciones = () => {
                       leftIconName="FaLock"
                       text="Sincronizada con sistema"
                     />
-                  )}
+                  )} */}
                 </AddressActions>
               </AddressCardHeader>
 

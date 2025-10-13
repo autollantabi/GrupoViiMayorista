@@ -11,6 +11,11 @@ const Card = styled.div`
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -18,6 +23,11 @@ const CardTitle = styled.h2`
   margin-top: 0;
   margin-bottom: 24px;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
 `;
 
 const PreferenceItem = styled.div`
@@ -26,24 +36,47 @@ const PreferenceItem = styled.div`
   align-items: center;
   padding: 16px 0;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  gap: 16px;
 
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 768px) {
+    padding: 12px 0;
+    gap: 12px;
+  }
 `;
 
-const PreferenceText = styled.div``;
+const PreferenceText = styled.div`
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    flex: 1;
+  }
+`;
 
 const PreferenceTitle = styled.h3`
   margin: 0 0 4px 0;
   font-size: 1rem;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+  }
 `;
 
 const PreferenceDescription = styled.p`
   margin: 0;
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.textLight};
+  line-height: 1.4;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
 `;
 
 const Switch = styled.label`
@@ -51,6 +84,12 @@ const Switch = styled.label`
   display: inline-block;
   width: 50px;
   height: 26px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 46px;
+    height: 24px;
+  }
 `;
 
 const SwitchInput = styled.input.attrs({ type: "checkbox" })`
@@ -64,6 +103,12 @@ const SwitchInput = styled.input.attrs({ type: "checkbox" })`
 
   &:checked + span:before {
     transform: translateX(24px);
+  }
+
+  @media (max-width: 768px) {
+    &:checked + span:before {
+      transform: translateX(22px);
+    }
   }
 `;
 
@@ -88,6 +133,13 @@ const Slider = styled.span`
     background-color: white;
     transition: 0.4s;
     border-radius: 50%;
+  }
+
+  @media (max-width: 768px) {
+    &:before {
+      height: 16px;
+      width: 16px;
+    }
   }
 `;
 

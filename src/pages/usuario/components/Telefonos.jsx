@@ -13,6 +13,11 @@ const Card = styled.div`
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
 `;
 
 const CardTitle = styled.h2`
@@ -20,6 +25,11 @@ const CardTitle = styled.h2`
   margin-top: 0;
   margin-bottom: 24px;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
 `;
 
 const CompanyFilter = styled.div`
@@ -27,11 +37,22 @@ const CompanyFilter = styled.div`
   align-items: center;
   margin-bottom: 20px;
   gap: 12px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
 `;
 
 const CompanyFilterLabel = styled.label`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const PhoneItem = styled.div`
@@ -43,12 +64,25 @@ const PhoneItem = styled.div`
   border-radius: 8px;
   margin-bottom: 12px;
   background-color: ${({ theme }) => theme.colors.background};
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 12px;
+  }
 `;
 
 const PhoneInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const PhoneNumber = styled.span`
@@ -57,17 +91,38 @@ const PhoneNumber = styled.span`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+  }
 `;
 
 const PhoneType = styled.span`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const PhoneActions = styled.div`
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 `;
 
 const PriorityBadge = styled.span`
@@ -85,6 +140,11 @@ const PriorityBadge = styled.span`
     border: 1px solid ${theme.colors.success + "40"};
   `
       : ""}
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -94,6 +154,11 @@ const EmptyState = styled.div`
   background-color: ${({ theme }) => theme.colors.background};
   border-radius: 8px;
   border: 1px dashed ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    font-size: 0.9rem;
+  }
 `;
 
 const InfoMessage = styled.div`
@@ -104,7 +169,14 @@ const InfoMessage = styled.div`
   margin-bottom: 16px;
   color: ${({ theme }) => theme.colors.info};
   font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
 `;
+
 const SapBadge = styled.span`
   display: inline-flex;
   align-items: center;
@@ -113,7 +185,46 @@ const SapBadge = styled.span`
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
-  margin-left: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+`;
+
+const ActionButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+
+  &:hover {
+    background: ${({ theme }) =>
+      theme.colors.primaryDark || theme.colors.primary};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    white-space: normal;
+    text-align: center;
+    width: 100%;
+  }
 `;
 
 const Telefonos = () => {
@@ -177,8 +288,8 @@ const Telefonos = () => {
           }))}
           value={selectedEmpresa}
           onChange={(e) => setSelectedEmpresa(e.target.value)}
-          width="200px"
           placeholder="Seleccionar empresa"
+          style={{ width: window.innerWidth <= 768 ? "100%" : "200px" }}
         />
       </CompanyFilter>
 
@@ -193,27 +304,27 @@ const Telefonos = () => {
                     Predeterminado
                   </PriorityBadge>
                 )}
+                {telefono.ORIGIN === "SAP" && (
+                  <SapBadge>
+                    <RenderIcon
+                      name="FaLock"
+                      size={10}
+                      style={{ marginRight: "4px" }}
+                    />
+                    Sistema
+                  </SapBadge>
+                )}
               </PhoneNumber>
               <PhoneType>{telefono.PHONE_TYPE}</PhoneType>
             </PhoneInfo>
             <PhoneActions>
               {!telefono.PREDETERMINED && (
-                <Button
+                <ActionButton
                   text="Establecer predeterminado"
                   size="small"
-                  variant="outlined"
+                  leftIconName="FaCheck"
                   onClick={() => handleSetPredeterminado(telefono.ID_PHONE)}
                 />
-              )}
-              {telefono.ORIGIN === "SAP" && (
-                <SapBadge>
-                  <RenderIcon
-                    name="FaLock"
-                    size={10}
-                    style={{ marginRight: "4px" }}
-                  />
-                  Sistema
-                </SapBadge>
               )}
             </PhoneActions>
           </PhoneItem>

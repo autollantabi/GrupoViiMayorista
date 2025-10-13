@@ -487,8 +487,6 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
     const filters = filterMap[selectedLinea] || [];
     const additionalFilterOptions = [];
 
-    console.log(filters);
-
     // Obtener productos base filtrados solo por el flujo principal (sin filtros adicionales)
     let baseFilteredProducts = productsToUse.filter(
       (product) => product.lineaNegocio === selectedLinea

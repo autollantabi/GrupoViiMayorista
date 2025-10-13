@@ -258,6 +258,11 @@ const UserEmail = styled.div`
   font-weight: 500;
   word-break: break-all;
   overflow-wrap: break-word;
+
+  @media (min-width: 768px) {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
 `;
 
 export default function Header() {
@@ -353,6 +358,10 @@ export default function Header() {
               />
 
               <UserMenuDropdown $isOpen={isUserMenuOpen}>
+                <UserEmail>
+                  {user?.CORREOS?.[0] || user?.EMAIL || "Usuario"}
+                </UserEmail>
+
                 {!isReencaucheUser && (
                   <UserMenuItem onClick={handleProfile}>
                     <RenderIcon name="FaUser" size={16} />
@@ -420,7 +429,7 @@ export default function Header() {
           </CloseButton>
         </MobileMenuHeader>
 
-        <UserEmail>{user?.EMAIL || "Usuario"}</UserEmail>
+        <UserEmail>{user?.CORREOS?.[0] || user?.EMAIL || "Usuario"}</UserEmail>
 
         <MobileMenuContent>
           {!isReencaucheUser && (

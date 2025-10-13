@@ -262,7 +262,7 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
   // Función para solicitar acceso a una empresa
   const handleRequestAccess = (empresaId) => {
     // Aquí podrías implementar la lógica para solicitar acceso
-    console.log("Solicitar acceso a empresa:", empresaId);
+    // console.log("Solicitar acceso a empresa:", empresaId);
   };
 
   // Filtrar y ordenar productos

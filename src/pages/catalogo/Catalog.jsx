@@ -539,7 +539,6 @@ const Catalog = () => {
       if (response.success) {
         toast.success("Solicitud enviada exitosamente");
         setRequestSubmitted(true);
-        console.log("Solicitud de acceso enviada:", requestData);
       } else {
         toast.error(response.message || "Error al enviar la solicitud");
       }

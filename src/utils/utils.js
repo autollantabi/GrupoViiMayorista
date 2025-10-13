@@ -19,7 +19,6 @@ export const copyToClipboard = async (text) => {
       toast.error("No se pudo copiar el ID");
     }
     document.body.removeChild(textarea);
-    console.log("Texto copiado al portapapeles:", text);
   } catch (error) {
     console.error("Error al copiar al portapapeles:", error);
   }

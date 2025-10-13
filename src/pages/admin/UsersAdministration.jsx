@@ -522,7 +522,6 @@ const UsersAdministration = () => {
         role: rolVisualizacion,
         enterprises: formData.empresas.join(","),
       };
-      console.log(newUser);
 
       const response = await api_users_create(newUser);
       if (!response.success) {
