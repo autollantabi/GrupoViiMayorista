@@ -232,14 +232,26 @@ export const api_bonos_getBonosByReencaucheUser = async (idUser) => {
 
 /**
  * Generar código QR para un bono (el backend encripta)
- * @param {number} bonoId - ID del bono
+ * @param {number|Object} bonoIdOrData - ID del bono O objeto con {invoiceNumber, customerIdentification}
  * @returns {Promise<Object>} Respuesta con el QR code
  */
-export const api_bonos_generateQR = async (bonoId) => {
+export const api_bonos_generateQR = async (bonoIdOrData) => {
   try {
-    const response = await api.post(`/bonos/generateQR`, {
-      bonusId: bonoId,
-    });
+    let requestData;
+
+    // Verificar si es un objeto (para múltiples bonos) o un ID simple (para un solo bono)
+    if (typeof bonoIdOrData === "object") {
+      requestData = {
+        invoiceNumber: bonoIdOrData.invoiceNumber,
+        customerIdentification: bonoIdOrData.customerIdentification,
+      };
+    } else {
+      requestData = {
+        bonusId: bonoIdOrData,
+      };
+    }
+
+    const response = await api.post(`/bonos/generateQR`, requestData);
     return {
       success: true,
       message: response.data.message || "QR generado correctamente",

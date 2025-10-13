@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import FilterCards from "../../components/catalog/FilterCards";
 import ProductGridView from "../../components/catalog/ProductGridView";
 import AdditionalFilters from "../../components/catalog/AdditionalFilters";
@@ -9,15 +9,16 @@ import useCatalogFlow from "../../hooks/useCatalogFlow";
 import { useProductCatalog } from "../../context/ProductCatalogContext";
 import RenderIcon from "../../components/ui/RenderIcon";
 import ProductDetail from "../../components/catalog/ProductDetail";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import { api_access_requestAccess } from "../../api/access/apiAccessRequest";
 
 const CatalogContainer = styled.div`
-  min-height: 100vh;
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
 `;
 
 const MainContent = styled.main`
-  min-height: 100vh;
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
 `;
@@ -190,11 +191,205 @@ const LoadingText = styled.p`
   font-size: 1rem;
 `;
 
+const UnauthorizedContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 20px;
+  min-height: 60vh;
+
+  @media (max-width: 768px) {
+    padding: 40px 15px;
+    gap: 16px;
+  }
+`;
+
+const UnauthorizedTitle = styled.h2`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const UnauthorizedMessage = styled.p`
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 1.1rem;
+  margin: 0;
+  max-width: 500px;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const UnauthorizedButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+
+  &:hover {
+    background: ${({ theme }) =>
+      theme.colors.primaryDark || theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const AccessRequestForm = styled.form`
+  width: 100%;
+  max-width: 500px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const FormLabel = styled.label`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 0.95rem;
+  font-weight: 500;
+`;
+
+const FormInput = styled.input`
+  padding: 12px 16px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  font-size: 1rem;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  padding: 12px 16px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
+  font-size: 1rem;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  transition: all 0.2s ease;
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.textLight};
+  }
+`;
+
+const SubmitButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) =>
+      theme.colors.primaryDark || theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const SuccessMessage = styled.div`
+  background: ${({ theme }) => theme.colors.success}15;
+  border: 1px solid ${({ theme }) => theme.colors.success};
+  color: ${({ theme }) => theme.colors.success};
+  padding: 16px 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 24px;
+  max-width: 500px;
+`;
+
+const BackButton = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textLight};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.surface};
+    border-color: ${({ theme }) => theme.colors.textLight};
+  }
+`;
+
 const Catalog = () => {
   const { empresaName } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
     useProductCatalog();
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Estados para el formulario de solicitud de acceso
+  const [accessRequestForm, setAccessRequestForm] = useState({
+    email: user?.CORREOS?.[0] || "",
+    fullName: user?.NOMBRE_SOCIO || "",
+    reason: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
 
   // Funciones para manejar localStorage del producto seleccionado
   const saveSelectedProduct = useCallback((product) => {
@@ -299,6 +494,73 @@ const Catalog = () => {
     clearAdditionalFilter(filterId);
   };
 
+  // Funciones para el formulario de solicitud de acceso
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setAccessRequestForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleAccessRequestSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validaciones básicas
+    if (
+      !accessRequestForm.email ||
+      !accessRequestForm.fullName ||
+      !accessRequestForm.reason
+    ) {
+      toast.error("Por favor, completa todos los campos");
+      return;
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(accessRequestForm.email)) {
+      toast.error("Por favor, ingresa un correo electrónico válido");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const requestData = {
+        empresa: empresaName,
+        email: accessRequestForm.email,
+        fullName: accessRequestForm.fullName,
+        reason: accessRequestForm.reason,
+        userId: user?.ID_USER,
+      };
+
+      const response = await api_access_requestAccess(requestData);
+
+      if (response.success) {
+        toast.success("Solicitud enviada exitosamente");
+        setRequestSubmitted(true);
+        console.log("Solicitud de acceso enviada:", requestData);
+      } else {
+        toast.error(response.message || "Error al enviar la solicitud");
+      }
+    } catch (error) {
+      console.error("Error al enviar solicitud:", error);
+      toast.error("Error al enviar la solicitud");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Reiniciar estado del formulario cuando cambia la empresa
+  useEffect(() => {
+    setRequestSubmitted(false);
+    setAccessRequestForm({
+      email: user?.CORREOS?.[0] || "",
+      fullName: user?.NOMBRE_SOCIO || "",
+      reason: "",
+    });
+  }, [empresaName, user]);
+
   // Cargar producto seleccionado desde localStorage al inicializar
   useEffect(() => {
     const savedProduct = loadSelectedProduct();
@@ -311,6 +573,133 @@ const Catalog = () => {
   useEffect(() => {
     saveSelectedProduct(selectedProduct);
   }, [selectedProduct, saveSelectedProduct]);
+
+  // Verificar si el usuario tiene acceso a la empresa
+  if (empresaName && user) {
+    const userAccess = user?.EMPRESAS || [];
+    const empresaNameUpper = empresaName.toUpperCase();
+
+    if (!userAccess.includes(empresaNameUpper)) {
+      return (
+        <CatalogContainer>
+          <MainContent>
+            <UnauthorizedContainer>
+              <RenderIcon
+                name="FaLock"
+                size={60}
+                style={{ color: "var(--color-error, #ef4444)" }}
+              />
+              <UnauthorizedTitle>
+                Solicitar Acceso a {empresaName}
+              </UnauthorizedTitle>
+
+              {!requestSubmitted ? (
+                <>
+                  <UnauthorizedMessage>
+                    No tienes permisos para acceder al catálogo de{" "}
+                    <strong>{empresaName}</strong>. Completa el siguiente
+                    formulario para solicitar acceso y nos contactaremos
+                    contigo.
+                  </UnauthorizedMessage>
+
+                  <AccessRequestForm onSubmit={handleAccessRequestSubmit}>
+                    <FormGroup>
+                      <FormLabel htmlFor="email">
+                        Correo Electrónico *
+                      </FormLabel>
+                      <FormInput
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={accessRequestForm.email}
+                        onChange={handleFormChange}
+                        placeholder="tu@correo.com"
+                        required
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <FormLabel htmlFor="fullName">
+                        Nombre Completo *
+                      </FormLabel>
+                      <FormInput
+                        type="text"
+                        id="fullName"
+                        name="fullName"
+                        value={accessRequestForm.fullName}
+                        onChange={handleFormChange}
+                        placeholder="Tu nombre completo"
+                        required
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <FormLabel htmlFor="reason">
+                        ¿Por qué necesitas acceso? *
+                      </FormLabel>
+                      <FormTextarea
+                        id="reason"
+                        name="reason"
+                        value={accessRequestForm.reason}
+                        onChange={handleFormChange}
+                        placeholder="Describe brevemente por qué necesitas acceso al catálogo de esta empresa..."
+                        required
+                      />
+                    </FormGroup>
+
+                    <SubmitButton type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <RenderIcon
+                            name="FaSpinner"
+                            size={16}
+                            style={{
+                              animation: "spin 1s linear infinite",
+                              marginRight: "8px",
+                            }}
+                          />
+                          Enviando...
+                        </>
+                      ) : (
+                        "Enviar Solicitud"
+                      )}
+                    </SubmitButton>
+                  </AccessRequestForm>
+
+                  <BackButton onClick={() => navigate("/")}>
+                    Volver al Inicio
+                  </BackButton>
+                </>
+              ) : (
+                <>
+                  <SuccessMessage>
+                    <RenderIcon
+                      name="FaCheckCircle"
+                      size={40}
+                      style={{ marginBottom: "12px" }}
+                    />
+                    <p
+                      style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}
+                    >
+                      ¡Solicitud Enviada Exitosamente!
+                    </p>
+                    <p style={{ margin: "8px 0 0 0" }}>
+                      Hemos recibido tu solicitud de acceso a{" "}
+                      <strong>{empresaName}</strong>. Nos contactaremos contigo
+                      pronto.
+                    </p>
+                  </SuccessMessage>
+                  <UnauthorizedButton onClick={() => navigate("/")}>
+                    Volver al Inicio
+                  </UnauthorizedButton>
+                </>
+              )}
+            </UnauthorizedContainer>
+          </MainContent>
+        </CatalogContainer>
+      );
+    }
+  }
 
   // Mostrar carga si estamos cargando productos de empresa
   if (empresaName && loadingByEmpresa[empresaName]) {

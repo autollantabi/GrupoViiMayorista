@@ -63,7 +63,7 @@ const DropdownMenu = styled.div`
   right: 0;
   margin-top: ${({ $dropUp }) => ($dropUp ? "0" : "4px")};
   margin-bottom: ${({ $dropUp }) => ($dropUp ? "4px" : "0")};
-  max-height: 300px;
+  max-height: ${({ $maxHeight }) => $maxHeight}px;
   background-color: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 4px;
@@ -113,7 +113,8 @@ const OptionsList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: ${({ $hasSearch }) => ($hasSearch ? "242px" : "300px")};
+  max-height: ${({ $hasSearch, $maxHeight }) =>
+    $hasSearch ? `${$maxHeight - 58}px` : `${$maxHeight}px`};
   overflow-y: auto;
 
   /* Estilos personalizados para el scrollbar */
@@ -138,7 +139,8 @@ const OptionsList = styled.ul`
 
   /* Para Firefox */
   scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border} ${({ theme }) => theme.colors.background};
+  scrollbar-color: ${({ theme }) => theme.colors.border}
+    ${({ theme }) => theme.colors.background};
 `;
 
 const OptionItem = styled.li`
@@ -177,6 +179,8 @@ const Select = ({
   label,
   name = "",
   disabled = false,
+  maxHeight = 300,
+  dropDirection = "auto", // "auto", "down", "up"
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,14 +191,16 @@ const Select = ({
   // Filtrar opciones basadas en el término de búsqueda
   const filteredOptions = options.filter((option) => {
     const label = option[labelKey];
-    if (!label || typeof label !== 'string') return false;
+    if (!label || typeof label !== "string") return false;
     return label.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   // Encontrar la opción seleccionada
   const selectedOption = options.find((option) => {
     const optionValue = option[valueKey];
-    return optionValue !== null && optionValue !== undefined && optionValue === value;
+    return (
+      optionValue !== null && optionValue !== undefined && optionValue === value
+    );
   });
 
   // Manejar clic fuera para cerrar dropdown
@@ -229,21 +235,31 @@ const Select = ({
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isOpen]);
 
   // Función para detectar si debe desplegarse hacia arriba
   const checkDropDirection = () => {
+    // Si el usuario especificó una dirección manual, usarla
+    if (dropDirection === "up") {
+      setDropUp(true);
+      return;
+    } else if (dropDirection === "down") {
+      setDropUp(false);
+      return;
+    }
+
+    // Si es "auto", calcular automáticamente
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-      const dropdownHeight = 300; // altura máxima del dropdown
+      const dropdownHeight = maxHeight; // usar el maxHeight proporcionado
       const spaceBelow = windowHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Si no hay suficiente espacio abajo pero sí arriba, desplegar hacia arriba
       if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
         setDropUp(true);
@@ -295,7 +311,7 @@ const Select = ({
         rightIconName={"FaChevronDown"}
       />
 
-      <DropdownMenu $isOpen={isOpen} $dropUp={dropUp}>
+      <DropdownMenu $isOpen={isOpen} $dropUp={dropUp} $maxHeight={maxHeight}>
         {withSearch && (
           <SearchInputWrapper>
             <FaSearch size={14} />
@@ -310,7 +326,7 @@ const Select = ({
           </SearchInputWrapper>
         )}
 
-        <OptionsList $hasSearch={withSearch}>
+        <OptionsList $hasSearch={withSearch} $maxHeight={maxHeight}>
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option, index) => (
               <OptionItem

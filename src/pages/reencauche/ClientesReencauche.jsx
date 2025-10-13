@@ -6,7 +6,7 @@ import Button from "../../components/ui/Button";
 import RenderIcon from "../../components/ui/RenderIcon";
 import { useNavigate } from "react-router-dom";
 import FormularioNuevoCliente from "./FormularioNuevoCliente";
-import FormularioNuevoBono from "./FormularioNuevoBono";
+import FormularioNuevoBonoLista from "./FormularioNuevoBonoLista";
 import PDFGenerator from "../../components/pdf/PDFGenerator";
 import {
   api_bonos_getClientesByMayorista,
@@ -14,6 +14,10 @@ import {
 } from "../../api/bonos/apiBonos";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import {
+  generateAndSendMultipleBonosPDF,
+  downloadMultipleBonosPDF,
+} from "../../utils/bonoUtils";
 
 const PageHeader = styled.div`
   display: flex;
@@ -312,11 +316,11 @@ const SectionTitle = styled.h3`
 const BonosList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 `;
 
-const BonoCard = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
+const FacturaGroup = styled.div`
+  background-color: ${({ theme }) => theme.colors.background};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 16px;
@@ -327,23 +331,74 @@ const BonoCard = styled.div`
   }
 `;
 
+const FacturaHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
+`;
+
+const FacturaInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const FacturaNumber = styled.h4`
+  margin: 0;
+  font-size: 1.1rem;
+  color: ${({ theme }) => theme.colors.text};
+  font-weight: 600;
+`;
+
+const BonosCount = styled.span`
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: ${({ theme }) => theme.colors.primary}20;
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const BonosGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+`;
+
+const BonoCard = styled.div`
+  background-color: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  padding: 10px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 6px ${({ theme }) => theme.colors.shadow};
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
 const BonoHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 `;
 
 const BonoNumber = styled.span`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
-  font-size: 1rem;
+  font-size: 0.85rem;
 `;
 
 const EstadoBadge = styled.span`
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
   font-weight: 600;
   background-color: ${({ theme, $estado }) => {
     switch ($estado) {
@@ -376,26 +431,27 @@ const EstadoBadge = styled.span`
 `;
 
 const BonoDetails = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
 `;
 
 const BonoDetailItem = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 `;
 
 const BonoDetailLabel = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 500;
 `;
 
 const BonoDetailValue = styled.span`
   color: ${({ theme }) => theme.colors.text};
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.75rem;
 `;
 
 const EmptyBonos = styled.div`
@@ -618,6 +674,21 @@ const ClientesReencauche = () => {
     return bonos.filter((bono) => bono.ID_CUSTOMERRETREAD === clientId);
   };
 
+  const groupBonosByInvoice = (clientId) => {
+    const clientBonos = getClientBonos(clientId);
+    const grouped = {};
+
+    clientBonos.forEach((bono) => {
+      const invoiceNumber = bono.INVOICENUMBER || "Sin Factura";
+      if (!grouped[invoiceNumber]) {
+        grouped[invoiceNumber] = [];
+      }
+      grouped[invoiceNumber].push(bono);
+    });
+
+    return grouped;
+  };
+
   const parseProductSpecification = (specification) => {
     if (!specification || specification === "") {
       return { brand: "N/A", size: "N/A", design: "N/A" };
@@ -628,11 +699,6 @@ const ClientesReencauche = () => {
       size: parts[1] || "N/A",
       design: parts[2] || "N/A",
     };
-  };
-
-  const getTipoLlantaLabel = (bono) => {
-    const spec = parseProductSpecification(bono.PRODUCT_SPECIFICATION);
-    return `${spec.brand} - ${spec.size} - ${spec.design}`;
   };
 
   const getEstadoLabel = (estado) => {
@@ -664,15 +730,6 @@ const ClientesReencauche = () => {
     setShowBonoModal(true);
   };
 
-  const handleNewBonoGeneric = () => {
-    if (!hayBonosDisponibles) {
-      toast.error("No tiene bonos disponibles para crear nuevos bonos");
-      return;
-    }
-    setSelectedClient(null);
-    setShowBonoModal(true);
-  };
-
   const handleNewClient = () => {
     setShowClientModal(true);
   };
@@ -691,9 +748,25 @@ const ClientesReencauche = () => {
     setSelectedClient(null);
   };
 
-  const handleGeneratePDF = (bono) => {
-    setSelectedBono(bono);
-    setShowPDFGenerator(true);
+  const handleGeneratePDF = async (invoiceNumber, bonosDeFactura) => {
+    try {
+      toast.info("Generando PDF con todos los bonos de la factura...");
+
+      const downloadResponse = await downloadMultipleBonosPDF(
+        bonosDeFactura,
+        selectedClient,
+        invoiceNumber
+      );
+
+      if (downloadResponse.success) {
+        toast.success("PDF descargado exitosamente");
+      } else {
+        toast.error("Error al descargar el PDF");
+      }
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      toast.error("Error al generar el PDF");
+    }
   };
 
   const handleClosePDFGenerator = () => {
@@ -905,7 +978,7 @@ const ClientesReencauche = () => {
 
       {/* Formulario de nuevo bono */}
       {showBonoModal && (
-        <FormularioNuevoBono
+        <FormularioNuevoBonoLista
           selectedClient={selectedClient}
           onClose={handleCloseBonoModal}
           onBonoCreated={handleBonoCreated}
@@ -973,75 +1046,101 @@ const ClientesReencauche = () => {
               <BonosSection>
                 <SectionTitle>
                   <RenderIcon name="FaTicketAlt" size={20} />
-                  Lista de Bonos (
-                  {getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length})
+                  Bonos por Factura (
+                  {
+                    getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length
+                  }{" "}
+                  bonos)
                 </SectionTitle>
 
                 {getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length >
                 0 ? (
                   <BonosList>
-                    {getClientBonos(selectedClient.ID_CUSTOMERRETREAD).map(
-                      (bono) => (
-                        <BonoCard key={bono.ID_BONUS}>
-                          <BonoHeader>
-                            <BonoNumber>{bono.INVOICENUMBER}</BonoNumber>
-                            <EstadoBadge $estado={bono.STATUS}>
-                              {getEstadoLabel(bono.STATUS)}
-                            </EstadoBadge>
-                          </BonoHeader>
-                          <BonoDetails>
-                            <BonoDetailItem>
-                              <BonoDetailLabel>Marca:</BonoDetailLabel>
-                              <BonoDetailValue>
-                                {
-                                  parseProductSpecification(
-                                    bono.PRODUCT_SPECIFICATION
-                                  ).brand
-                                }
-                              </BonoDetailValue>
-                            </BonoDetailItem>
-                            <BonoDetailItem>
-                              <BonoDetailLabel>Tamaño:</BonoDetailLabel>
-                              <BonoDetailValue>
-                                {
-                                  parseProductSpecification(
-                                    bono.PRODUCT_SPECIFICATION
-                                  ).size
-                                }
-                              </BonoDetailValue>
-                            </BonoDetailItem>
-                            <BonoDetailItem>
-                              <BonoDetailLabel>Diseño:</BonoDetailLabel>
-                              <BonoDetailValue>
-                                {
-                                  parseProductSpecification(
-                                    bono.PRODUCT_SPECIFICATION
-                                  ).design
-                                }
-                              </BonoDetailValue>
-                            </BonoDetailItem>
-                            <BonoDetailItem>
-                              <BonoDetailLabel>Factura:</BonoDetailLabel>
-                              <BonoDetailValue>
-                                {bono.INVOICENUMBER}
-                              </BonoDetailValue>
-                            </BonoDetailItem>
-                            <BonoDetailItem>
-                              <BonoDetailLabel>Fecha Creación:</BonoDetailLabel>
-                              <BonoDetailValue>
-                                {formatDate(bono.createdAt)}
-                              </BonoDetailValue>
-                            </BonoDetailItem>
-                          </BonoDetails>
-                          <BonoActions>
-                            <PDFButton onClick={() => handleGeneratePDF(bono)}>
-                              <RenderIcon name="FaFilePdf" size={12} />
-                              PDF
-                            </PDFButton>
-                          </BonoActions>
-                        </BonoCard>
-                      )
-                    )}
+                    {Object.entries(
+                      groupBonosByInvoice(selectedClient.ID_CUSTOMERRETREAD)
+                    ).map(([invoiceNumber, bonosFactura]) => (
+                      <FacturaGroup key={invoiceNumber}>
+                        <FacturaHeader>
+                          <FacturaInfo>
+                            <FacturaNumber>
+                              <RenderIcon name="FaFileInvoice" size={16} />
+                              {invoiceNumber}
+                            </FacturaNumber>
+                            <BonosCount>{bonosFactura.length} bonos</BonosCount>
+                          </FacturaInfo>
+                          <PDFButton
+                            onClick={() =>
+                              handleGeneratePDF(invoiceNumber, bonosFactura)
+                            }
+                          >
+                            <RenderIcon name="FaFilePdf" size={14} />
+                            Descargar PDF
+                          </PDFButton>
+                        </FacturaHeader>
+
+                        <BonosGrid>
+                          {bonosFactura.map((bono) => {
+                            const producto = parseProductSpecification(
+                              bono.PRODUCT_SPECIFICATION
+                            );
+                            return (
+                              <BonoCard key={bono.ID_BONUS}>
+                                <BonoHeader>
+                                  <BonoNumber>#{bono.ID_BONUS}</BonoNumber>
+                                  <EstadoBadge $estado={bono.STATUS}>
+                                    {getEstadoLabel(bono.STATUS)}
+                                  </EstadoBadge>
+                                </BonoHeader>
+                                <BonoDetails>
+                                  <BonoDetailItem>
+                                    <BonoDetailLabel>Marca:</BonoDetailLabel>
+                                    <BonoDetailValue>
+                                      {producto.brand}
+                                    </BonoDetailValue>
+                                  </BonoDetailItem>
+                                  <BonoDetailItem>
+                                    <BonoDetailLabel>Tamaño:</BonoDetailLabel>
+                                    <BonoDetailValue>
+                                      {producto.size}
+                                    </BonoDetailValue>
+                                  </BonoDetailItem>
+                                  <BonoDetailItem>
+                                    <BonoDetailLabel>Diseño:</BonoDetailLabel>
+                                    <BonoDetailValue>
+                                      {producto.design}
+                                    </BonoDetailValue>
+                                  </BonoDetailItem>
+                                  {bono.QUANTITY && (
+                                    <BonoDetailItem>
+                                      <BonoDetailLabel>Cant:</BonoDetailLabel>
+                                      <BonoDetailValue>
+                                        {bono.QUANTITY}
+                                      </BonoDetailValue>
+                                    </BonoDetailItem>
+                                  )}
+                                  {bono.MASTER && (
+                                    <BonoDetailItem>
+                                      <BonoDetailLabel>Master:</BonoDetailLabel>
+                                      <BonoDetailValue>
+                                        {bono.MASTER}
+                                      </BonoDetailValue>
+                                    </BonoDetailItem>
+                                  )}
+                                  {bono.ITEM && (
+                                    <BonoDetailItem>
+                                      <BonoDetailLabel>Item:</BonoDetailLabel>
+                                      <BonoDetailValue>
+                                        {bono.ITEM}
+                                      </BonoDetailValue>
+                                    </BonoDetailItem>
+                                  )}
+                                </BonoDetails>
+                              </BonoCard>
+                            );
+                          })}
+                        </BonosGrid>
+                      </FacturaGroup>
+                    ))}
                   </BonosList>
                 ) : (
                   <EmptyBonos>
