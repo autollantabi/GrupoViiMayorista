@@ -5,6 +5,7 @@ import RenderIcon from "../ui/RenderIcon";
 const FilterCardsContainer = styled.div`
   padding: 24px;
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
 
   @media (max-width: 768px) {
@@ -40,9 +41,10 @@ const FilterDescription = styled.p`
 
 const CardsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 32px;
+  width: 100%;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;

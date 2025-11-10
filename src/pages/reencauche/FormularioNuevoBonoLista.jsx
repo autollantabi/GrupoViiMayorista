@@ -97,8 +97,8 @@ const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-  overflow-y: auto;
   padding-right: 8px;
+  padding-bottom: 8px;
 
   /* Estilos del scrollbar */
   &::-webkit-scrollbar {
@@ -221,8 +221,9 @@ const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  padding: 10px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 568px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -280,8 +281,12 @@ const TireItem = styled.div`
 const TireInfo = styled.div`
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 const TireField = styled.div`
@@ -387,6 +392,7 @@ const FormularioNuevoBonoLista = ({
   selectedClient,
   onClose,
   onBonoCreated,
+  bonosDisponiblesData,
 }) => {
   const { theme } = useAppTheme();
 
@@ -399,9 +405,8 @@ const FormularioNuevoBonoLista = ({
     brand: "",
     size: "",
     model: "",
+    measure: "",
     quantity: "1",
-    master: "",
-    item: "",
   });
 
   // Lista de llantas agregadas
@@ -409,32 +414,72 @@ const FormularioNuevoBonoLista = ({
 
   // Estados para productos elegibles
   const [eligibleProducts, setEligibleProducts] = useState([]);
+  const [eligibleCatalog, setEligibleCatalog] = useState([]);
   const [brandOptions, setBrandOptions] = useState([]);
   const [sizeOptions, setSizeOptions] = useState([]);
   const [modelOptions, setModelOptions] = useState([]);
+  const [measureOptions, setMeasureOptions] = useState([]);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cargar productos elegibles
-  const obtenerProductosEligibles = async () => {
-    const response = await api_bonos_getEligibleProducts();
-    setEligibleProducts(response.data);
-
-    const uniqueBrands = [...new Set(response.data.map((p) => p.BRAND))];
-    setBrandOptions(
-      uniqueBrands.map((brand) => ({ label: brand, value: brand }))
-    );
-  };
-
+  // Cargar breakdown disponible desde bonos
   useEffect(() => {
-    obtenerProductosEligibles();
+    if (bonosDisponiblesData?.BREAKDOWN_BY_DESIGN) {
+      setEligibleProducts(bonosDisponiblesData.BREAKDOWN_BY_DESIGN);
+    } else {
+      setEligibleProducts([]);
+    }
+  }, [bonosDisponiblesData]);
+
+  // Cargar catálogo elegible desde API (base para selects)
+  useEffect(() => {
+    const fetchEligible = async () => {
+      try {
+        const resp = await api_bonos_getEligibleProducts();
+        if (resp.success && Array.isArray(resp.data)) {
+          setEligibleCatalog(resp.data);
+          const uniqueBrands = [...new Set(resp.data.map((p) => p.BRAND))];
+          setBrandOptions(uniqueBrands.map((b) => ({ label: b, value: b })));
+        } else {
+          setEligibleCatalog([]);
+          setBrandOptions([]);
+        }
+      } catch (e) {
+        setEligibleCatalog([]);
+        setBrandOptions([]);
+      }
+    };
+    fetchEligible();
   }, []);
 
-  // Actualizar opciones de SIZE cuando se selecciona BRAND
+  // Función para verificar si hay bonos disponibles para un producto específico
+  // La medida es solo informativa, no afecta el conteo de disponibles
+  const getAvailableBonusesForProduct = (brand, size, design) => {
+    if (!bonosDisponiblesData?.BREAKDOWN_BY_DESIGN) return 0;
+
+    const product = bonosDisponiblesData.BREAKDOWN_BY_DESIGN.find(
+      (p) => p.BRAND === brand && p.SIZE === size && p.DESIGN === design
+    );
+
+    if (!product) return 0;
+
+    const available = Number(product.AVAILABLE_BONUSES ?? 0);
+
+    const usedInList = tireList
+      .filter(
+        (tire) =>
+          tire.brand === brand && tire.size === size && tire.model === design
+      )
+      .reduce((sum, tire) => sum + tire.quantity, 0);
+
+    return Math.max(0, available - usedInList);
+  };
+
+  // Actualizar opciones de SIZE cuando se selecciona BRAND (desde catálogo elegible)
   useEffect(() => {
-    if (tireForm.brand && eligibleProducts.length > 0) {
-      const filteredByBrand = eligibleProducts.filter(
+    if (tireForm.brand && eligibleCatalog.length > 0) {
+      const filteredByBrand = eligibleCatalog.filter(
         (p) => p.BRAND === tireForm.brand
       );
       const uniqueSizes = [...new Set(filteredByBrand.map((p) => p.SIZE))];
@@ -442,34 +487,134 @@ const FormularioNuevoBonoLista = ({
     } else {
       setSizeOptions([]);
       setModelOptions([]);
+      setMeasureOptions([]);
     }
-  }, [tireForm.brand, eligibleProducts]);
+  }, [tireForm.brand, eligibleCatalog]);
 
   // Actualizar opciones de DESIGN cuando se seleccionan BRAND y SIZE
+  // Diseños base del catálogo, filtrados por disponibilidad (AVAILABLE_BONUSES > 0)
   useEffect(() => {
-    if (tireForm.brand && tireForm.size && eligibleProducts.length > 0) {
-      const productMatch = eligibleProducts.find(
+    if (tireForm.brand && tireForm.size) {
+      const catalogByBrandSize = eligibleCatalog.filter(
         (p) => p.BRAND === tireForm.brand && p.SIZE === tireForm.size
       );
+      const designsFromCatalog = new Set();
+      catalogByBrandSize.forEach((item) => {
+        const d = item?.DESIGNS || {};
+        Object.keys(d).forEach((k) => designsFromCatalog.add(k));
+      });
 
-      if (
-        productMatch &&
-        productMatch.DESIGNS &&
-        Array.isArray(productMatch.DESIGNS)
-      ) {
-        setModelOptions(
-          productMatch.DESIGNS.map((design) => ({
-            label: design,
-            value: design,
-          }))
-        );
-      } else {
-        setModelOptions([]);
-      }
+      const availableByBrandSize = eligibleProducts.filter(
+        (p) =>
+          p.BRAND === tireForm.brand &&
+          p.SIZE === tireForm.size &&
+          (p.AVAILABLE_BONUSES ?? 0) > 0
+      );
+      const availableDesigns = new Set(
+        availableByBrandSize.map((p) => p.DESIGN)
+      );
+
+      const filteredDesigns = [...designsFromCatalog].filter((d) =>
+        availableDesigns.has(d)
+      );
+
+      setModelOptions(
+        filteredDesigns.map((design) => ({ label: design, value: design }))
+      );
     } else {
       setModelOptions([]);
+      setMeasureOptions([]);
     }
-  }, [tireForm.brand, tireForm.size, eligibleProducts]);
+  }, [tireForm.brand, tireForm.size, eligibleCatalog, eligibleProducts]);
+
+  // Actualizar opciones de MEASURE cuando se seleccionan BRAND, SIZE y MODEL
+  // Priorizar DESIGNS[MODEL] del catálogo; fallback: RINSIZE del breakdown
+  useEffect(() => {
+    if (
+      tireForm.brand &&
+      tireForm.size &&
+      tireForm.model &&
+      (eligibleCatalog.length > 0 || eligibleProducts.length > 0)
+    ) {
+      // 1) Intentar construir opciones desde DESIGNS[model] del catálogo
+      const catalogByBrandSize = eligibleCatalog.filter(
+        (p) => p.BRAND === tireForm.brand && p.SIZE === tireForm.size
+      );
+      const sizesForDesign = catalogByBrandSize.flatMap((item) => {
+        const map = item?.DESIGNS || {};
+        const arr = map[tireForm.model];
+        return Array.isArray(arr) ? arr : [];
+      });
+      if (sizesForDesign.length > 0) {
+        const filteredByRin = sizesForDesign.filter(
+          (s) => typeof s === "string" && s.trim().endsWith(tireForm.size)
+        );
+
+        const options = filteredByRin
+          .map((s) => {
+            const measure = s
+              .replace(
+                new RegExp(
+                  `\\s*${tireForm.size.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`
+                ),
+                ""
+              )
+              .trim();
+            return measure ? { label: measure, value: measure } : null;
+          })
+          .filter(Boolean);
+
+        if (options.length > 0) {
+          setMeasureOptions(options);
+          return;
+        }
+      }
+
+      // 2) Fallback: usar RINSIZE del breakdown si existe
+      const filteredProduct = eligibleProducts.find(
+        (p) =>
+          p.BRAND === tireForm.brand &&
+          p.SIZE === tireForm.size &&
+          p.DESIGN === tireForm.model
+      );
+
+      if (filteredProduct && filteredProduct.RINSIZE) {
+        setMeasureOptions([
+          { label: filteredProduct.RINSIZE, value: filteredProduct.RINSIZE },
+        ]);
+      } else {
+        setMeasureOptions([]);
+      }
+    } else {
+      setMeasureOptions([]);
+    }
+  }, [
+    tireForm.brand,
+    tireForm.size,
+    tireForm.model,
+    eligibleCatalog,
+    eligibleProducts,
+  ]);
+
+  // Actualizar el formulario cuando cambie la lista de llantas para recalcular disponibles
+  useEffect(() => {
+    // Si hay un producto seleccionado, recalcular los disponibles
+    if (tireForm.brand && tireForm.size && tireForm.model) {
+      const availableBonuses = getAvailableBonusesForProduct(
+        tireForm.brand,
+        tireForm.size,
+        tireForm.model
+      );
+
+      // Si la cantidad actual excede los disponibles, ajustarla
+      if (parseInt(tireForm.quantity) > availableBonuses) {
+        setTireForm((prev) => ({
+          ...prev,
+          quantity: availableBonuses.toString(),
+        }));
+      }
+    }
+  }, [tireList, tireForm.brand, tireForm.size, tireForm.model]);
 
   const handleInvoiceSubmit = () => {
     if (!invoiceNumber.trim()) {
@@ -496,12 +641,20 @@ const FormularioNuevoBonoLista = ({
         brand: value,
         size: "",
         model: "",
+        measure: "",
       }));
     } else if (name === "size") {
       setTireForm((prev) => ({
         ...prev,
         size: value,
         model: "",
+        measure: "",
+      }));
+    } else if (name === "model") {
+      setTireForm((prev) => ({
+        ...prev,
+        model: value,
+        measure: "",
       }));
     } else {
       setTireForm((prev) => ({
@@ -522,13 +675,21 @@ const FormularioNuevoBonoLista = ({
     const newErrors = {};
 
     if (!tireForm.brand) newErrors.brand = "La marca es requerida";
-    if (!tireForm.size) newErrors.size = "El tamaño es requerido";
+    if (!tireForm.size) newErrors.size = "El Aro/Rin es requerido";
     if (!tireForm.model) newErrors.model = "El diseño es requerido";
+    if (!tireForm.measure) newErrors.measure = "La medida es requerida";
     if (!tireForm.quantity || parseInt(tireForm.quantity) < 1) {
       newErrors.quantity = "La cantidad debe ser mayor a 0";
+    } else {
+      const availableBonuses = getAvailableBonusesForProduct(
+        tireForm.brand,
+        tireForm.size,
+        tireForm.model
+      );
+      if (parseInt(tireForm.quantity) > availableBonuses) {
+        newErrors.quantity = `La cantidad no puede ser mayor a ${availableBonuses} bonos disponibles`;
+      }
     }
-    if (!tireForm.master.trim()) newErrors.master = "El Master es requerido";
-    if (!tireForm.item.trim()) newErrors.item = "El Item es requerido";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -539,14 +700,26 @@ const FormularioNuevoBonoLista = ({
       return;
     }
 
+    // Verificar si hay bonos disponibles para este producto
+    const availableBonuses = getAvailableBonusesForProduct(
+      tireForm.brand,
+      tireForm.size,
+      tireForm.model
+    );
+    if (availableBonuses <= 0) {
+      toast.error(
+        `No hay bonos disponibles para ${tireForm.brand} ${tireForm.size} ${tireForm.model}`
+      );
+      return;
+    }
+
     const newTire = {
       id: Date.now(),
       brand: tireForm.brand,
       size: tireForm.size,
       model: tireForm.model,
+      measure: tireForm.measure,
       quantity: parseInt(tireForm.quantity),
-      master: tireForm.master.trim(),
-      item: tireForm.item.trim(),
     };
 
     setTireList((prev) => [...prev, newTire]);
@@ -556,76 +729,12 @@ const FormularioNuevoBonoLista = ({
       brand: "",
       size: "",
       model: "",
+      measure: "",
       quantity: "1",
-      master: "",
-      item: "",
     });
     setErrors({});
 
     toast.success("Llanta agregada a la lista");
-  };
-
-  const handleSaveTire = async (tire) => {
-    if (!selectedClient) {
-      toast.error("No se ha seleccionado un cliente");
-      return;
-    }
-
-    try {
-      const bonusData = {
-        ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
-        BRAND: tire.brand,
-        SIZE: tire.size,
-        DESIGN: tire.model,
-        INVOICENUMBER: invoiceNumber,
-        QUANTITY: tire.quantity,
-        MASTER: tire.master,
-        ITEM: tire.item,
-      };
-
-      const response = await api_bonos_createBonus(bonusData);
-
-      if (response.success) {
-        const bonoCreado = response.data;
-        const bonoRaw = bonoCreado.bonus || bonoCreado.bono || bonoCreado;
-
-        const bonoCompleto = {
-          ID_BONUS: bonoRaw.ID_BONUS || bonoRaw.id,
-          INVOICENUMBER: bonoRaw.INVOICENUMBER || invoiceNumber,
-          STATUS: bonoRaw.STATUS || "ACTIVO",
-          PRODUCT_SPECIFICATION:
-            bonoRaw.PRODUCT_SPECIFICATION ||
-            `${tire.brand};${tire.size};${tire.model}`,
-          QUANTITY: tire.quantity,
-          MASTER: tire.master,
-          ITEM: tire.item,
-          createdAt: bonoRaw.createdAt || new Date().toISOString(),
-          ...bonoRaw,
-        };
-
-        // Notificar al componente padre
-        if (onBonoCreated) {
-          onBonoCreated({
-            ...tire,
-            invoiceNumber,
-            cliente: {
-              ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
-              CUSTOMER_NAME: selectedClient.CUSTOMER_NAME,
-              CUSTOMER_LASTNAME: selectedClient.CUSTOMER_LASTNAME,
-              CUSTOMER_IDENTIFICATION: selectedClient.CUSTOMER_IDENTIFICATION,
-            },
-          });
-        }
-
-        return bonoCompleto; // Retornar el bono para agregarlo a la lista
-      } else {
-        throw new Error(response.message || "Error al crear el bono");
-      }
-    } catch (error) {
-      console.error("Error al crear bono:", error);
-      toast.error(`Error al crear bono: ${error.message}`);
-      throw error;
-    }
   };
 
   const handleRemoveTire = (tireId) => {
@@ -639,56 +748,95 @@ const FormularioNuevoBonoLista = ({
       return;
     }
 
+    if (!selectedClient) {
+      toast.error("No se ha seleccionado un cliente");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const bonosCreados = [];
+      // Preparar el formato de productos
+      const products = tireList.map((tire) => ({
+        BRAND: tire.brand,
+        SIZE: tire.size,
+        DESIGN: tire.model,
+        RINSIZE: tire.measure,
+        QUANTITY: tire.quantity,
+      }));
 
-      // Crear todos los bonos
-      for (const tire of tireList) {
-        const bonoCompleto = await handleSaveTire(tire);
-        bonosCreados.push(bonoCompleto);
-        toast.success(
-          `Bono creado exitosamente para ${tire.brand} ${tire.size}`
-        );
-      }
+      // Crear el objeto de datos en el nuevo formato
+      const bonusData = {
+        ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
+        INVOICENUMBER: invoiceNumber,
+        products: products,
+      };
 
-      // Si todos se crearon exitosamente, generar y enviar UN SOLO PDF con todos los bonos
-      if (bonosCreados.length > 0) {
-        try {
-          toast.info("Generando PDF con todos los bonos...");
+      // Enviar todos los bonos en una sola petición
+      const response = await api_bonos_createBonus(bonusData);
 
-          const sendResponse = await generateAndSendMultipleBonosPDF(
-            bonosCreados,
-            selectedClient,
-            invoiceNumber
-          );
+      if (response.success) {
+        toast.success("Bonos creados exitosamente");
 
-          if (sendResponse.success) {
-            toast.success(
-              "PDF con todos los bonos enviado por email y WhatsApp"
+        // Obtener los bonos creados de la respuesta
+        const bonosCreados = response.data.bonuses || response.data.data || [];
+
+        // Notificar al componente padre
+        if (onBonoCreated) {
+          tireList.forEach((tire) => {
+            onBonoCreated({
+              ...tire,
+              invoiceNumber,
+              cliente: {
+                ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
+                CUSTOMER_NAME: selectedClient.CUSTOMER_NAME,
+                CUSTOMER_LASTNAME: selectedClient.CUSTOMER_LASTNAME,
+                CUSTOMER_IDENTIFICATION: selectedClient.CUSTOMER_IDENTIFICATION,
+              },
+            });
+          });
+        }
+
+        // Generar y enviar PDF con todos los bonos
+        if (bonosCreados.length > 0) {
+          try {
+            toast.info("Generando PDF con todos los bonos...");
+
+            const sendResponse = await generateAndSendMultipleBonosPDF(
+              bonosCreados,
+              selectedClient,
+              invoiceNumber
             );
-          } else {
+
+            if (sendResponse.success) {
+              toast.success(
+                "PDF con todos los bonos enviado por email y WhatsApp"
+              );
+            } else {
+              toast.warning(
+                "Bonos creados pero hubo un error al enviar el PDF"
+              );
+            }
+          } catch (pdfError) {
+            console.error("Error al generar/enviar PDF:", pdfError);
             toast.warning("Bonos creados pero hubo un error al enviar el PDF");
           }
-        } catch (pdfError) {
-          console.error("Error al generar/enviar PDF:", pdfError);
-          toast.warning("Bonos creados pero hubo un error al enviar el PDF");
         }
-      }
 
-      // Si todas se guardaron correctamente, limpiar la lista y cerrar
-      setTimeout(() => {
-        toast.success(
-          `${bonosCreados.length} bonos fueron creados exitosamente`
-        );
-        setTireList([]);
-        if (onClose) {
-          onClose();
-        }
-      }, 1500);
+        // Limpiar la lista y cerrar después de un delay
+        setTimeout(() => {
+          toast.success(`${products.length} bonos fueron creados exitosamente`);
+          setTireList([]);
+          if (onClose) {
+            onClose();
+          }
+        }, 1500);
+      } else {
+        throw new Error(response.message || "Error al crear los bonos");
+      }
     } catch (error) {
-      console.error("Error al guardar todas las llantas:", error);
+      console.error("Error al guardar los bonos:", error);
+      toast.error(`Error al crear los bonos: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -810,11 +958,11 @@ const FormularioNuevoBonoLista = ({
 
                   <div>
                     <Select
-                      label="Tamaño *"
+                      label="Aro/Rin *"
                       options={sizeOptions}
                       value={tireForm.size}
                       onChange={handleTireInputChange}
-                      placeholder="Seleccione el tamaño"
+                      placeholder="Seleccione el Aro/Rin"
                       name="size"
                       width="100%"
                       maxHeight={200}
@@ -845,7 +993,7 @@ const FormularioNuevoBonoLista = ({
                       withSearch={true}
                       width="100%"
                       maxHeight={200}
-                      dropDirection="down"
+                      dropDirection="up"
                       disabled={!tireForm.brand || !tireForm.size}
                     />
                     {errors.model && (
@@ -861,8 +1009,45 @@ const FormularioNuevoBonoLista = ({
                     )}
                   </div>
 
+                  <div>
+                    <Select
+                      label="Medida *"
+                      options={measureOptions}
+                      value={tireForm.measure}
+                      onChange={handleTireInputChange}
+                      placeholder="Seleccione la medida"
+                      name="measure"
+                      withSearch={true}
+                      width="100%"
+                      maxHeight={200}
+                      dropDirection="up"
+                      disabled={
+                        !tireForm.brand || !tireForm.size || !tireForm.model
+                      }
+                    />
+                    {errors.measure && (
+                      <div
+                        style={{
+                          color: theme.colors.error,
+                          fontSize: "10px",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {errors.measure}
+                      </div>
+                    )}
+                  </div>
+
                   <Input
-                    label="Cantidad *"
+                    label={`Cantidad * (Disponibles: ${
+                      tireForm.brand && tireForm.size && tireForm.model
+                        ? getAvailableBonusesForProduct(
+                            tireForm.brand,
+                            tireForm.size,
+                            tireForm.model
+                          )
+                        : 0
+                    })`}
                     type="number"
                     name="quantity"
                     value={tireForm.quantity}
@@ -870,28 +1055,18 @@ const FormularioNuevoBonoLista = ({
                     placeholder="Cantidad"
                     errorMessage={errors.quantity}
                     min="1"
-                    fullWidth
-                  />
-
-                  <Input
-                    label="Master *"
-                    type="text"
-                    name="master"
-                    value={tireForm.master}
-                    onChange={handleTireInputChange}
-                    placeholder="Ingrese Master"
-                    errorMessage={errors.master}
-                    fullWidth
-                  />
-
-                  <Input
-                    label="Item *"
-                    type="text"
-                    name="item"
-                    value={tireForm.item}
-                    onChange={handleTireInputChange}
-                    placeholder="Ingrese Item"
-                    errorMessage={errors.item}
+                    max={
+                      tireForm.brand && tireForm.size && tireForm.model
+                        ? getAvailableBonusesForProduct(
+                            tireForm.brand,
+                            tireForm.size,
+                            tireForm.model
+                          )
+                        : undefined
+                    }
+                    disabled={
+                      !tireForm.brand || !tireForm.size || !tireForm.model
+                    }
                     fullWidth
                   />
                 </FormGrid>
@@ -936,7 +1111,7 @@ const FormularioNuevoBonoLista = ({
                           <TireFieldValue>{tire.brand}</TireFieldValue>
                         </TireField>
                         <TireField>
-                          <TireFieldLabel>Tamaño</TireFieldLabel>
+                          <TireFieldLabel>Aro/Rin</TireFieldLabel>
                           <TireFieldValue>{tire.size}</TireFieldValue>
                         </TireField>
                         <TireField>
@@ -944,16 +1119,34 @@ const FormularioNuevoBonoLista = ({
                           <TireFieldValue>{tire.model}</TireFieldValue>
                         </TireField>
                         <TireField>
+                          <TireFieldLabel>Medida</TireFieldLabel>
+                          <TireFieldValue>{tire.measure}</TireFieldValue>
+                        </TireField>
+                        <TireField>
                           <TireFieldLabel>Cantidad</TireFieldLabel>
                           <TireFieldValue>{tire.quantity}</TireFieldValue>
                         </TireField>
                         <TireField>
-                          <TireFieldLabel>Master</TireFieldLabel>
-                          <TireFieldValue>{tire.master}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Item</TireFieldLabel>
-                          <TireFieldValue>{tire.item}</TireFieldValue>
+                          <TireFieldLabel>Bonos Disponibles</TireFieldLabel>
+                          <TireFieldValue
+                            style={{
+                              color:
+                                getAvailableBonusesForProduct(
+                                  tire.brand,
+                                  tire.size,
+                                  tire.model
+                                ) > 0
+                                  ? theme.colors.success
+                                  : theme.colors.error,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {getAvailableBonusesForProduct(
+                              tire.brand,
+                              tire.size,
+                              tire.model
+                            )}
+                          </TireFieldValue>
                         </TireField>
                       </TireInfo>
                       <TireActions>
@@ -987,15 +1180,17 @@ const FormularioNuevoBonoLista = ({
               disabled={isSubmitting}
             />
           )}
-          <Button
-            type="button"
-            text={isSubmitting ? "Guardando..." : "Guardar Todas"}
-            variant="solid"
-            backgroundColor={theme.colors.primary}
-            leftIconName="FaSave"
-            onClick={handleSaveAll}
-            disabled={isSubmitting}
-          />
+          {tireList.length > 0 && (
+            <Button
+              type="button"
+              text={isSubmitting ? "Guardando..." : "Guardar Todas"}
+              variant="solid"
+              backgroundColor={theme.colors.primary}
+              leftIconName="FaSave"
+              onClick={handleSaveAll}
+              disabled={isSubmitting}
+            />
+          )}
         </ModalFooter>
       </ModalContent>
     </ModalOverlay>

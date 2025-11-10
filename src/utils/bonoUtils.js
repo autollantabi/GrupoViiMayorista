@@ -5,6 +5,7 @@ import {
   api_bonos_sendBonusFile,
   api_bonos_generateQR,
 } from "../api/bonos/apiBonos";
+import { generateCompleteBonosHTML } from "./bonoHTMLGenerator";
 
 /**
  * Parsea la especificación del producto (BRAND;SIZE;DESIGN)
@@ -24,50 +25,37 @@ export const parseProductSpecification = (specification) => {
 /**
  * Genera un código QR con los datos de la factura (obtiene el código del backend)
  */
-const generateInvoiceQRCode = async (invoiceNumber, customerIdentification) => {
+const generateInvoiceQRCode = async (invoiceNumber) => {
   try {
-    console.log("🔍 Generando código QR para factura y cliente");
-    console.log("📋 Invoice:", invoiceNumber);
-    console.log("🆔 Customer ID:", customerIdentification);
 
-    if (!invoiceNumber || !customerIdentification) {
-      console.error("❌ Número de factura o cédula es undefined o null");
+    if (!invoiceNumber) {
+      console.error("❌ Número de factura es undefined o null");
       return null;
     }
 
-    // Llamar al backend para que genere el código QR con factura y cédula
-    const response = await api_bonos_generateQR({
-      invoiceNumber,
-      customerIdentification,
-    });
-
-    console.log("📡 Respuesta del backend:", response);
+    // Llamar al backend para que genere el código QR solo con el número de factura
+    const response = await api_bonos_generateQR(invoiceNumber);
 
     if (response.success && response.data.qrCode) {
-      console.log("✅ Código QR obtenido exitosamente desde el backend");
-      console.log("🔑 QR Code data:", response.data.qrCode);
 
       // Construir la URL completa de verificación
       const preUrl =
         import.meta.env.VITE_NODE_ENV === "production"
           ? import.meta.env.VITE_PRODUCTION_URL
           : import.meta.env.VITE_DEVELOPMENT_URL;
-      const verificationUrl = `${preUrl}/reencauche/verificacion?data=${response.data.qrCode}`;
-
-      console.log("🌐 URL de verificación:", verificationUrl);
+      const verificationUrl = `${preUrl}/reencauche/verificacion?code=${response.data.qrCode}`;
 
       // Generar el código QR visualmente usando la librería qrcode
       const qrDataURL = await QRCode.toDataURL(verificationUrl, {
         width: 120,
         margin: 1,
+        errorCorrectionLevel: "L",
         color: {
           dark: "#000000",
           light: "#FFFFFF",
         },
       });
 
-      console.log("✅ QR de factura generado visualmente");
-      console.log("📏 QR Data URL length:", qrDataURL.length);
       return qrDataURL;
     } else {
       console.error(
@@ -84,128 +72,68 @@ const generateInvoiceQRCode = async (invoiceNumber, customerIdentification) => {
 };
 
 /**
+ * Previsualiza el HTML de los bonos en una nueva ventana para testing
+ * Ahora usa componentes JSX para generar el HTML
+ */
+export const previewBonosHTML = async (bonos, cliente, invoiceNumber) => {
+  try {
+    const qrCodeDataURL = await generateInvoiceQRCode(invoiceNumber);
+
+    // Generar el HTML completo usando el generador modular
+    const finalHTML = await generateCompleteBonosHTML(
+      bonos,
+      cliente,
+      invoiceNumber,
+      qrCodeDataURL
+    );
+
+    // Crear ventana de previsualización con tamaño A4 + márgenes
+    const previewWindow = window.open(
+      "",
+      "_blank",
+      "width=900,height=1200,scrollbars=yes,resizable=yes"
+    );
+
+    if (!previewWindow) {
+      throw new Error("No se pudo abrir la ventana de previsualización");
+    }
+
+    previewWindow.document.write(finalHTML);
+    previewWindow.document.close();
+
+    return { success: true, message: "Previsualización generada exitosamente" };
+  } catch (error) {
+    console.error("Error generando previsualización:", error);
+    throw error;
+  }
+};
+
+/**
  * Genera el HTML del PDF con múltiples bonos en formato de tarjetas
+ * Usa el mismo generador que el preview para consistencia
  */
 const generateMultipleBonosPDFHTML = async (bonos, cliente, invoiceNumber) => {
-  console.log("🔄 Iniciando generación de HTML para PDF múltiple");
-  const qrCodeDataURL = await generateInvoiceQRCode(
+  const qrCodeDataURL = await generateInvoiceQRCode(invoiceNumber);
+
+  // Generar el HTML completo usando el generador modular
+  const htmlString = await generateCompleteBonosHTML(
+    bonos,
+    cliente,
     invoiceNumber,
-    cliente.CUSTOMER_IDENTIFICATION
+    qrCodeDataURL
   );
 
-  console.log(
-    "📊 QR Code Data URL resultado:",
-    qrCodeDataURL ? "✅ Generado" : "❌ Null/undefined"
-  );
+  // Crear un iframe temporal oculto para parsear el HTML
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  // Escribir el HTML en el iframe
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(htmlString);
+  iframe.contentDocument.close();
 
-  // Generar HTML de tarjetas de bonos
-  const bonosHTML = bonos
-    .map((bono) => {
-      const productoAplicable = parseProductSpecification(
-        bono.PRODUCT_SPECIFICATION
-      );
-
-      return `
-      <div style="
-        width: 85mm;
-        height: 45mm;
-        border: 2px solid #1a1a1a;
-        border-radius: 8px;
-        padding: 3mm;
-        background: #ffffff;
-        box-sizing: border-box;
-        page-break-inside: avoid;
-        display: inline-block;
-        margin: 2mm;
-        vertical-align: top;
-        position: relative;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      ">
-        <!-- Encabezado del bono -->
-        <div style="
-          text-align: center; 
-          background: #1a1a1a;
-          color: white;
-          padding: 2mm;
-          margin: -3mm -3mm 2mm -3mm;
-          border-radius: 6px 6px 0 0;
-        ">
-          <h3 style="margin: 0; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">BONO DE REENCAUCHE</h3>
-          <p style="margin: 0; font-size: 8px; color: #FF6B35;">MISTOX</p>
-        </div>
-        
-        <!-- ID del Bono -->
-        <div style="
-          text-align: center; 
-          background: #FF6B35;
-          color: white;
-          padding: 1mm;
-          margin-bottom: 2mm; 
-          border-radius: 4px;
-        ">
-          <p style="margin: 0; font-size: 11px; font-weight: bold;">BONO #${
-            bono.ID_BONUS
-          }</p>
-        </div>
-        
-        <!-- Información del producto -->
-        <div style="margin-bottom: 1.5mm; font-size: 8px; line-height: 1.2;">
-          <div style="margin-bottom: 1mm; display: flex; justify-content: space-between;">
-            <span style="color: #1a1a1a; font-weight: bold;">Marca:</span>
-            <span style="color: #333333;">${productoAplicable.brand}</span>
-          </div>
-          <div style="margin-bottom: 1mm; display: flex; justify-content: space-between;">
-            <span style="color: #1a1a1a; font-weight: bold;">Tamaño:</span>
-            <span style="color: #333333;">${productoAplicable.size}</span>
-          </div>
-          <div style="margin-bottom: 1mm; display: flex; justify-content: space-between;">
-            <span style="color: #1a1a1a; font-weight: bold;">Diseño:</span>
-            <span style="color: #333333;">${productoAplicable.design}</span>
-          </div>
-          ${
-            bono.QUANTITY
-              ? `<div style="margin-bottom: 1mm; display: flex; justify-content: space-between;"><span style="color: #1a1a1a; font-weight: bold;">Cantidad:</span><span style="color: #333333;">${bono.QUANTITY}</span></div>`
-              : ""
-          }
-          ${
-            bono.MASTER
-              ? `<div style="margin-bottom: 1mm; display: flex; justify-content: space-between;"><span style="color: #1a1a1a; font-weight: bold;">Master:</span><span style="color: #333333;">${bono.MASTER}</span></div>`
-              : ""
-          }
-          ${
-            bono.ITEM
-              ? `<div style="margin-bottom: 1mm; display: flex; justify-content: space-between;"><span style="color: #1a1a1a; font-weight: bold;">Item:</span><span style="color: #333333;">${bono.ITEM}</span></div>`
-              : ""
-          }
-        </div>
-        
-        <!-- Fecha -->
-        <div style="
-          text-align: center; 
-          font-size: 7px; 
-          color: #666666;
-          background: #F5F5F5;
-          padding: 1mm;
-          border-radius: 4px;
-          border: 1px solid #DDDDDD;
-        ">
-          <p style="margin: 0;">Emisión: ${formatDate(bono.createdAt)}</p>
-        </div>
-      </div>
-    `;
-    })
-    .join("");
-
-  // Crear elemento temporal
+  // Crear elemento temporal para html2canvas
   const tempDiv = document.createElement("div");
   tempDiv.style.position = "absolute";
   tempDiv.style.left = "-9999px";
@@ -213,135 +141,25 @@ const generateMultipleBonosPDFHTML = async (bonos, cliente, invoiceNumber) => {
   tempDiv.style.width = "210mm";
   tempDiv.style.backgroundColor = "#ffffff";
   tempDiv.style.fontFamily = "Arial, sans-serif";
-  tempDiv.style.padding = "10mm";
 
-  tempDiv.innerHTML = `
-    <!-- Cabecera compacta con datos del cliente y QR -->
-    <div style="
-      background: #ffffff;
-      padding: 4mm;
-      margin-bottom: 6mm;
-      border-radius: 8px;
-      border: 2px solid #FF6B35;
-      page-break-after: avoid;
-      box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);
-    ">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="flex: 1; color: white;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3mm;">
-            <h2 style="
-              margin: 0; 
-              font-size: 16px; 
-              color: #FF6B35;
-              font-weight: bold;
-              letter-spacing: 0.5px;
-            ">
-              📄 FACTURA: ${invoiceNumber}
-            </h2>
-            <div style="
-              background: #FF6B35;
-              color: white;
-              padding: 2mm 4mm;
-              border-radius: 6px;
-              font-size: 10px;
-              font-weight: bold;
-              text-align: center;
-            ">
-              🎫 ${bonos.length} BONOS
-            </div>
-          </div>
-          <div style="
-            font-size: 9px; 
-            line-height: 1.4;
-            background: rgba(255, 107, 53, 0.1);
-            padding: 3mm;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 107, 53, 0.3);
-          ">
-            <div style="margin-bottom: 1.5mm; display: flex; align-items: center;">
-              <span style="background: #FF6B35; border-radius: 50%; width: 4mm; height: 4mm; display: inline-flex; align-items: center; justify-content: center; margin-right: 2mm; font-size: 6px; color: white;">👤</span>
-              <strong style="color: #FF6B35; padding-right: 2mm;">Cliente:</strong> <span style="color: #1a1a1a;">${
-                cliente.CUSTOMER_NAME
-              } ${cliente.CUSTOMER_LASTNAME}</span>
-            </div>
-            <div style="margin-bottom: 1.5mm; display: flex; align-items: center;">
-              <span style="background: #FF6B35; border-radius: 50%; width: 4mm; height: 4mm; display: inline-flex; align-items: center; justify-content: center; margin-right: 2mm; font-size: 6px; color: white;">🆔</span>
-              <strong style="color: #FF6B35; padding-right: 2mm;">CI/RUC:</strong> <span style="color: #1a1a1a;">${
-                cliente.CUSTOMER_IDENTIFICATION
-              }</span>
-            </div>
-            <div style="margin-bottom: 1.5mm; display: flex; align-items: center;">
-              <span style="background: #FF6B35; border-radius: 50%; width: 4mm; height: 4mm; display: inline-flex; align-items: center; justify-content: center; margin-right: 2mm; font-size: 6px; color: white;">📧</span>
-              <strong style="color: #FF6B35; padding-right: 2mm;">Email:</strong> <span style="color: #1a1a1a;">${
-                cliente.CUSTOMER_EMAIL || "No registrado"
-              }</span>
-            </div>
-            <div style="display: flex; align-items: center;">
-              <span style="background: #FF6B35; border-radius: 50%; width: 4mm; height: 4mm; display: inline-flex; align-items: center; justify-content: center; margin-right: 2mm; font-size: 6px; color: white;">📱</span>
-              <strong style="color: #FF6B35; padding-right: 2mm;">Teléfono:</strong> <span style="color: #1a1a1a;">${
-                cliente.CUSTOMER_PHONE || "No registrado"
-              }</span>
-            </div>
-          </div>
-        </div>
-        <div style="text-align: center; margin-left: 8mm;">
-          ${
-            qrCodeDataURL
-              ? `
-            <div style="background: white; padding: 2mm; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #FF6B35;">
-              <img src="${qrCodeDataURL}" alt="Código QR" style="width: 30mm; height: 30mm; border-radius: 4px;"/>
-              <p style="margin: 1mm 0 0 0; font-size: 7px; color: #000; font-weight: bold;">QR VERIFICACIÓN</p>
-            </div>
-          `
-              : `
-            <div style="
-              width: 30mm; 
-              height: 30mm; 
-              border: 2px dashed #FF6B35; 
-              border-radius: 8px; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              background: rgba(255, 107, 53, 0.1);
-            ">
-              <p style="margin: 0; font-size: 7px; color: #FF6B35; text-align: center; font-weight: bold;">QR<br/>No disponible</p>
-            </div>
-            <p style="margin: 1mm 0 0 0; font-size: 7px; color: #FF6B35; font-weight: bold;">QR VERIFICACIÓN</p>
-          `
-          }
-        </div>
-      </div>
-    </div>
+  // Clonar el contenido del body del iframe
+  const iframeBody = iframe.contentDocument.body;
+  tempDiv.innerHTML = iframeBody.innerHTML;
 
-    <!-- Grid de bonos -->
-    <div style="text-align: center;">
-      ${bonosHTML}
-    </div>
+  // Copiar los estilos computados del iframe
+  const iframeStyles = iframe.contentDocument.getElementsByTagName("style");
+  for (let styleEl of iframeStyles) {
+    const newStyle = document.createElement("style");
+    newStyle.textContent = styleEl.textContent;
+    tempDiv.appendChild(newStyle);
+  }
 
+  // Remover el iframe
+  document.body.removeChild(iframe);
 
-    <!-- Footer -->
-    <div style="
-      margin-top: 8mm; 
-      text-align: center; 
-      font-size: 9px; 
-      color: #4A5568;
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-      border-radius: 12px;
-      padding: 6mm;
-      border: 1px solid #e2e8f0;
-      page-break-inside: avoid;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    ">
-      <p style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 2mm;">
-        🏢 <strong>Este documento es generado automáticamente por el sistema de MISTOX</strong>
-      </p>
-      <p style="margin: 2mm 0 0 0; display: flex; align-items: center; justify-content: center; gap: 2mm;">
-        🕒 Fecha de generación: ${new Date().toLocaleString("es-ES")}
-      </p>
-    </div>
-  `;
-
+  // Agregar el div temporal al documento
   document.body.appendChild(tempDiv);
+
   return tempDiv;
 };
 
@@ -465,34 +283,39 @@ export const generateMultipleBonosPDFBlob = async (
     // Crear HTML temporal
     tempDiv = await generateMultipleBonosPDFHTML(bonos, cliente, invoiceNumber);
 
-    // Generar canvas
+    // Generar canvas con mejor calidad
     const canvas = await html2canvas(tempDiv, {
-      scale: 2,
+      scale: 1.5, // Reducido para mejor rendimiento
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#ffffff",
+      logging: false, // Deshabilitar logs para mejor rendimiento
     });
 
-    // Generar PDF
-    const imgData = canvas.toDataURL("image/jpeg", 0.9);
+    // Generar PDF con paginación mejorada
+    const imgData = canvas.toDataURL("image/jpeg", 0.85);
     const pdf = new jsPDF("p", "mm", "a4");
 
     const imgWidth = 210;
     const pageHeight = 297;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
 
-    // Agregar primera página
-    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Calcular cuántas páginas necesitamos
+    const totalPages = Math.ceil(imgHeight / pageHeight);
 
-    // Agregar páginas adicionales si es necesario
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    // Agregar páginas una por una para mejor control
+    for (let i = 0; i < totalPages; i++) {
+      if (i > 0) {
+        pdf.addPage();
+      }
+
+      const yPosition = -(i * pageHeight);
+      const currentPageHeight = Math.min(
+        pageHeight,
+        imgHeight - i * pageHeight
+      );
+
+      pdf.addImage(imgData, "JPEG", 0, yPosition, imgWidth, imgHeight);
     }
 
     const blob = pdf.output("blob");

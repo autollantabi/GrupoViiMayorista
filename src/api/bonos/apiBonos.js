@@ -207,13 +207,67 @@ export const api_bonos_verifyQRCode = async (encryptedCode) => {
 };
 
 /**
+ * Verificar código QR de Master
+ * @param {string} encryptedMaster - Código master encriptado
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_verifyQRCodeMaster = async (encryptedMaster) => {
+  try {
+    const response = await api.post("/bonos/verifyQRCodeMaster", {
+      qrCode: encryptedMaster,
+    });
+    return {
+      success: true,
+      message:
+        response.data.message || "Código Master verificado correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al verificar el código Master";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Obtener bonos por número de factura
+ * @param {string} invoiceNumber - Número de factura
+ * @returns {Promise<Object>} Respuesta de la API con los bonos
+ */
+export const api_bonos_getBonusByInvoiceNumber = async (invoiceNumber) => {
+  try {
+    const response = await api.get(
+      `/bonos/getBonusByInvoiceNumber/${invoiceNumber}`
+    );
+    return {
+      success: true,
+      message: response.data.message || "Bonos obtenidos correctamente",
+      data: response.data.data || [],
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al obtener los bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
  * Obtener bonos de usuario reencauchador
  * @param {string} idUser - ID del usuario Reencauchador
  * @returns {Promise<Object>} Respuesta de la API
  */
 export const api_bonos_getBonosByReencaucheUser = async (idUser) => {
   try {
-    const response = await api.get(`/bonos/getUsedBonusByUser/${idUser}`);
+    const response = await api.get(`/bonos/getBonusByUser/${idUser}`);
     return {
       success: true,
       message: response.data.message || "Bonos obtenidos correctamente",
@@ -232,26 +286,39 @@ export const api_bonos_getBonosByReencaucheUser = async (idUser) => {
 
 /**
  * Generar código QR para un bono (el backend encripta)
- * @param {number|Object} bonoIdOrData - ID del bono O objeto con {invoiceNumber, customerIdentification}
+ * @param {number|string} invoiceNumber - Número de factura (string)
  * @returns {Promise<Object>} Respuesta con el QR code
  */
-export const api_bonos_generateQR = async (bonoIdOrData) => {
+export const api_bonos_generateQR = async (invoiceNumber) => {
   try {
-    let requestData;
-
-    // Verificar si es un objeto (para múltiples bonos) o un ID simple (para un solo bono)
-    if (typeof bonoIdOrData === "object") {
-      requestData = {
-        invoiceNumber: bonoIdOrData.invoiceNumber,
-        customerIdentification: bonoIdOrData.customerIdentification,
-      };
-    } else {
-      requestData = {
-        bonusId: bonoIdOrData,
-      };
-    }
-
-    const response = await api.post(`/bonos/generateQR`, requestData);
+    const response = await api.post(`/bonos/generateQR`, {
+      invoiceNumber: invoiceNumber,
+    });
+    return {
+      success: true,
+      message: response.data.message || "QR generado correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al generar el QR";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+/**
+ * Generar código QR para un bono con master(el backend encripta)
+ * @param {number|string} master - Master (string)
+ * @returns {Promise<Object>} Respuesta con el QR code
+ */
+export const api_bonos_generateQRMaster = async (master) => {
+  try {
+    const response = await api.post(`/bonos/generateQRMaster`, {
+      master: master,
+    });
     return {
       success: true,
       message: response.data.message || "QR generado correctamente",
@@ -306,6 +373,131 @@ export const api_bonos_sendBonusFile = async (
     const message =
       error.response?.data?.message ||
       "Ocurrió un error al enviar el archivo de bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Actualizar MASTER e ITEM de bonos
+ * @param {Array} bonusUpdates - Array de objetos con ID_BONUS, MASTER e ITEM
+ * @param {Array} links - Array de links de los masters
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_updateMasterItem = async (
+  bonusUpdates,
+  links
+) => {
+  try {
+    const response = await api.patch("/bonos/updateMasterItem", {
+      bonuses: bonusUpdates,
+      links: links,
+    });
+    return {
+      success: true,
+      message: response.data.message || "Bonos actualizados correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al actualizar los bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Usar múltiples bonos (para reencauchadores)
+ * @param {Array} bonusUpdates - Array de objetos con ID_BONUS, RETREADINVOICE e ID_USER
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_useBonuses = async (bonusUpdates) => {
+  try {
+    const response = await api.patch("/bonos/useBonus", bonusUpdates);
+    return {
+      success: true,
+      message: response.data.message || "Bonos utilizados correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al usar los bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Rechazar un bono (para reencauchadores)
+ * @param {number} idBonus - ID del bono
+ * @param {string} rejectionReason - Motivo del rechazo
+ * @param {number} idUser - ID del usuario reencauchador
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_rejectBonus = async (
+  idBonus,
+  rejectionReason,
+  idUser
+) => {
+  try {
+    const response = await api.patch(`/bonos/rejectBonus/${idBonus}`, {
+      reason: rejectionReason,
+      userId: idUser,
+    });
+    return {
+      success: true,
+      message: response.data.message || "Bono rechazado correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al rechazar el bono";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Obtener datos de ventas para bonos disponibles
+ * @param {string} codigoSocio - Código del socio
+ * @param {string} empresas - String de empresas separadas por comas
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_getSalesDataForBonus = async (codigoSocio, empresas) => {
+  try {
+    console.log("codigoSocio", codigoSocio);
+    console.log("empresas", empresas);
+    const response = await api.get(
+      `/bonos/getSalesDataForBonus/${codigoSocio}`,
+      {
+        empresa: empresas,
+      }
+    );
+    console.log("response", response);
+    return {
+      success: true,
+      message:
+        response.data.message || "Datos de bonos obtenidos correctamente",
+      data: response.data.data || null,
+    };
+  } catch (error) {
+    console.log("error", error);
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al obtener los datos de bonos";
     return {
       success: false,
       message,

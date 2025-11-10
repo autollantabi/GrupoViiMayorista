@@ -8,6 +8,7 @@ import { api_products_getInfoProductos } from "../../api/products/apiProducts";
 import PageContainer from "../../components/layout/PageContainer";
 import RenderLoader from "../../components/ui/RenderLoader";
 import RenderIcon from "../../components/ui/RenderIcon";
+import SEO from "../../components/seo/SEO";
 import { ROUTES } from "../../constants/routes";
 
 const WelcomeSection = styled.div`
@@ -246,7 +247,7 @@ const ReencaucheButton = styled(Button)`
 const ClientHomeComponent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [productsInfo, setProductsInfo] = useState({});
+  const [productsInfo, setProductsInfo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Función para formatear el nombre en modo título (cada palabra con mayúscula)
@@ -264,17 +265,22 @@ const ClientHomeComponent = () => {
       try {
         setIsLoading(true);
         const response = await api_products_getInfoProductos();
+        console.log("response", response);
 
         if (response.success && response.data) {
-          setProductsInfo(response.data);
+          // Asegurar que siempre sea un array
+          const data = Array.isArray(response.data) ? response.data : [];
+          setProductsInfo(data);
         } else {
           console.error(
             "Error al obtener información de productos:",
             response.message
           );
+          setProductsInfo([]);
         }
       } catch (error) {
         console.error("Error fetching products info:", error);
+        setProductsInfo([]);
       } finally {
         setIsLoading(false);
       }
@@ -292,16 +298,16 @@ const ClientHomeComponent = () => {
 
   // Función para obtener la cantidad de productos de una empresa
   const getProductCount = (empresaName) => {
-    if (!productsInfo) {
+    if (!Array.isArray(productsInfo) || productsInfo.length === 0) {
       return 0;
     }
     const productsInf = productsInfo.filter(
       (product) => product.ENTERPRISE === empresaName
     );
-    if (!productsInf) {
+    if (!productsInf || productsInf.length === 0) {
       return 0;
     }
-    const productsCount = productsInf[0].TOTAL;
+    const productsCount = productsInf[0]?.TOTAL || 0;
 
     return productsCount;
   };
@@ -321,87 +327,98 @@ const ClientHomeComponent = () => {
   }
 
   return (
-    <PageContainer>
-      <WelcomeSection>
-        <WelcomeTitle>
-          ¡Bienvenido de vuelta,
-          <br /> {formatNameToTitle(user?.NAME_USER)}!
-        </WelcomeTitle>
-        <WelcomeSubtitle>
-          Estamos emocionados de tenerte aquí. Explora nuestros catálogos y
-          descubre productos increíbles de las mejores empresas.
-        </WelcomeSubtitle>
-      </WelcomeSection>
+    <>
+      <SEO
+        title={`Bienvenido - Portal Cliente`}
+        description={`Portal de cliente ViiCommerce. Accede a catálogos de neumáticos, lubricantes y herramientas. Gestiona bonos de reencauche y explora productos de las mejores empresas.`}
+        keywords="portal cliente, catálogo productos, bonos reencauche, neumáticos, lubricantes, herramientas, ViiCommerce"
+      />
+      <PageContainer>
+        <WelcomeSection>
+          <WelcomeTitle>
+            ¡Bienvenido de vuelta,
+            <br /> {formatNameToTitle(user?.NAME_USER)}!
+          </WelcomeTitle>
+          <WelcomeSubtitle>
+            Estamos emocionados de tenerte aquí. Explora nuestros catálogos y
+            descubre productos increíbles de las mejores empresas.
+          </WelcomeSubtitle>
+        </WelcomeSection>
 
-      {/* Sección de Reencauche */}
-      {/* <ReencaucheSection>
-        <ReencaucheHeader>
-          <ReencaucheTitle>
-            <RenderIcon name="FaTicketAlt" size={24} />
-            Sistema de Bonos
-          </ReencaucheTitle>
-          <ReencaucheDescription>
-            Gestiona los bonos de neumáticos de tus clientes de manera fácil y
-            eficiente. Registra bonos por CI/RUC y mantén un control completo.
-          </ReencaucheDescription>
-        </ReencaucheHeader>
+        {/* Sección de Reencauche */}
+        <ReencaucheSection>
+          <ReencaucheHeader>
+            <ReencaucheTitle>
+              <RenderIcon name="FaTicketAlt" size={24} />
+              Sistema de Bonos
+            </ReencaucheTitle>
+            <ReencaucheDescription>
+              Gestiona los bonos de neumáticos de tus clientes de manera fácil y
+              eficiente. Registra bonos por CI/RUC y mantén un control completo.
+            </ReencaucheDescription>
+          </ReencaucheHeader>
 
-        <ReencaucheActions>
-          <ReencaucheButton
-            text="Acceder al Sistema de Bonos"
-            leftIconName="FaTicketAlt"
-            onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE)}
-          />
-        </ReencaucheActions>
-      </ReencaucheSection> */}
+          <ReencaucheActions>
+            <ReencaucheButton
+              text="Acceder al Sistema de Bonos"
+              leftIconName="FaTicketAlt"
+              onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE)}
+            />
+          </ReencaucheActions>
+        </ReencaucheSection>
 
-      <CompaniesSection>
-        <CompaniesGrid>
-          {empresas.map((empresa) => {
-            // Verificar si el usuario tiene acceso (comparando en mayúsculas)
-            const hasAccess = userAccess.includes(empresa.nombre.toUpperCase());
-            const productCount = getProductCount(empresa.nombre);
+        <CompaniesSection>
+          <CompaniesGrid>
+            {empresas.map((empresa) => {
+              // Verificar si el usuario tiene acceso (comparando en mayúsculas)
+              const hasAccess = userAccess.includes(
+                empresa.nombre.toUpperCase()
+              );
+              const productCount = getProductCount(empresa.nombre);
 
-            return (
-              <CompanyCard
-                key={empresa.id}
-                onClick={() => handleCardClick(empresa)}
-              >
-                <AccessRibbon>
-                  <RibbonContent $hasAccess={hasAccess}>
-                    {hasAccess ? "ACCESO" : "SIN ACCESO"}
-                  </RibbonContent>
-                </AccessRibbon>
+              return (
+                <CompanyCard
+                  key={empresa.id}
+                  onClick={() => handleCardClick(empresa)}
+                >
+                  <AccessRibbon>
+                    <RibbonContent $hasAccess={hasAccess}>
+                      {hasAccess ? "ACCESO" : "SIN ACCESO"}
+                    </RibbonContent>
+                  </AccessRibbon>
 
-                <CompanyLogo>
-                  <img src={empresa.logo} alt={`Logo de ${empresa.nombre}`} />
-                </CompanyLogo>
-                <CardBody>
-                  <CompanyDescription>{empresa.descripcion}</CompanyDescription>
-                </CardBody>
-                <CardFooter>
-                  <ProductCount>{productCount} productos</ProductCount>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Button
-                      size="small"
-                      text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}
-                      variant={hasAccess ? "solid" : "outlined"}
-                      onClick={() => handleCardClick(empresa)}
-                    />
-                  </div>
-                </CardFooter>
-              </CompanyCard>
-            );
-          })}
-        </CompaniesGrid>
-      </CompaniesSection>
-    </PageContainer>
+                  <CompanyLogo>
+                    <img src={empresa.logo} alt={`Logo de ${empresa.nombre}`} />
+                  </CompanyLogo>
+                  <CardBody>
+                    <CompanyDescription>
+                      {empresa.descripcion}
+                    </CompanyDescription>
+                  </CardBody>
+                  <CardFooter>
+                    <ProductCount>{productCount} productos</ProductCount>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}
+                        variant={hasAccess ? "solid" : "outlined"}
+                        onClick={() => handleCardClick(empresa)}
+                      />
+                    </div>
+                  </CardFooter>
+                </CompanyCard>
+              );
+            })}
+          </CompaniesGrid>
+        </CompaniesSection>
+      </PageContainer>
+    </>
   );
 };
 

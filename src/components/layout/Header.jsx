@@ -5,16 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useAppTheme } from "../../context/AppThemeContext";
 import { useState } from "react";
-import {
-  FaShoppingCart,
-  FaUser,
-  FaSignOutAlt,
-  FaHistory,
-  FaBars,
-  FaTimes,
-} from "react-icons/fa";
-import { ROLES } from "../../constants/roles";
-import { ROUTES } from "../../constants/routes";
+
 import RenderIcon from "../ui/RenderIcon";
 
 const HeaderContainer = styled.header`
@@ -26,7 +17,7 @@ const HeaderContainer = styled.header`
   grid-template-columns: 1fr 1fr;
   align-items: center;
   justify-content: space-between;
-  z-index: 10;
+  z-index: 500;
   box-shadow: 0 2px 4px ${({ theme }) => theme.colors.shadow};
   position: relative;
   height: 45px;
@@ -77,20 +68,16 @@ const IconButton = styled(Button)`
   }
 `;
 
-const CartCount = styled.span`
+const CartIndicator = styled.span`
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: ${({ theme }) => theme.colors.error};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: 0.7rem;
-  font-weight: bold;
+  top: -4px;
+  right: -4px;
+  background-color: ${({ theme }) => theme.colors.white};
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 10px;
+  height: 10px;
+  border: 2px solid ${({ theme }) => theme.colors.primary};
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 `;
 
 const UserMenu = styled.div`
@@ -105,7 +92,7 @@ const UserMenuDropdown = styled.div`
   border-radius: 4px;
   box-shadow: 0 2px 10px ${({ theme }) => theme.colors.shadow};
   width: 200px;
-  z-index: 100;
+  z-index: 260;
   overflow: hidden;
   display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
 
@@ -178,7 +165,7 @@ const MobileMenuOverlay = styled.div`
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  z-index: 250;
   display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
 
   @media (min-width: 768px) {
@@ -268,7 +255,7 @@ const UserEmail = styled.div`
 export default function Header() {
   const { user, isClient, isVisualizacion, isReencaucheUser, logout } =
     useAuth();
-  const { itemCount } = useCart();
+  const { hasItems } = useCart(); // Solo usamos hasItems para mostrar indicador
   const { isDarkMode, toggleTheme } = useAppTheme();
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -343,7 +330,7 @@ export default function Header() {
 
             {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
-                text={itemCount > 0 && <CartCount>{itemCount}</CartCount>}
+                text={hasItems && <CartIndicator />}
                 leftIconName={"FaShoppingCart"}
                 iconSize={18}
                 onClick={handleGoToCart}
@@ -404,7 +391,7 @@ export default function Header() {
           <MobileOnlySection>
             {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
-                text={itemCount > 0 && <CartCount>{itemCount}</CartCount>}
+                text={hasItems && <CartIndicator />}
                 leftIconName={"FaShoppingCart"}
                 iconSize={20}
                 onClick={handleGoToCart}

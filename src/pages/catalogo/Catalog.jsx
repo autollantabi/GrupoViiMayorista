@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import FilterCards from "../../components/catalog/FilterCards";
 import ProductGridView from "../../components/catalog/ProductGridView";
 import AdditionalFilters from "../../components/catalog/AdditionalFilters";
@@ -11,31 +11,56 @@ import RenderIcon from "../../components/ui/RenderIcon";
 import ProductDetail from "../../components/catalog/ProductDetail";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import { api_access_requestAccess } from "../../api/access/apiAccessRequest";
+import { api_email_solicitudEmpresa } from "../../api/email/apiEmail";
 
 const CatalogContainer = styled.div`
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
+  height: calc(100vh - 77px);
+  max-height: calc(100vh - 77px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
-const MainContent = styled.main`
+const MainContent = styled.div`
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
+  max-height: calc(100vh - 77px);
+  overflow-y: auto;
+  overflow-x: hidden;
+`;
+
+const MainContentProducts = styled.div`
+  background: ${({ theme }) => theme.colors.background};
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
 `;
 
 const ContentWithFilters = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  gap: 16px;
+  align-items: stretch;
 
   @media (min-width: 1024px) {
     flex-direction: row;
+    min-height: 0;
+    align-items: stretch;
   }
 `;
 
 const WelcomeScreen = styled.div`
   padding: 20px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
 
@@ -377,16 +402,18 @@ const BackButton = styled.button`
 const Catalog = () => {
   const { empresaName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
     useProductCatalog();
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [pendingRestore, setPendingRestore] = useState(null);
+  const [initialSort, setInitialSort] = useState("default");
+  const [restoreApplied, setRestoreApplied] = useState(false);
 
   // Estados para el formulario de solicitud de acceso
   const [accessRequestForm, setAccessRequestForm] = useState({
-    email: user?.CORREOS?.[0] || "",
-    fullName: user?.NOMBRE_SOCIO || "",
-    reason: "",
+    telefono: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
@@ -440,6 +467,9 @@ const Catalog = () => {
     goToAdditionalFilter,
     handleSearchChange,
     goToFilterStep,
+    isInitialized,
+    setSelectedValues,
+    setCurrentStepIndex,
   } = useCatalogFlow(
     empresaName,
     empresaName ? catalogByEmpresa[empresaName] : null
@@ -494,6 +524,56 @@ const Catalog = () => {
     clearAdditionalFilter(filterId);
   };
 
+  useEffect(() => {
+    if (location.state?.filters) {
+      setPendingRestore({
+        filters: location.state.filters,
+        search: location.state.searchTerm || "",
+        sort: location.state.sortBy || "default",
+      });
+      setInitialSort(location.state.sortBy || "default");
+      setRestoreApplied(false);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (pendingRestore && isInitialized) {
+      if (pendingRestore.filters?.selectedLinea) {
+        selectLinea(pendingRestore.filters.selectedLinea);
+      }
+      handleSearchChange(pendingRestore.search || "");
+    }
+  }, [pendingRestore, isInitialized, selectLinea, handleSearchChange]);
+
+  useEffect(() => {
+    if (
+      pendingRestore &&
+      pendingRestore.filters?.selectedLinea &&
+      selectedLinea === pendingRestore.filters.selectedLinea
+    ) {
+      setSelectedValues(pendingRestore.filters.selectedValues || {});
+
+      if (flowConfig?.steps?.length) {
+        setCurrentStepIndex(flowConfig.steps.length - 1);
+      }
+
+      setPendingRestore(null);
+      setRestoreApplied(true);
+    }
+  }, [
+    pendingRestore,
+    selectedLinea,
+    flowConfig,
+    setSelectedValues,
+    setCurrentStepIndex,
+  ]);
+
+  useEffect(() => {
+    if (restoreApplied) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [restoreApplied, navigate, location.pathname]);
+
   // Funciones para el formulario de solicitud de acceso
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -506,35 +586,28 @@ const Catalog = () => {
   const handleAccessRequestSubmit = async (e) => {
     e.preventDefault();
 
-    // Validaciones básicas
-    if (
-      !accessRequestForm.email ||
-      !accessRequestForm.fullName ||
-      !accessRequestForm.reason
-    ) {
-      toast.error("Por favor, completa todos los campos");
+    // Validar teléfono
+    if (!accessRequestForm.telefono || !accessRequestForm.telefono.trim()) {
+      toast.error("Por favor, ingresa tu número de teléfono");
       return;
     }
 
-    // Validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(accessRequestForm.email)) {
-      toast.error("Por favor, ingresa un correo electrónico válido");
+    // Validar que existan los datos del usuario
+    if (!user?.ACCOUNT_USER || !user?.NAME_USER || !user?.EMAIL) {
+      toast.error("Faltan datos en tu perfil de usuario");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const requestData = {
+      const response = await api_email_solicitudEmpresa({
+        cuenta: user.ACCOUNT_USER,
+        nombre: user.NAME_USER,
+        correo: user.EMAIL,
+        telefono: accessRequestForm.telefono.trim(),
         empresa: empresaName,
-        email: accessRequestForm.email,
-        fullName: accessRequestForm.fullName,
-        reason: accessRequestForm.reason,
-        userId: user?.ID_USER,
-      };
-
-      const response = await api_access_requestAccess(requestData);
+      });
 
       if (response.success) {
         toast.success("Solicitud enviada exitosamente");
@@ -554,9 +627,7 @@ const Catalog = () => {
   useEffect(() => {
     setRequestSubmitted(false);
     setAccessRequestForm({
-      email: user?.CORREOS?.[0] || "",
-      fullName: user?.NOMBRE_SOCIO || "",
-      reason: "",
+      telefono: "",
     });
   }, [empresaName, user]);
 
@@ -602,46 +673,55 @@ const Catalog = () => {
                   </UnauthorizedMessage>
 
                   <AccessRequestForm onSubmit={handleAccessRequestSubmit}>
+                    {/* Información del usuario (solo lectura) */}
                     <FormGroup>
-                      <FormLabel htmlFor="email">
-                        Correo Electrónico *
-                      </FormLabel>
-                      <FormInput
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={accessRequestForm.email}
-                        onChange={handleFormChange}
-                        placeholder="tu@correo.com"
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <FormLabel htmlFor="fullName">
-                        Nombre Completo *
-                      </FormLabel>
+                      <FormLabel>RUC / Cédula</FormLabel>
                       <FormInput
                         type="text"
-                        id="fullName"
-                        name="fullName"
-                        value={accessRequestForm.fullName}
-                        onChange={handleFormChange}
-                        placeholder="Tu nombre completo"
-                        required
+                        value={user?.ACCOUNT_USER || "No disponible"}
+                        disabled
+                        style={{
+                          backgroundColor: "#f3f4f6",
+                          cursor: "not-allowed",
+                        }}
                       />
                     </FormGroup>
 
                     <FormGroup>
-                      <FormLabel htmlFor="reason">
-                        ¿Por qué necesitas acceso? *
-                      </FormLabel>
-                      <FormTextarea
-                        id="reason"
-                        name="reason"
-                        value={accessRequestForm.reason}
+                      <FormLabel>Nombre Completo</FormLabel>
+                      <FormInput
+                        type="text"
+                        value={user?.NAME_USER || "No disponible"}
+                        disabled
+                        style={{
+                          backgroundColor: "#f3f4f6",
+                          cursor: "not-allowed",
+                        }}
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <FormLabel>Correo Electrónico</FormLabel>
+                      <FormInput
+                        type="email"
+                        value={user?.EMAIL || "No disponible"}
+                        disabled
+                        style={{
+                          backgroundColor: "#f3f4f6",
+                          cursor: "not-allowed",
+                        }}
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <FormLabel htmlFor="telefono">Teléfono *</FormLabel>
+                      <FormInput
+                        type="tel"
+                        id="telefono"
+                        name="telefono"
+                        value={accessRequestForm.telefono}
                         onChange={handleFormChange}
-                        placeholder="Describe brevemente por qué necesitas acceso al catálogo de esta empresa..."
+                        placeholder="0987654321"
                         required
                       />
                     </FormGroup>
@@ -815,7 +895,7 @@ const Catalog = () => {
           isAtProductView={isAtProductView}
         />
 
-        <MainContent>
+        <MainContentProducts>
           <ContentWithFilters>
             <AdditionalFilters
               filters={additionalFilters}
@@ -832,11 +912,13 @@ const Catalog = () => {
                 selectedValues,
                 availableLines,
                 flowConfig,
+                searchQuery,
               }}
               onProductSelect={handleProductSelect}
+              initialSort={initialSort}
             />
           </ContentWithFilters>
-        </MainContent>
+        </MainContentProducts>
       </CatalogContainer>
     );
   }

@@ -284,6 +284,10 @@ export const PRODUCT_LINE_CONFIG = {
         field: "DMA_SUBGRUPO",
         transform: (value) => value?.toLowerCase().replace(/ /g, "_"),
       },
+      {
+        field: "DMA_SUBGRUPO2",
+        transform: (value) => value?.toLowerCase().replace(/ /g, "_"),
+      }
     ],
     nameTemplate: (item) => `${item.DMA_NOMBREITEM || ""}`,
     descriptionTemplate: (item) => `${item.DMA_CARACTERISTICASESP || ""}`,

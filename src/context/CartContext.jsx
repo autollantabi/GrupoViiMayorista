@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useAuth } from "./AuthContext";
 import { TAXES } from "../constants/taxes";
 import { ROLES } from "../constants/roles";
@@ -76,7 +82,7 @@ export function CartProvider({ children }) {
   };
 
   // Función para cargar el carrito desde la API
-  const loadCartFromAPI = async () => {
+  const loadCartFromAPI = useCallback(async () => {
     if (!user?.ACCOUNT_USER) {
       return;
     }
@@ -85,17 +91,19 @@ export function CartProvider({ children }) {
     try {
       const response = await api_cart_getCarrito(user.ACCOUNT_USER);
 
-      if (response.success && response.data && response.data.length > 0) {
-        // Guardar todos los cartIds por empresa (mantener todos los existentes)
-        const newCartIds = { ...cartIds }; // Mantener cartIds existentes
+      if (
+        response.success &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const incomingCartIds = {};
         let allCartItems = [];
 
-        // Procesar todos los carritos de todas las empresas
         for (const cartData of response.data) {
           const enterprise = cartData.CABECERA.ENTERPRISE;
-          newCartIds[enterprise] = cartData.CABECERA.ID_SHOPPING_CART_HEADER;
+          incomingCartIds[enterprise] =
+            cartData.CABECERA.ID_SHOPPING_CART_HEADER;
 
-          // Obtener información completa de cada producto en este carrito
           const cartItemsPromises = cartData.DETALLE.map(async (item) => {
             try {
               const productResponse = await api_products_getProductByCodigo(
@@ -106,7 +114,7 @@ export function CartProvider({ children }) {
               if (productResponse.success && productResponse.data) {
                 const product = productResponse.data;
 
-                const cartItem = {
+                return {
                   id: item.PRODUCT_CODE,
                   quantity: item.QUANTITY,
                   price: product.DMA_COSTO || 0,
@@ -115,32 +123,28 @@ export function CartProvider({ children }) {
                   empresaId: enterprise,
                   stock: product.DMA_STOCK || 0,
                   brand: product.DMA_MARCA || "Sin marca",
-                  discount: product.DMA_DESCUENTO_PROMOCIONAL || 0, // No hay campo de descuento en la respuesta
-                  iva: TAXES.IVA_PERCENTAGE, // Usar IVA por defecto
-                };
-
-                return cartItem;
-              } else {
-                // Si no se puede obtener la información del producto, usar datos básicos
-                return {
-                  id: item.PRODUCT_CODE,
-                  quantity: item.QUANTITY,
-                  price: item.PRICE,
-                  name: item.PRODUCT_CODE,
-                  image: "",
-                  empresaId: enterprise,
-                  stock: 0,
-                  brand: "Sin marca",
-                  discount: 0,
+                  discount: product.DMA_DESCUENTO_PROMOCIONAL || 0,
                   iva: TAXES.IVA_PERCENTAGE,
                 };
               }
+
+              return {
+                id: item.PRODUCT_CODE,
+                quantity: item.QUANTITY,
+                price: item.PRICE,
+                name: item.PRODUCT_CODE,
+                image: "",
+                empresaId: enterprise,
+                stock: 0,
+                brand: "Sin marca",
+                discount: 0,
+                iva: TAXES.IVA_PERCENTAGE,
+              };
             } catch (error) {
               console.error(
                 `❌ Error al obtener información del producto ${item.PRODUCT_CODE}:`,
                 error
               );
-              // En caso de error, usar datos básicos
               return {
                 id: item.PRODUCT_CODE,
                 quantity: item.QUANTITY,
@@ -160,28 +164,42 @@ export function CartProvider({ children }) {
           allCartItems = [...allCartItems, ...cartItems];
         }
 
-        // Actualizar cartIds siempre (mantener todos los existentes)
-        setCartIds(newCartIds);
-        setCart(allCartItems);
+        setCartIds(incomingCartIds);
+        setCart((prevCart) => {
+          if (prevCart.length === 0) {
+            return allCartItems;
+          }
+
+          const mergedMap = new Map();
+          prevCart.forEach((item) => {
+            const key = `${item.empresaId || ""}-${item.id}`;
+            mergedMap.set(key, item);
+          });
+          allCartItems.forEach((item) => {
+            const key = `${item.empresaId || ""}-${item.id}`;
+            mergedMap.set(key, item);
+          });
+
+          return Array.from(mergedMap.values());
+        });
       } else {
-        // Si no hay carrito en la API, mantener cartIds existentes pero limpiar productos
-        setCart([]);
+        setCartIds({});
+        setCart((prevCart) => prevCart);
       }
     } catch (error) {
-      // En caso de error, limpiar productos pero mantener cartIds existentes
-      setCart([]);
-      // NO limpiar cartIds, mantenerlos para futuras operaciones
+      console.error("❌ Error al cargar el carrito desde la API:", error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Cargar carrito cuando el usuario cambie
-  useEffect(() => {
-    if (user?.ACCOUNT_USER) {
-      loadCartFromAPI();
-    }
   }, [user?.ACCOUNT_USER]);
+
+  // NO cargar automáticamente el carrito
+  // La página de carrito será responsable de cargarlo cuando sea necesario
+  // useEffect(() => {
+  //   if (user?.ACCOUNT_USER) {
+  //     loadCartFromAPI();
+  //   }
+  // }, [user?.ACCOUNT_USER]);
 
   // Función para sincronizar el carrito con la API
   const syncCartWithAPI = async (newCart) => {
@@ -482,11 +500,11 @@ export function CartProvider({ children }) {
   };
 
   // Función para forzar la recarga del carrito desde la API
-  const reloadCartFromAPI = async () => {
+  const reloadCartFromAPI = useCallback(async () => {
     if (user?.ACCOUNT_USER) {
       await loadCartFromAPI();
     }
-  };
+  }, [loadCartFromAPI, user?.ACCOUNT_USER]);
 
   const value = {
     cart,
@@ -500,9 +518,9 @@ export function CartProvider({ children }) {
     removeItemsByCompany,
     loadCartFromAPI,
     reloadCartFromAPI,
-    syncCartWithAPI,
     cartIds,
     itemCount: cart.reduce((count, item) => count + item.quantity, 0),
+    hasItems: cart.length > 0, // Indicador simple de si hay items
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

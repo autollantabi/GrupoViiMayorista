@@ -12,16 +12,21 @@ import PageContainer from "../../components/layout/PageContainer";
 import ContactModal from "../../components/ui/ContactModal";
 import SEO from "../../components/seo/SEO";
 import { useProductStructuredData } from "../../hooks/useStructuredData";
+import { baseLinkImages } from "../../constants/links";
 
 const ProductLayout = styled.div`
   display: grid;
   grid-template-columns: 35% 1fr;
   gap: 40px;
-  background-color: ${({ theme }) =>
-    theme.colors.background}; // Añadir color de fondo
+  background-color: ${({ theme }) => theme.colors.background};
 
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  @media (max-width: 576px) {
+    gap: 24px;
   }
 `;
 
@@ -30,6 +35,7 @@ const InfoSection = styled.div`
   flex-direction: column;
   width: 100%;
   position: relative;
+  min-width: 0;
 `;
 
 const Category = styled.div`
@@ -43,6 +49,10 @@ const ProductTitle = styled.h1`
   color: ${({ theme }) => theme.colors.text};
   font-size: 1.8rem;
   word-break: break-word;
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const Brand = styled.div`
@@ -63,12 +73,21 @@ const PriceContainer = styled.div`
   display: flex;
   align-items: baseline;
   gap: 10px;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
 `;
 
 const CurrentPrice = styled.span`
   font-size: 2rem;
   font-weight: bold;
   color: ${({ theme }) => theme.colors.primary};
+
+  @media (max-width: 480px) {
+    font-size: 1.6rem;
+  }
 `;
 
 const IVAIndicator = styled.span`
@@ -77,6 +96,10 @@ const IVAIndicator = styled.span`
   font-style: italic;
   display: block;
   margin-bottom: 5px;
+
+  @media (max-width: 480px) {
+    margin-bottom: 0;
+  }
 `;
 
 const OriginalPrice = styled.span`
@@ -99,6 +122,10 @@ const Description = styled.div`
   color: ${({ theme }) => theme.colors.text};
   white-space: pre-line;
   /* margin-bottom: 24px; */
+
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
+  }
 `;
 const StockIndicator = styled.div`
   margin: 10px 0;
@@ -114,6 +141,13 @@ const StockIndicator = styled.div`
   align-items: center;
   width: max-content;
   gap: 10px;
+  max-width: 100%;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    gap: 8px;
+  }
 `;
 
 const StockBadge = styled.span`
@@ -125,6 +159,7 @@ const StockBadge = styled.span`
   background-color: ${({ theme, $inStock }) =>
     $inStock ? theme.colors.success : theme.colors.error};
   color: ${({ theme }) => theme.colors.white};
+  white-space: nowrap;
 `;
 
 const StockMessage = styled.span`
@@ -132,6 +167,14 @@ const StockMessage = styled.span`
   color: ${({ theme, $inStock }) =>
     $inStock ? theme.colors.success : theme.colors.error};
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const QuantitySelector = styled.div`
@@ -187,6 +230,11 @@ const ButtonsContainer = styled.div`
   display: flex;
   gap: 16px;
   margin-top: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 // Agregar este nuevo componente para las especificaciones
@@ -281,6 +329,8 @@ const ImageSection = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
+  width: 100%;
+  min-width: 0;
 `;
 
 const MainImageContainer = styled.div`
@@ -299,6 +349,10 @@ const MainImage = styled.img`
   height: auto;
   object-fit: contain;
   display: block;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 `;
 
 const ImagePlaceholder = styled.div`
@@ -315,6 +369,12 @@ const ImagePlaceholder = styled.div`
   padding: 40px;
   border-radius: 8px;
   border: 2px dashed ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    padding: 24px;
+    height: auto;
+  }
 `;
 
 const ZoomWindow = styled.div`
@@ -371,7 +431,11 @@ const renderSpecifications = (product) => {
 
             return (
               <SpecRow key={specConfig.field}>
-                <SpecLabel>{specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label}</SpecLabel>
+                <SpecLabel>
+                  {specConfig.label === "Serie"
+                    ? "Alto/Serie"
+                    : specConfig.label}
+                </SpecLabel>
                 <SpecValue>{value}</SpecValue>
               </SpecRow>
             );
@@ -397,7 +461,13 @@ const DetalleProducto = () => {
   // SEO y datos estructurados
   const structuredData = useProductStructuredData(product);
 
-  const empresaId = location.state?.empresaId || null;
+  const resolvedEmpresaId = useMemo(() => {
+    const companyFromState = location.state?.empresaId;
+    if (companyFromState) return companyFromState;
+    if (product?.empresaId) return product.empresaId;
+    if (product?.empresa) return product.empresa;
+    return null;
+  }, [location.state, product?.empresaId, product?.empresa]);
 
   const [isHovering, setIsHovering] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -407,6 +477,7 @@ const DetalleProducto = () => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const hoverTimeoutRef = useRef(null);
+  const hasFetchedProductRef = useRef(false);
 
   const prevUrl = location.state?.prevUrl;
 
@@ -486,7 +557,8 @@ const DetalleProducto = () => {
       // Sin prevUrl - ir al catálogo de la empresa
       breadcrumbs.push({
         label: `Catálogo ${product?.empresa || product?.empresaId || ""}`,
-        onClick: () => navigate(`/catalogo/${product?.empresaId || empresaId}`),
+        onClick: () =>
+          navigate(`/catalogo/${product?.empresaId || resolvedEmpresaId}`),
         active: false,
       });
     }
@@ -654,21 +726,77 @@ const DetalleProducto = () => {
   };
 
   useEffect(() => {
+    hasFetchedProductRef.current = false;
+  }, [id]);
+
+  const resolvedImageSrc = useMemo(() => {
+    if (!product?.image) return "";
+    const trimmed = product.image.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
+    }
+    return `${baseLinkImages}${
+      trimmed.startsWith("/") ? trimmed.slice(1) : trimmed
+    }`;
+  }, [product?.image]);
+
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(!!resolvedImageSrc);
+  }, [resolvedImageSrc]);
+
+  useEffect(() => {
+    if (hasFetchedProductRef.current) {
+      return;
+    }
+
+    if (!resolvedEmpresaId) {
+      if (!product) {
+        handleNavigate();
+      }
+      return;
+    }
+
     const cargarProducto = async () => {
-      const productoApi = await loadProductByCodigo(id, empresaId);
+      const productoApi = await loadProductByCodigo(id, resolvedEmpresaId);
 
       if (productoApi) {
-        setProduct(productoApi);
-      } else {
+        setProduct((prev) => {
+          if (!prev) {
+            return productoApi;
+          }
+
+          const merged = {
+            ...prev,
+            ...productoApi,
+          };
+
+          // Preservar la imagen previa si la nueva es falsy
+          if (!productoApi?.image && prev.image) {
+            merged.image = prev.image;
+          }
+
+          // Preservar la descripción previa si la nueva es falsy
+          if (!productoApi?.description && prev.description) {
+            merged.description = prev.description;
+          }
+
+          // Preservar la marca previa si la nueva es falsy
+          if (!productoApi?.brand && prev.brand) {
+            merged.brand = prev.brand;
+          }
+
+          return merged;
+        });
+        hasFetchedProductRef.current = true;
+      } else if (!product) {
         handleNavigate();
       }
     };
 
-    // Solo buscar si no hay producto en el state
-    if (!product) {
-      cargarProducto();
-    }
-  }, [id, empresaId]);
+    cargarProducto();
+  }, [id, resolvedEmpresaId, loadProductByCodigo, product]);
 
   // Limpiar timeout al desmontar el componente
   useEffect(() => {
@@ -805,7 +933,7 @@ const DetalleProducto = () => {
               onMouseMove={handleMouseMove}
             >
               <ProductImageWithFallback
-                src={product.image}
+                src={resolvedImageSrc}
                 alt={product.name}
               />
 

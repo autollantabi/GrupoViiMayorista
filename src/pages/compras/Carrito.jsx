@@ -635,6 +635,7 @@ const Carrito = () => {
     clearCart,
     calculateCartTotal,
     isLoading,
+    loadCartFromAPI, // Función para cargar el carrito
   } = useCart();
   const navigate = useNavigate();
   const { theme } = useAppTheme();
@@ -687,6 +688,13 @@ const Carrito = () => {
       return companyData.shippingAddressId && companyData.billingAddressId;
     });
   };
+
+  // Cargar el carrito cuando se monte el componente
+  useEffect(() => {
+    if (user?.ACCOUNT_USER && cart.length === 0) {
+      loadCartFromAPI();
+    }
+  }, [user?.ACCOUNT_USER, cart.length, loadCartFromAPI]);
 
   // Cargar direcciones del usuario
   useEffect(() => {

@@ -7,19 +7,19 @@ import Button from "../ui/Button";
 const FiltersContainer = styled.div`
   display: none;
 
+  width: 100%;
   @media (min-width: 1024px) {
     display: block;
     width: 290px;
     background: ${({ theme }) => theme.colors.surface};
     padding: 24px;
     overflow-y: auto;
-    height: calc(100vh - 250px);
-    position: sticky;
-    top: 169px;
-    margin-right: 20px;
     z-index: 50;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
     border-radius: 12px;
+    flex: 0 0 290px;
+    align-self: flex-start;
+    max-height: calc(100vh - 160px);
   }
 `;
 
@@ -50,7 +50,7 @@ const FilterOptionCount = styled.span`
   color: ${({ $isSelected, theme }) =>
     $isSelected ? theme.colors.primary : theme.colors.textSecondary};
   background: ${({ $isSelected, theme }) =>
-    $isSelected ? theme.colors.primaryLight : '#f5f5f5'};
+    $isSelected ? theme.colors.primaryLight : theme.colors.background};
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 8px;
@@ -62,7 +62,7 @@ const ClearButton = styled.button`
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #f5f5f5;
+  background: ${({ theme }) => theme.colors.background};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 4px;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -152,7 +152,7 @@ const CloseButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.colors.background};
     color: ${({ theme }) => theme.colors.text};
   }
 `;
@@ -176,12 +176,13 @@ const AccordionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f5f5f5;
+  background: ${({ theme }) => theme.colors.background};
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #e0e0e0;
+    background: ${({ theme }) =>
+      theme.colors.backgroundHover || theme.colors.border};
   }
 `;
 
@@ -212,7 +213,7 @@ const AccordionContent = styled.div`
 
 const FilterSearchContainer = styled.div`
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const FilterSearchInput = styled(Input)`
@@ -239,7 +240,7 @@ const FilterOption = styled.div`
       $isSelected ? theme.colors.primary : "transparent"};
   background: ${({ $isSelected, $disabled, theme }) =>
     $disabled
-      ? "#f5f5f5"
+      ? theme.colors.background
       : $isSelected
       ? theme.colors.primaryLight
       : "transparent"};
@@ -254,10 +255,10 @@ const FilterOption = styled.div`
   &:hover {
     background: ${({ $isSelected, $disabled, theme }) =>
       $disabled
-        ? "#f5f5f5"
+        ? theme.colors.background
         : $isSelected
         ? theme.colors.primaryLight
-        : "#f5f5f5"};
+        : theme.colors.background};
     border-color: ${({ $isSelected, $disabled, theme }) =>
       $disabled
         ? "transparent"
@@ -275,6 +276,23 @@ const SearchContainer = styled.div`
   }
 `;
 
+const SelectedIndicator = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 0.8em;
+`;
+
+const InfoMessage = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 14px;
+  margin: 0;
+  padding: ${({ $withPadding }) => ($withPadding ? "8px" : "0")};
+`;
+
+const ClearSection = styled.div`
+  padding: 8px 16px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
 const AdditionalFilters = ({
   filters = [],
   selectedValues = {},
@@ -288,21 +306,25 @@ const AdditionalFilters = ({
   const [openAccordions, setOpenAccordions] = useState({});
   const [filterSearches, setFilterSearches] = useState({});
 
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery || "");
+  }, [searchQuery]);
+
   // Efecto para abrir ciertos filtros por defecto cuando cambien los filtros disponibles
   useEffect(() => {
     // Filtros que deben empezar abiertos por defecto
-    const defaultOpenFilters = ['DMA_MARCA', 'DMA_SUBGRUPO'];
-    
-    setOpenAccordions(prevOpen => {
+    const defaultOpenFilters = ["DMA_MARCA", "DMA_SUBGRUPO"];
+
+    setOpenAccordions((prevOpen) => {
       const newOpen = { ...prevOpen };
-      
+
       // Abrir los filtros que están en la lista de defaultOpenFilters
-      filters.forEach(filter => {
+      filters.forEach((filter) => {
         if (defaultOpenFilters.includes(filter.id) && !(filter.id in newOpen)) {
           newOpen[filter.id] = true;
         }
       });
-      
+
       return newOpen;
     });
   }, [filters]);
@@ -325,25 +347,27 @@ const AdditionalFilters = ({
   };
 
   const toggleAccordion = (filterId) => {
-    setOpenAccordions(prev => ({
+    setOpenAccordions((prev) => ({
       ...prev,
-      [filterId]: !prev[filterId]
+      [filterId]: !prev[filterId],
     }));
   };
 
   const handleFilterSearch = (filterId, value) => {
-    setFilterSearches(prev => ({
+    setFilterSearches((prev) => ({
       ...prev,
-      [filterId]: value
+      [filterId]: value,
     }));
   };
 
   const getFilteredOptions = (options, filterId) => {
-    const searchTerm = filterSearches[filterId] || '';
+    const searchTerm = filterSearches[filterId] || "";
     if (!searchTerm) return options;
-    
-    return options.filter(option =>
-      String(option.label || '').toLowerCase().includes(searchTerm.toLowerCase())
+
+    return options.filter((option) =>
+      String(option.label || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
   };
 
@@ -385,9 +409,9 @@ const AdditionalFilters = ({
                 />
               </SearchContainer>
 
-              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+              <InfoMessage>
                 No hay filtros adicionales disponibles para esta selección.
-              </p>
+              </InfoMessage>
             </ModalContent>
           </ModalOverlay>
         )}
@@ -411,32 +435,32 @@ const AdditionalFilters = ({
             />
           </SearchContainer>
 
-          <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+          <InfoMessage>
             No hay filtros adicionales disponibles para esta selección.
-          </p>
+          </InfoMessage>
         </FiltersContainer>
       </>
     );
   }
 
   return (
-      <>
-        <MobileFilterContainer>
-          {/* Botón para abrir modal en móvil */}
-          <MobileFilterButton
-            variant="secondary"
-            onClick={openModal}
-            leftIconName="FaFilter"
-          >
-            Filtros y Búsqueda (
-            {
-              Object.keys(selectedValues).filter((key) => key.startsWith("DMA_"))
-                .length
-            }
-            )
-          </MobileFilterButton>
-        </MobileFilterContainer>
-      
+    <>
+      <MobileFilterContainer>
+        {/* Botón para abrir modal en móvil */}
+        <MobileFilterButton
+          variant="secondary"
+          onClick={openModal}
+          leftIconName="FaFilter"
+        >
+          Filtros y Búsqueda (
+          {
+            Object.keys(selectedValues).filter((key) => key.startsWith("DMA_"))
+              .length
+          }
+          )
+        </MobileFilterButton>
+      </MobileFilterContainer>
+
       {/* Modal para móvil */}
       {isModalOpen && (
         <ModalOverlay onClick={closeModal}>
@@ -464,8 +488,11 @@ const AdditionalFilters = ({
             <ModalFiltersContainer>
               {filters.map((filter) => {
                 const isOpen = openAccordions[filter.id] || false;
-                const filteredOptions = getFilteredOptions(filter.options, filter.id);
-                
+                const filteredOptions = getFilteredOptions(
+                  filter.options,
+                  filter.id
+                );
+
                 return (
                   <AccordionFilter key={filter.id}>
                     <AccordionHeader onClick={() => toggleAccordion(filter.id)}>
@@ -473,33 +500,35 @@ const AdditionalFilters = ({
                         <RenderIcon name="FaTag" size={14} />
                         {filter.name}
                         {selectedValues[filter.id] && (
-                          <span style={{ color: 'var(--primary-color)', fontSize: '0.8em' }}>
-                            (Seleccionado)
-                          </span>
+                          <SelectedIndicator>(Seleccionado)</SelectedIndicator>
                         )}
                       </AccordionTitle>
                       <AccordionIcon $isOpen={isOpen}>
                         <RenderIcon name="FaChevronDown" size={14} />
                       </AccordionIcon>
                     </AccordionHeader>
-                    
+
                     <AccordionContent $isOpen={isOpen}>
                       <FilterSearchContainer>
                         <FilterSearchInput
                           type="text"
                           placeholder={`Buscar ...`}
-                          value={filterSearches[filter.id] || ''}
-                          onChange={(e) => handleFilterSearch(filter.id, e.target.value)}
+                          value={filterSearches[filter.id] || ""}
+                          onChange={(e) =>
+                            handleFilterSearch(filter.id, e.target.value)
+                          }
                           leftIconName="FaSearch"
                         />
                       </FilterSearchContainer>
-                      
+
                       <FilterOptionsContainer>
                         {filteredOptions.length > 0 ? (
                           filteredOptions.map((option) => (
                             <FilterOption
                               key={option.value}
-                              $isSelected={selectedValues[filter.id] === option.value}
+                              $isSelected={
+                                selectedValues[filter.id] === option.value
+                              }
                               $disabled={option.disabled}
                               onClick={() => {
                                 if (!option.disabled) {
@@ -508,31 +537,35 @@ const AdditionalFilters = ({
                               }}
                             >
                               <FilterOptionLabel
-                                $isSelected={selectedValues[filter.id] === option.value}
+                                $isSelected={
+                                  selectedValues[filter.id] === option.value
+                                }
                               >
                                 {option.label}
                               </FilterOptionLabel>
                               <FilterOptionCount
-                                $isSelected={selectedValues[filter.id] === option.value}
+                                $isSelected={
+                                  selectedValues[filter.id] === option.value
+                                }
                               >
                                 {option.count}
                               </FilterOptionCount>
                             </FilterOption>
                           ))
                         ) : (
-                          <p style={{ color: '#666', fontSize: '14px', margin: 0, padding: '8px' }}>
+                          <InfoMessage $withPadding>
                             No se encontraron opciones
-                          </p>
+                          </InfoMessage>
                         )}
                       </FilterOptionsContainer>
-                      
+
                       {selectedValues[filter.id] && (
-                        <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-color)' }}>
+                        <ClearSection>
                           <ClearButton onClick={() => onClearFilter(filter.id)}>
                             <RenderIcon name="FaTimes" size={12} />
                             Limpiar
                           </ClearButton>
-                        </div>
+                        </ClearSection>
                       )}
                     </AccordionContent>
                   </AccordionFilter>
@@ -565,34 +598,34 @@ const AdditionalFilters = ({
         {filters.map((filter) => {
           const isOpen = openAccordions[filter.id] || false;
           const filteredOptions = getFilteredOptions(filter.options, filter.id);
-          
+
           return (
             <AccordionFilter key={filter.id}>
               <AccordionHeader onClick={() => toggleAccordion(filter.id)}>
                 <AccordionTitle>
                   {filter.name}
                   {selectedValues[filter.id] && (
-                    <span style={{ color: 'var(--primary-color)', fontSize: '0.8em' }}>
-                      (Seleccionado)
-                    </span>
+                    <SelectedIndicator>(Seleccionado)</SelectedIndicator>
                   )}
                 </AccordionTitle>
                 <AccordionIcon $isOpen={isOpen}>
                   <RenderIcon name="FaChevronDown" size={14} />
                 </AccordionIcon>
               </AccordionHeader>
-              
+
               <AccordionContent $isOpen={isOpen}>
                 <FilterSearchContainer>
                   <FilterSearchInput
                     type="text"
                     placeholder={`Buscar ...`}
-                    value={filterSearches[filter.id] || ''}
-                    onChange={(e) => handleFilterSearch(filter.id, e.target.value)}
+                    value={filterSearches[filter.id] || ""}
+                    onChange={(e) =>
+                      handleFilterSearch(filter.id, e.target.value)
+                    }
                     leftIconName="FaSearch"
                   />
                 </FilterSearchContainer>
-                
+
                 <FilterOptionsContainer>
                   {filteredOptions.length > 0 ? (
                     filteredOptions.map((option) => (
@@ -607,31 +640,35 @@ const AdditionalFilters = ({
                         }}
                       >
                         <FilterOptionLabel
-                          $isSelected={selectedValues[filter.id] === option.value}
+                          $isSelected={
+                            selectedValues[filter.id] === option.value
+                          }
                         >
                           {option.label}
                         </FilterOptionLabel>
                         <FilterOptionCount
-                          $isSelected={selectedValues[filter.id] === option.value}
+                          $isSelected={
+                            selectedValues[filter.id] === option.value
+                          }
                         >
                           {option.count}
                         </FilterOptionCount>
                       </FilterOption>
                     ))
                   ) : (
-                    <p style={{ color: '#666', fontSize: '14px', margin: 0, padding: '8px' }}>
+                    <InfoMessage $withPadding>
                       No se encontraron opciones
-                    </p>
+                    </InfoMessage>
                   )}
                 </FilterOptionsContainer>
-                
+
                 {selectedValues[filter.id] && (
-                  <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-color)' }}>
+                  <ClearSection>
                     <ClearButton onClick={() => onClearFilter(filter.id)}>
                       <RenderIcon name="FaTimes" size={12} />
                       Limpiar
                     </ClearButton>
-                  </div>
+                  </ClearSection>
                 )}
               </AccordionContent>
             </AccordionFilter>

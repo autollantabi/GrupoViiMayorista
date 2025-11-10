@@ -20,8 +20,26 @@ const BreadcrumbContainer = styled.nav`
   }
 `;
 
+const BreadcrumbContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    gap: 24px;
+  }
+`;
+
 const BreadcrumbSection = styled.div`
   margin-bottom: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 1024px) {
+    margin-bottom: 0;
+  }
 
   &:last-child {
     margin-bottom: 0;
@@ -138,7 +156,6 @@ const BreadcrumbText = styled.span`
   }
 `;
 
-
 const CatalogBreadcrumb = ({
   selectedLinea,
   selectedValues,
@@ -186,84 +203,86 @@ const CatalogBreadcrumb = ({
 
   return (
     <BreadcrumbContainer>
-      {/* Sección de líneas disponibles */}
-      <BreadcrumbSection>
-        <BreadcrumbSectionTitle>Líneas de Negocio</BreadcrumbSectionTitle>
-        <BreadcrumbList>
-          {availableLines.map((linea) => (
-            <BreadcrumbItem key={linea.key}>
-              <BreadcrumbLink
-                onClick={() => onLineaSelect(linea.key)}
-                $active={selectedLinea === linea.key}
-              >
-                <RenderIcon name={linea.icon} size={14} />
-                {linea.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          ))}
-        </BreadcrumbList>
-      </BreadcrumbSection>
-
-      {/* Sección de filtros aplicados */}
-      {(selectedLinea || Object.keys(selectedValues).length > 0) && (
+      <BreadcrumbContent>
+        {/* Sección de líneas disponibles */}
         <BreadcrumbSection>
-          <BreadcrumbSectionTitle>Filtros Aplicados</BreadcrumbSectionTitle>
+          <BreadcrumbSectionTitle>Líneas de Negocio</BreadcrumbSectionTitle>
           <BreadcrumbList>
-            {/* Mostrar filtros del flujo principal */}
-            {flowConfig?.steps?.map((step, index) => {
-              const stepValue = selectedValues[step.id];
-              if (!stepValue) return null;
-
-              return (
-                <BreadcrumbItemWithSeparator key={step.id}>
-                  <BreadcrumbLink
-                    onClick={() => onFilterSelect(step.id)}
-                    title={`Editar ${step.displayName || step.name}`}
-                  >
-                    <RenderIcon name="FaTag" size={14} />
-                    {getFilterDisplayName(step.id)}: {stepValue}
-                  </BreadcrumbLink>
-                </BreadcrumbItemWithSeparator>
-              );
-            })}
-
-            {/* Mostrar filtros adicionales */}
-            {Object.entries(selectedValues)
-              .filter(([key, value]) => key.startsWith("DMA_") && value)
-              .map(([filterId, value]) => (
-                <BreadcrumbItemWithSeparator key={filterId}>
-                  <BreadcrumbLink
-                    onClick={() => onFilterSelect(filterId)}
-                    title={`Editar ${getDMAFilterDisplayName(filterId)}`}
-                  >
-                    <RenderIcon name="FaFilter" size={14} />
-                    {getDMAFilterDisplayName(filterId)}: {value}
-                  </BreadcrumbLink>
-                </BreadcrumbItemWithSeparator>
-              ))}
-
-            {/* Mostrar "Productos" si estamos en la vista de productos */}
-            {isAtProductView && (
-              <BreadcrumbItem>
-                <BreadcrumbText>
-                  <RenderIcon name="FaBox" size={14} />
-                  Productos
-                </BreadcrumbText>
+            {availableLines.map((linea) => (
+              <BreadcrumbItem key={linea.key}>
+                <BreadcrumbLink
+                  onClick={() => onLineaSelect(linea.key)}
+                  $active={selectedLinea === linea.key}
+                >
+                  <RenderIcon name={linea.icon} size={14} />
+                  {linea.name}
+                </BreadcrumbLink>
               </BreadcrumbItem>
-            )}
-
-            {/* Mostrar paso actual si no estamos en la vista de productos */}
-            {!isAtProductView && currentStep && (
-              <BreadcrumbItem>
-                <BreadcrumbText>
-                  <RenderIcon name="FaArrowRight" size={14} />
-                  {currentStep.displayName || currentStep.name}
-                </BreadcrumbText>
-              </BreadcrumbItem>
-            )}
+            ))}
           </BreadcrumbList>
         </BreadcrumbSection>
-      )}
+
+        {/* Sección de filtros aplicados */}
+        {(selectedLinea || Object.keys(selectedValues).length > 0) && (
+          <BreadcrumbSection>
+            <BreadcrumbSectionTitle>Filtros Aplicados</BreadcrumbSectionTitle>
+            <BreadcrumbList>
+              {/* Mostrar filtros del flujo principal */}
+              {flowConfig?.steps?.map((step, index) => {
+                const stepValue = selectedValues[step.id];
+                if (!stepValue) return null;
+
+                return (
+                  <BreadcrumbItemWithSeparator key={step.id}>
+                    <BreadcrumbLink
+                      onClick={() => onFilterSelect(step.id)}
+                      title={`Editar ${step.displayName || step.name}`}
+                    >
+                      <RenderIcon name="FaTag" size={14} />
+                      {getFilterDisplayName(step.id)}: {stepValue}
+                    </BreadcrumbLink>
+                  </BreadcrumbItemWithSeparator>
+                );
+              })}
+
+              {/* Mostrar filtros adicionales */}
+              {Object.entries(selectedValues)
+                .filter(([key, value]) => key.startsWith("DMA_") && value)
+                .map(([filterId, value]) => (
+                  <BreadcrumbItemWithSeparator key={filterId}>
+                    <BreadcrumbLink
+                      onClick={() => onFilterSelect(filterId)}
+                      title={`Editar ${getDMAFilterDisplayName(filterId)}`}
+                    >
+                      <RenderIcon name="FaFilter" size={14} />
+                      {getDMAFilterDisplayName(filterId)}: {value}
+                    </BreadcrumbLink>
+                  </BreadcrumbItemWithSeparator>
+                ))}
+
+              {/* Mostrar "Productos" si estamos en la vista de productos */}
+              {isAtProductView && (
+                <BreadcrumbItem>
+                  <BreadcrumbText>
+                    <RenderIcon name="FaBox" size={14} />
+                    Productos
+                  </BreadcrumbText>
+                </BreadcrumbItem>
+              )}
+
+              {/* Mostrar paso actual si no estamos en la vista de productos */}
+              {!isAtProductView && currentStep && (
+                <BreadcrumbItem>
+                  <BreadcrumbText>
+                    <RenderIcon name="FaArrowRight" size={14} />
+                    {currentStep.displayName || currentStep.name}
+                  </BreadcrumbText>
+                </BreadcrumbItem>
+              )}
+            </BreadcrumbList>
+          </BreadcrumbSection>
+        )}
+      </BreadcrumbContent>
     </BreadcrumbContainer>
   );
 };

@@ -110,10 +110,11 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       DMA_SERIE: "Alto/Serie",
       DMA_CATEGORIA: "Categoría",
       DMA_APLICACION: "Aplicación",
-      DMA_SUBGRUPO: "Subgrupo",
+      DMA_SUBGRUPO: "Subgrupo 1",
       DMA_GRUPO: "Grupo",
       DMA_SAE: "Viscosidad SAE",
       DMA_ISOVG: "Viscosidad ISOVG",
+      DMA_SUBGRUPO2: "Subgrupo 2",
     };
     return names[filterField] || filterField;
   };
@@ -481,7 +482,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
         "DMA_TIPO",
         "DMA_MODELO",
       ],
-      HERRAMIENTAS: ["DMA_MARCA", "DMA_SUBGRUPO"],
+      HERRAMIENTAS: ["DMA_MARCA", "DMA_SUBGRUPO", "DMA_SUBGRUPO2"],
     };
 
     const filters = filterMap[selectedLinea] || [];

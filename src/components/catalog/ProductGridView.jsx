@@ -7,14 +7,50 @@ import Input from "../ui/Input";
 
 const ProductGridContainer = styled.div`
   flex: 1;
-  overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
 
   @media (max-width: 768px) {
     padding: 16px;
   }
+`;
+
+const GridScrollableContent = styled.div`
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px; /* espacio para scrollbar */
+  min-width: 0;
+
+  /* Scrollbar personalizado */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.textLight};
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.colors.border}
+    ${({ theme }) => theme.colors.background};
 `;
 
 const GridHeader = styled.div`
@@ -46,6 +82,8 @@ const ProductsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
+  width: 100%;
+  min-width: 0;
 
   @media (max-width: 1024px) {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -170,13 +208,13 @@ const PaginationContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  margin-top: 30px;
+  gap: 5px;
   padding-top: 20px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  align-self: stretch;
 
   @media (max-width: 768px) {
     margin-top: 20px;
@@ -249,21 +287,49 @@ const PaginationPagesContainer = styled.div`
   flex-shrink: 1;
 `;
 
-const ProductGridView = ({ products, catalogState, onProductSelect }) => {
-  const { selectedLinea, selectedValues } = catalogState || {};
-  const [sortBy, setSortBy] = useState("default");
+const PaginationJumpRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+`;
+
+const PaginationLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 14px;
+`;
+
+const ProductGridView = ({
+  products,
+  catalogState,
+  onProductSelect,
+  initialSort = "default",
+}) => {
+  const {
+    selectedLinea,
+    selectedValues,
+    searchQuery: catalogSearch = "",
+  } = catalogState || {};
+  const [sortBy, setSortBy] = useState(initialSort);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState("1");
-
+console.log(products);
   // Referencia para el contenedor de paginación
   const paginationContainerRef = React.useRef(null);
 
   // Función para solicitar acceso a una empresa
   const handleRequestAccess = (empresaId) => {
     // Aquí podrías implementar la lógica para solicitar acceso
-    // console.log("Solicitar acceso a empresa:", empresaId);
   };
+
+  React.useEffect(() => {
+    setSortBy(initialSort || "default");
+    setCurrentPage(1);
+    setPageInput("1");
+  }, [initialSort]);
 
   // Filtrar y ordenar productos
   const processedProducts = useMemo(() => {
@@ -432,124 +498,120 @@ const ProductGridView = ({ products, catalogState, onProductSelect }) => {
 
   return (
     <ProductGridContainer>
-      <SortContainer>
-        <ProductsInfo>
-          <ResultsInfo>
-            Mostrando {processedProducts.totalItems} producto
-            {processedProducts.totalItems !== 1 ? "s" : ""}
-          </ResultsInfo>
-        </ProductsInfo>
+      <GridScrollableContent>
+        <SortContainer>
+          <ProductsInfo>
+            <ResultsInfo>
+              Mostrando {processedProducts.totalItems} producto
+              {processedProducts.totalItems !== 1 ? "s" : ""}
+            </ResultsInfo>
+          </ProductsInfo>
 
-        {/* Solo mostrar el selector de ordenación si hay productos */}
-        {processedProducts && processedProducts.items.length > 0 && (
-          <SelectsContainer>
-            <Select
-              options={[
-                { value: "default", label: "Destacados" },
-                { value: "price_asc", label: "Menor precio" },
-                { value: "price_desc", label: "Mayor precio" },
-                { value: "name_asc", label: "Alfabético (A-Z)" },
-                { value: "rating", label: "Mejor valorados" },
-              ]}
-              value={sortBy}
-              onChange={handleSortChange}
-              preValue="Ordenar por:"
-              placeholder="Ordenar por..."
-            />
-
-            <Select
-              options={[
-                { value: 12, label: "12" },
-                { value: 36, label: "36" },
-                { value: 72, label: "72" },
-                { value: 144, label: "144" },
-              ]}
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              preValue="Mostrar: "
-              postValue=" items por página"
-              placeholder="Mostrar items"
-            />
-          </SelectsContainer>
-        )}
-      </SortContainer>
-
-      <ProductsGrid>
-        {processedProducts.items.map((product, index) => (
-          <ProductCard
-            key={`${product.empresaId}-${product.id}-${index}`}
-            product={product}
-            lineConfig={
-              PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
-              PRODUCT_LINE_CONFIG.DEFAULT
-            }
-            restricted={false}
-            onRequestAccess={handleRequestAccess}
-            // Pasar información de catálogo para preservar contexto
-            currentFilters={{
-              selectedLinea,
-              selectedValues,
-            }}
-            currentSearch=""
-            currentSort={sortBy}
-          />
-        ))}
-      </ProductsGrid>
-
-      {/* Paginación */}
-      {processedProducts &&
-        processedProducts.totalItems > 0 &&
-        processedProducts.totalPages > 1 && (
-          <PaginationContainer>
-            {/* Botones de páginas con scroll horizontal */}
-            <PaginationPagesContainer ref={paginationContainerRef}>
-              {Array.from({ length: processedProducts.totalPages }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <PaginationButton
-                    key={pageNum}
-                    data-page={pageNum}
-                    $isActive={currentPage === pageNum}
-                    onClick={() => {
-                      setCurrentPage(pageNum);
-                      setPageInput(pageNum.toString());
-                    }}
-                  >
-                    {pageNum}
-                  </PaginationButton>
-                );
-              })}
-            </PaginationPagesContainer>
-
-            {/* Input para saltar a página específica - centrado abajo */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                width: "100%",
-                marginTop: "16px",
-              }}
-            >
-              <span style={{ color: "#666", fontSize: "14px" }}>Ir a:</span>
-              <PaginationInput
-                type="number"
-                min="1"
-                max={processedProducts.totalPages}
-                value={pageInput}
-                onChange={handlePageInputChange}
-                onBlur={handlePageInputBlur}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handlePageInputBlur();
-                  }
-                }}
-                placeholder={`1-${processedProducts.totalPages}`}
+          {/* Solo mostrar el selector de ordenación si hay productos */}
+          {processedProducts && processedProducts.items.length > 0 && (
+            <SelectsContainer>
+              <Select
+                options={[
+                  { value: "default", label: "Destacados" },
+                  { value: "price_asc", label: "Menor precio" },
+                  { value: "price_desc", label: "Mayor precio" },
+                  { value: "name_asc", label: "Alfabético (A-Z)" },
+                  { value: "rating", label: "Mejor valorados" },
+                ]}
+                value={sortBy}
+                onChange={handleSortChange}
+                preValue="Ordenar por:"
+                placeholder="Ordenar por..."
               />
-            </div>
-          </PaginationContainer>
-        )}
+
+              <Select
+                options={[
+                  { value: 12, label: "12" },
+                  { value: 36, label: "36" },
+                  { value: 72, label: "72" },
+                  { value: 144, label: "144" },
+                ]}
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                preValue="Mostrar: "
+                postValue=" items por página"
+                placeholder="Mostrar items"
+              />
+            </SelectsContainer>
+          )}
+        </SortContainer>
+
+        <ProductsGrid>
+          {processedProducts.items.map((product, index) => (
+            <ProductCard
+              key={`${product.empresaId}-${product.id}-${index}`}
+              product={product}
+              lineConfig={
+                PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
+                PRODUCT_LINE_CONFIG.DEFAULT
+              }
+              restricted={false}
+              onRequestAccess={handleRequestAccess}
+              // Pasar información de catálogo para preservar contexto
+              currentFilters={{
+                selectedLinea,
+                selectedValues,
+              }}
+              currentSearch={catalogSearch}
+              currentSort={sortBy}
+            />
+          ))}
+        </ProductsGrid>
+
+        {/* Paginación */}
+        {processedProducts &&
+          processedProducts.totalItems > 0 &&
+          processedProducts.totalPages > 1 && (
+            <PaginationContainer>
+              {/* Botones de páginas con scroll horizontal */}
+              <PaginationPagesContainer ref={paginationContainerRef}>
+                {Array.from(
+                  { length: processedProducts.totalPages },
+                  (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <PaginationButton
+                        key={pageNum}
+                        data-page={pageNum}
+                        $isActive={currentPage === pageNum}
+                        onClick={() => {
+                          setCurrentPage(pageNum);
+                          setPageInput(pageNum.toString());
+                        }}
+                      >
+                        {pageNum}
+                      </PaginationButton>
+                    );
+                  }
+                )}
+              </PaginationPagesContainer>
+
+              {/* Input para saltar a página específica - centrado abajo */}
+              <PaginationJumpRow>
+                <PaginationLabel>Ir a:</PaginationLabel>
+                <PaginationInput
+                  type="number"
+                  min="1"
+                  max={processedProducts.totalPages}
+                  value={pageInput}
+                  onChange={handlePageInputChange}
+                  onBlur={handlePageInputBlur}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handlePageInputBlur();
+                    }
+                  }}
+                  placeholder={`1-${processedProducts.totalPages}`}
+                />
+              </PaginationJumpRow>
+            </PaginationContainer>
+          )}
+      </GridScrollableContent>
     </ProductGridContainer>
   );
 };
