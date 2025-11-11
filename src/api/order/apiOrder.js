@@ -35,19 +35,21 @@ export const api_order_getOrdersByAccount = async (account) => {
 export const api_order_createOrder = async (orderData) => {
   try {
     const response = await api.post("/pedidos/createPedido", orderData);
+    console.log(response);
     return {
       success: true,
       message: response.data.message || "Pedido creado correctamente",
       data: response.data.data || {},
     };
+    
   } catch (error) {
-    const message =
-      error.response?.data?.message || "Ocurrió un error al crear el pedido";
+    console.log(error);
+    const message = error?.message || "Ocurrió un error al crear el pedido";
 
     return {
       success: false,
       message,
-      error: error.response?.data || null,
+      error: error?.message || null,
     };
   }
 };

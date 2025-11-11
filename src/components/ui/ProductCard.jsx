@@ -717,20 +717,26 @@ const ProductCard = ({
     });
   };
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation();
     if (isAddingToCart || restricted) return; // Evitar múltiples clics y productos restringidos
 
     setIsAddingToCart(true);
-    addToCart(product, 1);
-
-    // Mostrar mensaje de éxito
-    toast.success(`${product.name} agregado al carrito`);
-
-    // Habilitar nuevamente después de un breve momento
-    setTimeout(() => {
+    try {
+      const result = await addToCart(product, 1);
+      if (result?.success) {
+        toast.success(`${product.name} agregado al carrito`);
+      } else {
+        const message =
+          result?.message || "No se pudo agregar el producto al carrito";
+        toast.error(message);
+      }
+    } catch (error) {
+      console.error("Error al agregar producto al carrito:", error);
+      toast.error("Ocurrió un problema al agregar el producto al carrito");
+    } finally {
       setIsAddingToCart(false);
-    }, 1000); // Aumentado a 1 segundo para dar tiempo a la sincronización
+    }
   };
 
   const handleRequestAccess = (e) => {
@@ -755,12 +761,7 @@ const ProductCard = ({
 
     const specsText = config.specs
       .slice(0, 3)
-      .map(
-        (spec) =>
-          `${spec.label}: ${
-            product.specs[spec.field]
-          }`
-      )
+      .map((spec) => `${spec.label}: ${product.specs[spec.field]}`)
       .join(" • ");
 
     return (

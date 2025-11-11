@@ -955,6 +955,7 @@ const Carrito = () => {
     await new Promise((resolve) => setTimeout(resolve, 3000)); // Simular un delay para el procesamiento
 
     const responseOrder = await api_order_createOrder(orderToProcess);
+    console.log("responseOrder", responseOrder);
 
     if (!responseOrder.success) {
       throw new Error(responseOrder.message || "Error al procesar el pedido");
