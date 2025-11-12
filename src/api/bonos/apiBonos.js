@@ -336,6 +336,72 @@ export const api_bonos_generateQRMaster = async (master) => {
 };
 
 /**
+ * Procesar archivo de Excel para usar bonos
+ * @param {FormData} formData - Debe incluir excelFile y userId
+ * @returns {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_processBonusExcel = async (formData) => {
+  try {
+    const response = await api.post("/bonos/processBonusExcel", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return {
+      success: true,
+      message:
+        response.data.message ||
+        "Archivo procesado correctamente para usar bonos",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al procesar el archivo de bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Procesar archivo de Excel para rechazar bonos
+ * @param {FormData} formData - Debe incluir excelFile y userId
+ * @returns {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_processRejectBonusExcel = async (formData) => {
+  try {
+    const response = await api.post(
+      "/bonos/processRejectBonusExcel",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return {
+      success: true,
+      message:
+        response.data.message ||
+        "Archivo procesado correctamente para rechazar bonos",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al procesar el archivo para rechazar bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
  * Enviar el archivo de bonos por email(archivo) y WhatsApp(notificacion)
  * @param {File|Blob} file - Archivo PDF del bono
  * @param {string} email - Correo electrónico
@@ -387,10 +453,7 @@ export const api_bonos_sendBonusFile = async (
  * @param {Array} links - Array de links de los masters
  * @return {Promise<Object>} Respuesta de la API
  */
-export const api_bonos_updateMasterItem = async (
-  bonusUpdates,
-  links
-) => {
+export const api_bonos_updateMasterItem = async (bonusUpdates, links) => {
   try {
     const response = await api.patch("/bonos/updateMasterItem", {
       bonuses: bonusUpdates,

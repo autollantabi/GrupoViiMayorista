@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import {
   api_bonos_getBonosByReencaucheUser,
   api_bonos_generateQRMaster,
+  api_bonos_processBonusExcel,
+  api_bonos_processRejectBonusExcel,
 } from "../../api/bonos/apiBonos";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -18,6 +20,7 @@ import {
 } from "../../constants/bonoStates";
 import ExportToExcel from "../../components/export/ExportToExcel";
 import { toast } from "react-toastify";
+import Button from "../../components/ui/Button";
 
 const Container = styled.div`
   padding: 20px;
@@ -246,11 +249,242 @@ const EmptyDescription = styled.p`
   font-size: 0.9rem;
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContainer = styled.div`
+  background: ${({ theme }) => theme.colors.surface};
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 850px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0;
+  font-size: 1.3rem;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text};
+  }
+`;
+
+const UploadSection = styled.div`
+  border: 1px dashed ${({ theme }) => theme.colors.border};
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: ${({ theme }) => theme.colors.background};
+`;
+
+const ModalContentLayout = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+`;
+
+const UploadsColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+`;
+
+const SummaryColumn = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+`;
+
+const UploadTitle = styled.h4`
+  margin: 0;
+  font-size: 1rem;
+  color: ${({ theme }) => theme.colors.text};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const UploadHint = styled.span`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+
+const FileInput = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 0.9rem;
+
+  &::file-selector-button {
+    margin-right: 12px;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  &::file-selector-button:hover {
+    background: ${({ theme }) => theme.colors.primaryDark};
+  }
+`;
+
+const ResultSection = styled.div`
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 10px;
+  padding: 20px;
+  background: ${({ theme }) => theme.colors.surface};
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const ResultContent = styled.div`
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+`;
+
+const ResultHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: ${({ theme }) => theme.colors.text};
+  font-weight: 600;
+  font-size: 1rem;
+`;
+
+const SummaryLabel = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.colors.textLight};
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const SummaryValue = styled.span`
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const SummaryMetrics = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+`;
+
+const SummaryChip = styled.div`
+  background: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => `${theme.colors.border}80`};
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+`;
+
+const BonusList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const BonusCard = styled.div`
+  border-radius: 6px;
+  border: 1px solid ${({ theme }) => `${theme.colors.border}80`};
+  background: ${({ theme }) => theme.colors.background};
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.82rem;
+`;
+
+const BonusRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+`;
+
+const BonusField = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: ${({ theme }) => theme.colors.textLight};
+
+  strong {
+    color: ${({ theme }) => theme.colors.text};
+    font-weight: 600;
+  }
+`;
+
 const BonosActivados = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [bonosActivados, setBonosActivados] = useState([]);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [useBonosFile, setUseBonosFile] = useState(null);
+  const [rejectBonosFile, setRejectBonosFile] = useState(null);
+  const [isProcessingUse, setIsProcessingUse] = useState(false);
+  const [isProcessingReject, setIsProcessingReject] = useState(false);
+  const [processType, setProcessType] = useState(null);
+  const [processData, setProcessData] = useState(null);
   const { user } = useAuth();
 
   const obtenerBonosActivados = async () => {
@@ -347,6 +581,99 @@ const BonosActivados = () => {
     navigate(ROUTES.REENCAUCHE.HOME);
   };
 
+  const handleOpenImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+    setUseBonosFile(null);
+    setRejectBonosFile(null);
+    setIsProcessingUse(false);
+    setIsProcessingReject(false);
+    setProcessType(null);
+    setProcessData(null);
+  };
+
+  const handleProcessUseBonos = async () => {
+    if (!useBonosFile) {
+      toast.error("Selecciona un archivo para procesar bonos.");
+      return;
+    }
+    if (!user?.ID_USER) {
+      toast.error("No se encontró información del usuario.");
+      return;
+    }
+
+    try {
+      setIsProcessingUse(true);
+      const formData = new FormData();
+      formData.append("excelFile", useBonosFile);
+      formData.append("userId", user.ID_USER);
+
+      const response = await api_bonos_processBonusExcel(formData);
+      console.log("response", response);
+      if (response.success) {
+        toast.success(
+          response.message || "Archivo procesado correctamente para usar bonos."
+        );
+        setProcessType("use");
+        setProcessData(response.data || null);
+      } else {
+        toast.error(
+          response.message || "No se pudo procesar el archivo para usar bonos."
+        );
+        setProcessType("use");
+        setProcessData(response.data || null);
+      }
+    } catch (error) {
+      console.error("Error al preparar archivo para usar bonos:", error);
+      toast.error("No se pudo preparar el archivo.");
+    } finally {
+      setIsProcessingUse(false);
+    }
+  };
+
+  const handleProcessRejectBonos = async () => {
+    if (!rejectBonosFile) {
+      toast.error("Selecciona un archivo para rechazar bonos.");
+      return;
+    }
+    if (!user?.ID_USER) {
+      toast.error("No se encontró información del usuario.");
+      return;
+    }
+
+    try {
+      setIsProcessingReject(true);
+      const formData = new FormData();
+      formData.append("excelFile", rejectBonosFile);
+      formData.append("userId", user.ID_USER);
+
+      const response = await api_bonos_processRejectBonusExcel(formData);
+      if (response.success) {
+        toast.success(
+          response.message ||
+            "Archivo procesado correctamente para rechazar bonos."
+        );
+        setProcessType("reject");
+        setProcessData(response.data || null);
+      } else {
+        toast.error(
+          response.message ||
+            "No se pudo procesar el archivo para rechazar bonos."
+        );
+        setProcessType("reject");
+        setProcessData(response.data || null);
+      }
+    } catch (error) {
+      console.error("Error al preparar archivo para rechazar bonos:", error);
+      toast.error("No se pudo preparar el archivo.");
+    } finally {
+      setIsProcessingReject(false);
+    }
+  };
+
   return (
     <>
       <SEO
@@ -389,6 +716,13 @@ const BonosActivados = () => {
                 buttonText={isMobile ? "Excel" : "Exportar a Excel"}
                 backgroundColor="#10b981"
                 size="medium"
+              />
+              <Button
+                text="Importar Excel"
+                variant="outlined"
+                size="medium"
+                onClick={handleOpenImportModal}
+                leftIconName="FaFileImport"
               />
             </SearchContainer>
           </Header>
@@ -507,7 +841,6 @@ const BonosActivados = () => {
                             </BonoDetailValue>
                           </BonoDetailItem>
                         </BonoDetails>
-                        {console.log("bono", bono)}
 
                         {/* Información adicional según el estado */}
                         {(bono.ITEM ||
@@ -566,8 +899,6 @@ const BonosActivados = () => {
                                 </BonoDetailItem>
                               )}
 
-                            {console.log("bono", bono)}
-
                             {/* Información de Rechazo solo para RECHAZADO */}
                             {bono.REJECT_INFORMATION && (
                               <BonoDetailItem style={{ gridColumn: "1 / -1" }}>
@@ -595,6 +926,168 @@ const BonosActivados = () => {
           )}
         </Container>
       </PageContainer>
+
+      {isImportModalOpen && (
+        <ModalOverlay>
+          <ModalContainer>
+            <ModalHeader>
+              <ModalTitle>
+                <RenderIcon name="FaFileExcel" size={20} /> Importar archivos de
+                bonos
+              </ModalTitle>
+              <CloseButton onClick={handleCloseImportModal}>
+                <RenderIcon name="FaTimes" size={18} />
+              </CloseButton>
+            </ModalHeader>
+
+            <ModalContentLayout>
+              <UploadsColumn>
+                <UploadSection>
+                  <UploadTitle>
+                    <RenderIcon name="FaCheckCircle" size={16} />
+                    Suba aquí para usar bonos
+                  </UploadTitle>
+                  <UploadHint>
+                    Formato permitido: .xlsx o .xls. Carga el listado de bonos a
+                    utilizar.
+                  </UploadHint>
+                  <FileInput
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setUseBonosFile(file);
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      text={isProcessingUse ? "Procesando..." : "Procesar uso"}
+                      variant="solid"
+                      size="small"
+                      onClick={handleProcessUseBonos}
+                      disabled={isProcessingUse}
+                      leftIconName="FaPlay"
+                    />
+                  </div>
+                </UploadSection>
+
+                <UploadSection>
+                  <UploadTitle>
+                    <RenderIcon name="FaTimesCircle" size={16} />
+                    Suba aquí para rechazar bonos
+                  </UploadTitle>
+                  <UploadHint>
+                    Formato permitido: .xlsx o .xls. Carga el listado de bonos a
+                    rechazar.
+                  </UploadHint>
+                  <FileInput
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setRejectBonosFile(file);
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      text={
+                        isProcessingReject
+                          ? "Procesando..."
+                          : "Procesar rechazo"
+                      }
+                      variant="solid"
+                      size="small"
+                      onClick={handleProcessRejectBonos}
+                      disabled={isProcessingReject}
+                      leftIconName="FaBan"
+                      backgroundColor="#dc3545"
+                    />
+                  </div>
+                </UploadSection>
+              </UploadsColumn>
+
+              {processData && (
+                <SummaryColumn>
+                  <ResultSection>
+                    <ResultHeader>
+                      <RenderIcon
+                        name={processType === "use" ? "FaCheckCircle" : "FaBan"}
+                        size={18}
+                      />
+                      Resumen de procesamiento (
+                      {processType === "use" ? "usar bonos" : "rechazar bonos"})
+                    </ResultHeader>
+
+                    {processData.summary ? (
+                      <SummaryMetrics>
+                        <SummaryChip>
+                          <SummaryLabel>Total de filas</SummaryLabel>
+                          <SummaryValue>
+                            {processData.summary.totalRows ?? 0}
+                          </SummaryValue>
+                        </SummaryChip>
+                        <SummaryChip>
+                          <SummaryLabel>Bonos procesados</SummaryLabel>
+                          <SummaryValue>
+                            {processData.summary.bonusesProcessed ?? 0}
+                          </SummaryValue>
+                        </SummaryChip>
+                        <SummaryChip>
+                          <SummaryLabel>Bonos no procesados</SummaryLabel>
+                          <SummaryValue>
+                            {processData.summary.bonusesNotProcessed ?? 0}
+                          </SummaryValue>
+                        </SummaryChip>
+                      </SummaryMetrics>
+                    ) : (
+                      <SummaryLabel>
+                        No se recibió resumen del procesamiento.
+                      </SummaryLabel>
+                    )}
+                  </ResultSection>
+
+                  {processData.notProcessedBonuses && (
+                    <>
+                      {Object.entries(processData.notProcessedBonuses).map(
+                        ([category, items]) =>
+                          Array.isArray(items) &&
+                          items.length > 0 && (
+                            <ResultSection
+                              key={category}
+                              style={{ flex: 1, minHeight: 0 }}
+                            >
+                              <SummaryLabel>Bonos no procesados</SummaryLabel>
+                              <ResultContent>
+                                <BonusList>
+                                  {items.map((item, index) => (
+                                    <BonusCard key={`${category}-${index}`}>
+                                      <BonusField>
+                                        FILA{" "}
+                                        <strong>{item.row ?? "N/A"}</strong>
+                                      </BonusField>
+                                      <BonusField>
+                                        MASTER{" "}
+                                        <strong>{item.master ?? "N/A"}</strong>
+                                      </BonusField>
+                                      <BonusField>
+                                        ITEM{" "}
+                                        <strong>{item.item ?? "N/A"}</strong>
+                                      </BonusField>
+                                    </BonusCard>
+                                  ))}
+                                </BonusList>
+                              </ResultContent>
+                            </ResultSection>
+                          )
+                      )}
+                    </>
+                  )}
+                </SummaryColumn>
+              )}
+            </ModalContentLayout>
+          </ModalContainer>
+        </ModalOverlay>
+      )}
     </>
   );
 };
