@@ -20,6 +20,31 @@ const FiltersContainer = styled.div`
     flex: 0 0 290px;
     align-self: flex-start;
     max-height: calc(100vh - 160px);
+
+    /* Estilos personalizados para el scrollbar */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: ${({ theme }) => theme.colors.background};
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: ${({ theme }) => theme.colors.border};
+      border-radius: 4px;
+      border: 1px solid ${({ theme }) => theme.colors.background};
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: ${({ theme }) => theme.colors.textLight};
+    }
+
+    /* Para Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: ${({ theme }) => theme.colors.border}
+      ${({ theme }) => theme.colors.background};
   }
 `;
 
@@ -124,6 +149,31 @@ const ModalContent = styled.div`
   padding: 24px;
   overflow-y: auto;
   position: relative;
+
+  /* Estilos personalizados para el scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+    border: 1px solid ${({ theme }) => theme.colors.background};
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.textLight};
+  }
+
+  /* Para Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.colors.border}
+    ${({ theme }) => theme.colors.background};
 `;
 
 const ModalHeader = styled.div`
@@ -224,6 +274,31 @@ const FilterOptionsContainer = styled.div`
   max-height: 500px;
   overflow-y: auto;
   padding: 12px;
+
+  /* Estilos personalizados para el scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+    border: 1px solid ${({ theme }) => theme.colors.background};
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.textLight};
+  }
+
+  /* Para Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.colors.border}
+    ${({ theme }) => theme.colors.background};
 `;
 
 const FilterOption = styled.div`

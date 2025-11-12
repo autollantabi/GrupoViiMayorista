@@ -66,6 +66,8 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       clasificacion: "DMA_CLASIFICACION",
       grupo: "DMA_GRUPO",
       subgrupo: "DMA_SUBGRUPO",
+      subgrupo2: "DMA_SUBGRUPO2",
+      tipo: "DMA_TIPO",
     };
     return fieldMap[stepId] || null;
   };
@@ -79,6 +81,8 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       clasificacion: `Clasificación ${value}`,
       grupo: `Herramientas del grupo ${value}`,
       subgrupo: `Subgrupo ${value}`,
+      subgrupo2: `Subgrupo 2 ${value}`,
+      tipo: `Tipo ${value}`,
     };
     return descriptions[stepId] || `Productos de ${value}`;
   };
@@ -92,6 +96,8 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
       clasificacion: "FaFilter",
       grupo: "FaFolder",
       subgrupo: "FaFolderOpen",
+      subgrupo2: "FaFolderOpen",
+      tipo: "FaTag",
     };
     return icons[stepId] || "FaTag";
   };
@@ -482,7 +488,7 @@ const useCatalogFlow = (empresaName = null, empresaProducts = null) => {
         "DMA_TIPO",
         "DMA_MODELO",
       ],
-      HERRAMIENTAS: ["DMA_MARCA", "DMA_SUBGRUPO", "DMA_SUBGRUPO2"],
+      HERRAMIENTAS: ["DMA_MARCA", "DMA_SUBGRUPO", "DMA_SUBGRUPO2", "DMA_TIPO"],
     };
 
     const filters = filterMap[selectedLinea] || [];
