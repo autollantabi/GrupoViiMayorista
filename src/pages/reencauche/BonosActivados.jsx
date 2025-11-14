@@ -393,6 +393,31 @@ const ResultContent = styled.div`
   gap: 12px;
   overflow-y: auto;
   padding-right: 4px;
+
+  /* Estilos personalizados para el scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+    border: 1px solid ${({ theme }) => theme.colors.background};
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.textLight};
+  }
+
+  /* Para Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.colors.border}
+    ${({ theme }) => theme.colors.background};
 `;
 
 const ResultHeader = styled.div`
@@ -471,6 +496,13 @@ const BonusField = styled.span`
     color: ${({ theme }) => theme.colors.text};
     font-weight: 600;
   }
+`;
+
+const RejectReasonContainer = styled.div`
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  width: 100%;
 `;
 
 const BonosActivados = () => {
@@ -651,6 +683,7 @@ const BonosActivados = () => {
       formData.append("userId", user.ID_USER);
 
       const response = await api_bonos_processRejectBonusExcel(formData);
+      console.log("response", response);
       if (response.success) {
         toast.success(
           response.message ||
@@ -848,9 +881,10 @@ const BonosActivados = () => {
                           bono.REJECT_REASON ||
                           bono.REJECT_INFORMATION) && (
                           <AdditionalInfo>
-                            {/* Item para ACTIVO y USADO */}
+                            {/* Item y Master para ACTIVO, USADO y RECHAZADO */}
                             {(bono.STATUS === "ACTIVO" ||
-                              bono.STATUS === "USADO") && (
+                              bono.STATUS === "USADO" ||
+                              bono.STATUS === "RECHAZADO") && (
                               <>
                                 <BonoDetailItem>
                                   <BonoDetailLabel>Item</BonoDetailLabel>
@@ -949,7 +983,8 @@ const BonosActivados = () => {
                   </UploadTitle>
                   <UploadHint>
                     Formato permitido: .xlsx o .xls. Carga el listado de bonos a
-                    utilizar.
+                    utilizar. El archivo debe tener las columnas: "master",
+                    "item" y "factura".
                   </UploadHint>
                   <FileInput
                     type="file"
@@ -978,7 +1013,8 @@ const BonosActivados = () => {
                   </UploadTitle>
                   <UploadHint>
                     Formato permitido: .xlsx o .xls. Carga el listado de bonos a
-                    rechazar.
+                    rechazar. El archivo debe tener las columnas: "master",
+                    "item" y "razon".
                   </UploadHint>
                   <FileInput
                     type="file"
@@ -1026,18 +1062,46 @@ const BonosActivados = () => {
                             {processData.summary.totalRows ?? 0}
                           </SummaryValue>
                         </SummaryChip>
-                        <SummaryChip>
-                          <SummaryLabel>Bonos procesados</SummaryLabel>
-                          <SummaryValue>
-                            {processData.summary.bonusesProcessed ?? 0}
-                          </SummaryValue>
-                        </SummaryChip>
-                        <SummaryChip>
-                          <SummaryLabel>Bonos no procesados</SummaryLabel>
-                          <SummaryValue>
-                            {processData.summary.bonusesNotProcessed ?? 0}
-                          </SummaryValue>
-                        </SummaryChip>
+                        {processType === "use" ? (
+                          <>
+                            <SummaryChip>
+                              <SummaryLabel>Bonos procesados</SummaryLabel>
+                              <SummaryValue>
+                                {processData.summary.bonusesProcessed ?? 0}
+                              </SummaryValue>
+                            </SummaryChip>
+                            <SummaryChip>
+                              <SummaryLabel>Bonos no procesados</SummaryLabel>
+                              <SummaryValue>
+                                {processData.summary.bonusesNotProcessed ?? 0}
+                              </SummaryValue>
+                            </SummaryChip>
+                          </>
+                        ) : (
+                          <>
+                            <SummaryChip>
+                              <SummaryLabel>Bonos rechazados</SummaryLabel>
+                              <SummaryValue>
+                                {processData.summary.bonusesRejected ?? 0}
+                              </SummaryValue>
+                            </SummaryChip>
+                            <SummaryChip>
+                              <SummaryLabel>
+                                Bonos de reemplazo creados
+                              </SummaryLabel>
+                              <SummaryValue>
+                                {processData.summary
+                                  .replacementBonusesCreated ?? 0}
+                              </SummaryValue>
+                            </SummaryChip>
+                            <SummaryChip>
+                              <SummaryLabel>Bonos no procesados</SummaryLabel>
+                              <SummaryValue>
+                                {processData.summary.bonusesNotProcessed ?? 0}
+                              </SummaryValue>
+                            </SummaryChip>
+                          </>
+                        )}
                       </SummaryMetrics>
                     ) : (
                       <SummaryLabel>
@@ -1045,6 +1109,57 @@ const BonosActivados = () => {
                       </SummaryLabel>
                     )}
                   </ResultSection>
+
+                  {processType === "reject" && processData.rejectedBonuses && (
+                    <ResultSection style={{ flex: 1, minHeight: 0 }}>
+                      <ResultHeader>
+                        <RenderIcon name="FaBan" size={18} />
+                        Bonos rechazados
+                      </ResultHeader>
+                      <ResultContent>
+                        <BonusList>
+                          {processData.rejectedBonuses.map((bono, index) => (
+                            <BonusCard
+                              key={`rejected-${index}`}
+                              style={{
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  gap: "16px",
+                                  flexWrap: "wrap",
+                                  width: "100%",
+                                }}
+                              >
+                                <BonusField>
+                                  BONO{" "}
+                                  <strong>#{bono.ID_BONUS ?? "N/A"}</strong>
+                                </BonusField>
+                                <BonusField>
+                                  MASTER <strong>{bono.MASTER ?? "N/A"}</strong>
+                                </BonusField>
+                                <BonusField>
+                                  ITEM <strong>{bono.ITEM ?? "N/A"}</strong>
+                                </BonusField>
+                              </div>
+                              {bono.REJECT_REASON && (
+                                <RejectReasonContainer>
+                                  <BonusField>
+                                    RAZÓN <strong>{bono.REJECT_REASON}</strong>
+                                  </BonusField>
+                                </RejectReasonContainer>
+                              )}
+                            </BonusCard>
+                          ))}
+                        </BonusList>
+                      </ResultContent>
+                    </ResultSection>
+                  )}
 
                   {processData.notProcessedBonuses && (
                     <>
@@ -1056,23 +1171,62 @@ const BonosActivados = () => {
                               key={category}
                               style={{ flex: 1, minHeight: 0 }}
                             >
-                              <SummaryLabel>Bonos no procesados</SummaryLabel>
+                              <ResultHeader>
+                                <RenderIcon
+                                  name="FaExclamationTriangle"
+                                  size={18}
+                                />
+                                Bonos no procesados -{" "}
+                                {category === "notFoundOrNotActive"
+                                  ? "No encontrados o inactivos"
+                                  : category === "alreadyRejected"
+                                  ? "Ya rechazados"
+                                  : category === "rejectErrors"
+                                  ? "Errores al rechazar"
+                                  : category === "otherErrors"
+                                  ? "Otros errores"
+                                  : category}
+                              </ResultHeader>
                               <ResultContent>
                                 <BonusList>
                                   {items.map((item, index) => (
                                     <BonusCard key={`${category}-${index}`}>
-                                      <BonusField>
-                                        FILA{" "}
-                                        <strong>{item.row ?? "N/A"}</strong>
-                                      </BonusField>
-                                      <BonusField>
-                                        MASTER{" "}
-                                        <strong>{item.master ?? "N/A"}</strong>
-                                      </BonusField>
-                                      <BonusField>
-                                        ITEM{" "}
-                                        <strong>{item.item ?? "N/A"}</strong>
-                                      </BonusField>
+                                      {item.row !== undefined && (
+                                        <BonusField>
+                                          FILA{" "}
+                                          <strong>{item.row ?? "N/A"}</strong>
+                                        </BonusField>
+                                      )}
+                                      {item.master !== undefined && (
+                                        <BonusField>
+                                          MASTER{" "}
+                                          <strong>
+                                            {item.master ?? "N/A"}
+                                          </strong>
+                                        </BonusField>
+                                      )}
+                                      {item.item !== undefined && (
+                                        <BonusField>
+                                          ITEM{" "}
+                                          <strong>{item.item ?? "N/A"}</strong>
+                                        </BonusField>
+                                      )}
+                                      {item.ID_BONUS !== undefined && (
+                                        <BonusField>
+                                          BONO{" "}
+                                          <strong>
+                                            #{item.ID_BONUS ?? "N/A"}
+                                          </strong>
+                                        </BonusField>
+                                      )}
+                                      {item.error && (
+                                        <BonusField>
+                                          ERROR{" "}
+                                          <strong style={{ color: "#dc3545" }}>
+                                            {item.error}
+                                          </strong>
+                                        </BonusField>
+                                      )}
                                     </BonusCard>
                                   ))}
                                 </BonusList>
