@@ -19,6 +19,31 @@ import { useProductCatalog } from "../../context/ProductCatalogContext";
 import PageContainer from "../../components/layout/PageContainer";
 import RenderLoader from "../../components/ui/RenderLoader";
 
+// Función para mapear la línea de producto a la clave de descuento
+const mapLineaToDiscountKey = (lineaNegocio) => {
+  if (!lineaNegocio) return null;
+
+  const lineaUpper = lineaNegocio.toUpperCase().trim();
+
+  // LLANTAS y LLANTAS MOTO mapean a LLANTAS
+  if (lineaUpper === "LLANTAS" || lineaUpper === "LLANTAS MOTO") {
+    return "LLANTAS";
+  }
+
+  // HERRAMIENTAS mapea a HERRAMIENTAS
+  if (lineaUpper === "HERRAMIENTAS") {
+    return "HERRAMIENTAS";
+  }
+
+  // LUBRICANTES mapea a LUBRICANTES
+  if (lineaUpper === "LUBRICANTES") {
+    return "LUBRICANTES";
+  }
+
+  // Para otras líneas, usar el nombre tal cual
+  return lineaUpper;
+};
+
 const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -26,6 +51,12 @@ const PageHeader = styled.div`
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const OrderTitle = styled.div``;
@@ -33,17 +64,38 @@ const OrderTitle = styled.div``;
 const OrderNumber = styled.h1`
   margin: 0 0 8px 0;
   color: ${({ theme }) => theme.colors.text};
+  font-size: 1.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+  }
 `;
 
 const OrderDate = styled.p`
   margin: 0;
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const OrderActions = styled.div`
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+
+    button {
+      width: 100%;
+    }
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -51,6 +103,11 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+  }
   background-color: ${({ theme, $status }) => {
     switch ($status) {
       case "PENDIENTE":
@@ -91,6 +148,12 @@ const Section = styled.section`
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -101,6 +164,13 @@ const SectionTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    gap: 6px;
+  }
 `;
 
 const TwoColumns = styled.div`
@@ -110,6 +180,7 @@ const TwoColumns = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 `;
 
@@ -125,12 +196,22 @@ const Label = styled.p`
   margin: 0 0 4px 0;
   font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
 `;
 
 const Value = styled.p`
   margin: 0;
   color: ${({ theme }) => theme.colors.text};
   font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
 `;
 
 const ProductName = styled.span`
@@ -138,7 +219,7 @@ const ProductName = styled.span`
   margin-bottom: 4px;
   color: ${({ theme }) => theme.colors.text};
   cursor: pointer;
-  
+
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
     text-decoration: underline;
@@ -148,18 +229,116 @@ const ProductName = styled.span`
 const ProductSKU = styled.span`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+`;
+
+const ProductInfoContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+`;
+
+const ProductNameContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+`;
+
+const ProductPriceContainer = styled.div`
+  text-align: right;
+  min-width: 110px;
+
+  @media (max-width: 768px) {
+    text-align: left;
+    min-width: auto;
+    width: 100%;
+  }
+`;
+
+const ProductPrice = styled.div`
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 1.08rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const ProductPriceLabel = styled.div`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const ProductDetailsRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+`;
+
+const ProductDetailsText = styled.div`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 0.98rem;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    width: 100%;
+  }
+`;
+
+const ProductDiscount = styled.div`
+  color: ${({ theme }) => theme.colors.success};
+  font-weight: 500;
+  font-size: 0.98rem;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const OrderSummary = styled.div`
   margin-top: 24px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
   padding-top: 16px;
+
+  @media (max-width: 768px) {
+    margin-top: 16px;
+    padding-top: 12px;
+  }
 `;
 
 const SummaryRow = styled.div`
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 12px;
 
   &:last-child {
     margin-bottom: 0;
@@ -169,17 +348,40 @@ const SummaryRow = styled.div`
     border-top: 1px solid ${({ theme }) => theme.colors.border};
     padding-top: 12px;
   }
+
+  @media (max-width: 768px) {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+
+    &:last-child {
+      font-size: 1rem;
+      margin-top: 10px;
+      padding-top: 10px;
+    }
+  }
 `;
 
 const SummaryLabel = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const SummaryValue = styled.span`
   color: ${({ theme }) => theme.colors.text};
+  text-align: right;
+  flex-shrink: 0;
   ${({ $operacion, theme }) =>
     $operacion &&
     `border-bottom: solid 1px ${theme.colors.border}; padding-bottom: 4px;`}
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
 `;
 
 const TrackingSteps = styled.div`
@@ -344,21 +546,25 @@ const DetallePedido = () => {
 
   const handleProductClick = (productId) => {
     // Buscar el producto en los detalles del pedido
-    const product = orderDetails?.detalle?.find(item => item.PRODUCT_ID === productId);
-    
+    const product = orderDetails?.detalle?.find(
+      (item) => item.PRODUCT_ID === productId
+    );
+
     navigate(`/productos/${productId}`, {
       state: {
-        product: product ? {
-          id: product.PRODUCT_ID,
-          name: product.PRODUCT_NAME,
-          brand: product.BRAND,
-          empresaId: orderDetails?.empresaInfo?.id,
-          image: product.IMAGE_URL || product.IMAGE,
-          description: product.DESCRIPTION,
-          price: product.PRICE,
-          stock: product.QUANTITY,
-          lineaNegocio: product.LINEA_NEGOCIO || "DEFAULT"
-        } : null,
+        product: product
+          ? {
+              id: product.PRODUCT_ID,
+              name: product.PRODUCT_NAME,
+              brand: product.BRAND,
+              empresaId: orderDetails?.empresaInfo?.id,
+              image: product.IMAGE_URL || product.IMAGE,
+              description: product.DESCRIPTION,
+              price: product.PRICE,
+              stock: product.QUANTITY,
+              lineaNegocio: product.LINEA_NEGOCIO || "DEFAULT",
+            }
+          : null,
         empresaId: orderDetails?.empresaInfo?.id,
         prevUrl: `/mis-pedidos/${orderId}`, // URL del detalle del pedido para el botón de regreso
       },
@@ -403,16 +609,23 @@ const DetallePedido = () => {
           )?.value;
 
           // Calcular el subtotal con IVA incluido
-          const ivaPercentage = cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
-          
-          const subtotal = detalle.reduce(
-            (sum, item) => {
-              const priceWithIVA = calculatePriceWithIVA(item.PRICE, ivaPercentage);
-              return sum + priceWithIVA * item.QUANTITY;
-            },
-            0
-          ); // Crear un objeto con la estructura que espera nuestro componente
-          const userDiscount = user?.DESCUENTOS?.[cabecera.ENTERPRISE] || 0;
+          const ivaPercentage =
+            cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
+
+          const subtotal = detalle.reduce((sum, item) => {
+            const priceWithIVA = calculatePriceWithIVA(
+              item.PRICE,
+              ivaPercentage
+            );
+            return sum + priceWithIVA * item.QUANTITY;
+          }, 0); // Crear un objeto con la estructura que espera nuestro componente
+
+          // Obtener la línea de negocio de la cabecera y mapearla a la clave de descuento
+          const businessLine = cabecera.BUSINESS_LINE || "";
+          const discountKey =
+            mapLineaToDiscountKey(businessLine) || businessLine;
+          const userDiscount =
+            user?.DESCUENTOS?.[cabecera.ENTERPRISE]?.[discountKey] || 0;
 
           // Crear tracking steps considerando que PENDIENTE y PENDIENTE CARTERA son estados alternativos en la misma posición
           const tracking = estadosTracking
@@ -433,12 +646,15 @@ const DetallePedido = () => {
               if (currentStatus === "CANCELADO") {
                 return step.key === "PENDIENTE" || step.key === "CANCELADO";
               }
-              
+
               // Para estados iniciales, mostrar solo el que está activo
-              if (step.key === "PENDIENTE" || step.key === "PENDIENTE CARTERA") {
+              if (
+                step.key === "PENDIENTE" ||
+                step.key === "PENDIENTE CARTERA"
+              ) {
                 return step.key === currentStatus;
               }
-              
+
               // Para otros estados, mostrar normalmente
               return step.key !== "CANCELADO";
             });
@@ -473,10 +689,14 @@ const DetallePedido = () => {
             },
             items: detalle.map((item) => {
               const basePrice = item.PRICE;
-              const ivaPercentage = cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
-              const priceWithIVA = calculatePriceWithIVA(basePrice, ivaPercentage);
+              const ivaPercentage =
+                cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
+              const priceWithIVA = calculatePriceWithIVA(
+                basePrice,
+                ivaPercentage
+              );
               const totalWithIVA = priceWithIVA * item.QUANTITY;
-              
+
               return {
                 id: item.PRODUCT_CODE,
                 name: item.MAESTRO?.DMA_NOMBREITEM || "Producto",
@@ -516,7 +736,9 @@ const DetallePedido = () => {
   }, [orderId]);
 
   const handleCancelOrder = () => {
-    const canCancel = orderDetails.status === "PENDIENTE" || orderDetails.status === "PENDIENTE CARTERA";
+    const canCancel =
+      orderDetails.status === "PENDIENTE" ||
+      orderDetails.status === "PENDIENTE CARTERA";
     if (canCancel) {
       setShowCancelModal(true);
     } else {
@@ -579,7 +801,9 @@ const DetallePedido = () => {
     );
   }
 
-  const canCancel = orderDetails.status === "PENDIENTE" || orderDetails.status === "PENDIENTE CARTERA";
+  const canCancel =
+    orderDetails.status === "PENDIENTE" ||
+    orderDetails.status === "PENDIENTE CARTERA";
 
   // 1. Subtotal sin descuentos
   const rawSubtotal = orderDetails.subtotal;
@@ -621,12 +845,18 @@ const DetallePedido = () => {
       <PageHeader>
         <OrderTitle>
           <OrderNumber>
-            Pedido #{orderDetails.id.substring(0, 12)}...
+            Pedido #
+            {(() => {
+              const idString = String(orderDetails.id || "");
+              return idString.length > 12
+                ? idString.substring(0, 12) + "..."
+                : idString;
+            })()}
             <RenderIcon
               name="FaCopy"
               size={16}
               style={{ marginLeft: "8px", cursor: "pointer" }}
-              onClick={() => copyToClipboard(orderDetails.id)}
+              onClick={() => copyToClipboard(String(orderDetails.id || ""))}
             />
           </OrderNumber>
           <OrderDate>
@@ -687,66 +917,6 @@ const DetallePedido = () => {
             }
           </StatusBadge>
         </SectionTitle>
-        {orderDetails.status === "PENDIENTE CARTERA" && (
-          <div
-            style={{
-              background: theme.colors.info + "15",
-              border: `1px solid ${theme.colors.info}30`,
-              borderRadius: 6,
-              padding: "12px 16px",
-              marginTop: 16,
-              fontWeight: 500,
-              fontSize: "0.95rem",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              color: theme.colors.info,
-            }}
-          >
-            <RenderIcon name="FaExclamationTriangle" size={16} />
-            <span>Su pedido está en revisión</span>
-          </div>
-        )}
-        {orderDetails.status !== "CANCELADO" ? (
-          <TrackingSteps>
-            {orderDetails.tracking
-              .filter((step) => step.key !== "CANCELADO")
-              .map((step, index) => (
-                <TrackingStep key={index}>
-                  <StepIconContainer $completed={step.completed}>
-                    {step.completed ? "✓" : index + 1}
-                  </StepIconContainer>
-                  <StepContent>
-                    <StepTitle>{step.step}</StepTitle>
-                    <StepDate>
-                      {step.date
-                        ? format(step.date, "d 'de' MMMM, yyyy 'a las' HH:mm", {
-                            locale: es,
-                          })
-                        : "Pendiente"}
-                    </StepDate>
-                  </StepContent>
-                </TrackingStep>
-              ))}
-          </TrackingSteps>
-        ) : (
-          <div style={{ marginTop: 20 }}>
-            {orderDetails.tracking
-              .filter(
-                (step) => step.key === "PENDIENTE" || step.key === "CANCELADO"
-              )
-              .map((step, index) => (
-                <div key={index} style={{ marginBottom: 8 }}>
-                  <b>{step.step}:</b>{" "}
-                  {step.date
-                    ? format(step.date, "d 'de' MMMM, yyyy 'a las' HH:mm", {
-                        locale: es,
-                      })
-                    : "Pendiente"}
-                </div>
-              ))}
-          </div>
-        )}
       </Section>
 
       <TwoColumns>
@@ -931,70 +1101,32 @@ const DetallePedido = () => {
                     justifyContent: "center",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <ProductName 
+                  <ProductInfoContainer>
+                    <ProductNameContainer>
+                      <ProductName
                         style={{ fontSize: "1.08rem" }}
                         onClick={() => handleProductClick(item.id)}
                       >
                         {item.name}
                       </ProductName>
                       <ProductSKU>SKU: {item.sku}</ProductSKU>
-                    </div>
-                    <div style={{ textAlign: "right", minWidth: 110 }}>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          color: theme.colors.primary,
-                          fontSize: "1.08rem",
-                        }}
-                      >
-                        ${total.toFixed(2)}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          color: theme.colors.textLight,
-                        }}
-                      >
-                        Total (IVA incl.)
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginTop: 8,
-                      gap: 12,
-                    }}
-                  >
-                    <div
-                      style={{ color: theme.colors.text, fontSize: "0.98rem" }}
-                    >
+                    </ProductNameContainer>
+                    <ProductPriceContainer>
+                      <ProductPrice>${total.toFixed(2)}</ProductPrice>
+                      <ProductPriceLabel>Total (IVA incl.)</ProductPriceLabel>
+                    </ProductPriceContainer>
+                  </ProductInfoContainer>
+                  <ProductDetailsRow>
+                    <ProductDetailsText>
                       x{qty} · ${price.toFixed(2)} c/u (IVA incl.) ={" "}
                       <b>${subtotal.toFixed(2)}</b>
-                    </div>
+                    </ProductDetailsText>
                     {promoPct > 0 && (
-                      <div
-                        style={{
-                          color: theme.colors.success,
-                          fontWeight: 500,
-                          fontSize: "0.98rem",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <ProductDiscount>
                         -{promoPct}% (${promoDiscount.toFixed(2)})
-                      </div>
+                      </ProductDiscount>
                     )}
-                  </div>
+                  </ProductDetailsRow>
                 </div>
               </ProductCard>
             );
@@ -1053,7 +1185,16 @@ const DetallePedido = () => {
 
           <SummaryRow>
             <SummaryLabel>Total:</SummaryLabel>
-            <SummaryValue style={{ fontWeight: 'bold', fontSize: '1.1rem', color: theme.colors.primary }}>
+            <SummaryValue
+              style={{
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                color: theme.colors.primary,
+                "@media (max-width: 768px)": {
+                  fontSize: "1rem",
+                },
+              }}
+            >
               ${orderDetails.total.toFixed(2)}
             </SummaryValue>
           </SummaryRow>
@@ -1081,6 +1222,7 @@ const DetallePedido = () => {
             justifyContent: "center",
             alignItems: "center",
             zIndex: 1000,
+            padding: "16px",
           }}
         >
           <div
@@ -1088,10 +1230,12 @@ const DetallePedido = () => {
               backgroundColor: theme.colors.surface,
               borderRadius: 8,
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-              width: "90%",
+              width: "100%",
               maxWidth: 400,
               display: "flex",
               flexDirection: "column",
+              maxHeight: "90vh",
+              overflow: "auto",
             }}
           >
             <div
@@ -1099,7 +1243,7 @@ const DetallePedido = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "16px 24px",
+                padding: "16px 20px",
                 borderBottom: `1px solid ${theme.colors.border}`,
               }}
             >
@@ -1107,22 +1251,44 @@ const DetallePedido = () => {
                 style={{
                   margin: 0,
                   color: theme.colors.text,
-                  fontSize: "1.2rem",
+                  fontSize: "1.1rem",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
+                  flexWrap: "wrap",
                 }}
               >
-                <RenderIcon name="FaExclamationTriangle" size={20} />
-                Confirmar cancelación
+                <RenderIcon name="FaExclamationTriangle" size={18} />
+                <span>Confirmar cancelación</span>
               </h3>
             </div>
 
-            <div style={{ padding: "24px" }}>
-              <p style={{ margin: 0, color: theme.colors.text, fontSize: "1rem" }}>
-                ¿Está seguro que desea cancelar el pedido #{orderDetails?.id?.substring(0, 12)}...?
+            <div style={{ padding: "20px" }}>
+              <p
+                style={{
+                  margin: 0,
+                  color: theme.colors.text,
+                  fontSize: "0.95rem",
+                  lineHeight: "1.5",
+                }}
+              >
+                ¿Está seguro que desea cancelar el pedido #
+                {(() => {
+                  const idString = String(orderDetails?.id || "");
+                  return idString.length > 12
+                    ? idString.substring(0, 12) + "..."
+                    : idString;
+                })()}
+                ?
               </p>
-              <p style={{ margin: "12px 0 0 0", color: theme.colors.textLight, fontSize: "0.9rem" }}>
+              <p
+                style={{
+                  margin: "12px 0 0 0",
+                  color: theme.colors.textLight,
+                  fontSize: "0.85rem",
+                  lineHeight: "1.5",
+                }}
+              >
                 Esta acción no se puede deshacer.
               </p>
             </div>
@@ -1132,20 +1298,29 @@ const DetallePedido = () => {
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 12,
-                padding: "16px 24px",
+                padding: "16px 20px",
                 borderTop: `1px solid ${theme.colors.border}`,
+                flexWrap: "wrap",
               }}
             >
               <Button
                 text="Cancelar"
                 variant="outlined"
                 onClick={handleCancelModalClose}
+                style={{
+                  flex: "1",
+                  minWidth: "120px",
+                }}
               />
               <Button
                 text="Confirmar"
                 variant="solid"
                 backgroundColor={theme.colors.error}
                 onClick={handleConfirmCancel}
+                style={{
+                  flex: "1",
+                  minWidth: "120px",
+                }}
               />
             </div>
           </div>

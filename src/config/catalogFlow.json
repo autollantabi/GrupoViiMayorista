@@ -17,14 +17,6 @@
   "HERRAMIENTAS": {
     "name": "Herramientas",
     "displayName": "Herramientas",
-    "steps": [
-      {
-        "id": "grupo",
-        "name": "Grupo",
-        "displayName": "Selecciona un grupo",
-        "description": "Elige el grupo de herramientas que necesitas",
-        "nextStep": null
-      }
-    ]
+    "steps": []
   }
 }

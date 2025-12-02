@@ -12,14 +12,13 @@ const FiltersContainer = styled.div`
     display: block;
     width: 290px;
     background: ${({ theme }) => theme.colors.surface};
-    padding: 24px;
+    padding: 14px 24px;
     overflow-y: auto;
     z-index: 50;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
-    border-radius: 12px;
     flex: 0 0 290px;
     align-self: flex-start;
-    max-height: calc(100vh - 160px);
+    height: 100%;
 
     /* Estilos personalizados para el scrollbar */
     &::-webkit-scrollbar {
@@ -49,7 +48,7 @@ const FiltersContainer = styled.div`
 `;
 
 const FilterHeader = styled.div`
-  padding-bottom: 16px;
+  padding-bottom: 6px;
 `;
 
 const FilterTitle = styled.h3`
@@ -102,6 +101,43 @@ const ClearButton = styled.button`
   }
 `;
 
+const FilterClearButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: ${({ theme }) => theme.colors.error || "#ef4444"};
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: auto;
+  height: auto;
+  align-self: stretch;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.errorDark || "#dc2626"};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (min-width: 1024px) {
+    font-size: 11px;
+    padding: 6px 10px;
+    align-self: center;
+  }
+`;
+
 // Componentes para el modal móvil
 const MobileFilterContainer = styled.div`
   padding: 10px;
@@ -116,7 +152,7 @@ const MobileFilterButton = styled(Button)`
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 0px;
   width: 100%;
   justify-content: center;
 
@@ -264,10 +300,31 @@ const AccordionContent = styled.div`
 const FilterSearchContainer = styled.div`
   padding: 12px 16px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const SearchInputWrapper = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+  }
+`;
+
+const SearchInputContainer = styled.div`
+  flex: 1;
+  min-width: 0; /* Permite que el input se encoja correctamente */
 `;
 
 const FilterSearchInput = styled(Input)`
   font-size: 14px;
+  width: 100%;
+  min-width: 0;
 `;
 
 const FilterOptionsContainer = styled.div`
@@ -344,10 +401,10 @@ const FilterOption = styled.div`
 `;
 
 const SearchContainer = styled.div`
-  margin-bottom: 16px;
+  margin: 10px 0 10px 0;
 
   @media (min-width: 1024px) {
-    margin-bottom: 24px;
+    margin: 10px 0 10px 0;
   }
 `;
 
@@ -366,6 +423,40 @@ const InfoMessage = styled.p`
 const ClearSection = styled.div`
   padding: 8px 16px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ClearAllButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: ${({ theme }) => theme.colors.error || "#ef4444"};
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+  margin: 0 0 10px 0;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.errorDark || "#dc2626"};
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 `;
 
 const AdditionalFilters = ({
@@ -388,7 +479,7 @@ const AdditionalFilters = ({
   // Efecto para abrir ciertos filtros por defecto cuando cambien los filtros disponibles
   useEffect(() => {
     // Filtros que deben empezar abiertos por defecto
-    const defaultOpenFilters = ["DMA_MARCA", "DMA_SUBGRUPO"];
+    const defaultOpenFilters = ["DMA_MARCA", "DMA_GRUPO"];
 
     setOpenAccordions((prevOpen) => {
       const newOpen = { ...prevOpen };
@@ -446,18 +537,39 @@ const AdditionalFilters = ({
     );
   };
 
+  // Función para limpiar todos los filtros adicionales
+  const handleClearAllFilters = () => {
+    // Obtener todos los filtros adicionales seleccionados (los que empiezan con DMA_)
+    const additionalFilterIds = Object.keys(selectedValues).filter((key) =>
+      key.startsWith("DMA_")
+    );
+
+    // Limpiar cada filtro
+    additionalFilterIds.forEach((filterId) => {
+      if (onClearFilter) {
+        onClearFilter(filterId);
+      }
+    });
+  };
+
+  // Verificar si hay filtros adicionales seleccionados
+  const hasSelectedFilters = Object.keys(selectedValues).some((key) =>
+    key.startsWith("DMA_")
+  );
+
   if (filters.length === 0) {
     return (
       <>
         <MobileFilterContainer>
           {/* Botón para abrir modal en móvil */}
           <MobileFilterButton
-            variant="secondary"
+            variant="primary"
+            backgroundColor={({ theme }) => theme.colors.primary}
+            color={({ theme }) => theme.colors.white}
             onClick={openModal}
             leftIconName="FaFilter"
-          >
-            Filtros y Búsqueda
-          </MobileFilterButton>
+            text="Filtros y Búsqueda"
+          />
         </MobileFilterContainer>
 
         {/* Modal para móvil */}
@@ -496,7 +608,7 @@ const AdditionalFilters = ({
           <FilterHeader>
             <FilterTitle>
               <RenderIcon name="FaFilter" size={16} />
-              Filtros Adicionales
+              Filtros
             </FilterTitle>
           </FilterHeader>
 
@@ -523,17 +635,13 @@ const AdditionalFilters = ({
       <MobileFilterContainer>
         {/* Botón para abrir modal en móvil */}
         <MobileFilterButton
-          variant="secondary"
+          variant="primary"
+          backgroundColor={({ theme }) => theme.colors.primary}
+          color={({ theme }) => theme.colors.white}
           onClick={openModal}
           leftIconName="FaFilter"
-        >
-          Filtros y Búsqueda (
-          {
-            Object.keys(selectedValues).filter((key) => key.startsWith("DMA_"))
-              .length
-          }
-          )
-        </MobileFilterButton>
+          text="Filtros y Búsqueda"
+        />
       </MobileFilterContainer>
 
       {/* Modal para móvil */}
@@ -560,6 +668,13 @@ const AdditionalFilters = ({
               />
             </SearchContainer>
 
+            {hasSelectedFilters && (
+              <ClearAllButton onClick={handleClearAllFilters}>
+                <RenderIcon name="FaTrash" size={14} />
+                Limpiar Todos los Filtros
+              </ClearAllButton>
+            )}
+
             <ModalFiltersContainer>
               {filters.map((filter) => {
                 const isOpen = openAccordions[filter.id] || false;
@@ -585,15 +700,26 @@ const AdditionalFilters = ({
 
                     <AccordionContent $isOpen={isOpen}>
                       <FilterSearchContainer>
-                        <FilterSearchInput
-                          type="text"
-                          placeholder={`Buscar ...`}
-                          value={filterSearches[filter.id] || ""}
-                          onChange={(e) =>
-                            handleFilterSearch(filter.id, e.target.value)
-                          }
-                          leftIconName="FaSearch"
-                        />
+                        <SearchInputWrapper>
+                          <SearchInputContainer>
+                            <FilterSearchInput
+                              type="text"
+                              placeholder={`Buscar ...`}
+                              value={filterSearches[filter.id] || ""}
+                              onChange={(e) =>
+                                handleFilterSearch(filter.id, e.target.value)
+                              }
+                            />
+                          </SearchInputContainer>
+                          {selectedValues[filter.id] && (
+                            <FilterClearButton
+                              onClick={() => onClearFilter(filter.id)}
+                            >
+                              <RenderIcon name="FaTimes" size={12} />
+                              Limpiar
+                            </FilterClearButton>
+                          )}
+                        </SearchInputWrapper>
                       </FilterSearchContainer>
 
                       <FilterOptionsContainer>
@@ -633,15 +759,6 @@ const AdditionalFilters = ({
                           </InfoMessage>
                         )}
                       </FilterOptionsContainer>
-
-                      {selectedValues[filter.id] && (
-                        <ClearSection>
-                          <ClearButton onClick={() => onClearFilter(filter.id)}>
-                            <RenderIcon name="FaTimes" size={12} />
-                            Limpiar
-                          </ClearButton>
-                        </ClearSection>
-                      )}
                     </AccordionContent>
                   </AccordionFilter>
                 );
@@ -656,7 +773,7 @@ const AdditionalFilters = ({
         <FilterHeader>
           <FilterTitle>
             <RenderIcon name="FaFilter" size={16} />
-            Filtros Adicionales
+            Filtros
           </FilterTitle>
         </FilterHeader>
 
@@ -669,6 +786,13 @@ const AdditionalFilters = ({
             leftIconName="FaSearch"
           />
         </SearchContainer>
+
+        {hasSelectedFilters && (
+          <ClearAllButton onClick={handleClearAllFilters}>
+            <RenderIcon name="FaTrash" size={14} />
+            Limpiar Todos los Filtros
+          </ClearAllButton>
+        )}
 
         {filters.map((filter) => {
           const isOpen = openAccordions[filter.id] || false;
@@ -690,15 +814,26 @@ const AdditionalFilters = ({
 
               <AccordionContent $isOpen={isOpen}>
                 <FilterSearchContainer>
-                  <FilterSearchInput
-                    type="text"
-                    placeholder={`Buscar ...`}
-                    value={filterSearches[filter.id] || ""}
-                    onChange={(e) =>
-                      handleFilterSearch(filter.id, e.target.value)
-                    }
-                    leftIconName="FaSearch"
-                  />
+                  <SearchInputWrapper>
+                    <SearchInputContainer>
+                      <FilterSearchInput
+                        type="text"
+                        placeholder={`Buscar ...`}
+                        value={filterSearches[filter.id] || ""}
+                        onChange={(e) =>
+                          handleFilterSearch(filter.id, e.target.value)
+                        }
+                      />
+                    </SearchInputContainer>
+                    {selectedValues[filter.id] && (
+                      <FilterClearButton
+                        onClick={() => onClearFilter(filter.id)}
+                      >
+                        <RenderIcon name="FaTimes" size={12} />
+                        Limpiar
+                      </FilterClearButton>
+                    )}
+                  </SearchInputWrapper>
                 </FilterSearchContainer>
 
                 <FilterOptionsContainer>
@@ -736,15 +871,6 @@ const AdditionalFilters = ({
                     </InfoMessage>
                   )}
                 </FilterOptionsContainer>
-
-                {selectedValues[filter.id] && (
-                  <ClearSection>
-                    <ClearButton onClick={() => onClearFilter(filter.id)}>
-                      <RenderIcon name="FaTimes" size={12} />
-                      Limpiar
-                    </ClearButton>
-                  </ClearSection>
-                )}
               </AccordionContent>
             </AccordionFilter>
           );

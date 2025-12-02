@@ -84,6 +84,16 @@ const UserMenu = styled.div`
   position: relative;
 `;
 
+const UserMenuBridge = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  height: 10px;
+  z-index: 259;
+  pointer-events: ${({ $isOpen }) => ($isOpen ? "auto" : "none")};
+`;
+
 const UserMenuDropdown = styled.div`
   position: absolute;
   top: calc(100% + 10px);
@@ -311,6 +321,10 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleUserMenuMouseLeave = () => {
+    setIsUserMenuOpen(false);
+  };
+
   return (
     <>
       <HeaderContainer>
@@ -337,12 +351,14 @@ export default function Header() {
               />
             )}
 
-            <UserMenu>
+            <UserMenu onMouseLeave={handleUserMenuMouseLeave}>
               <IconButton
                 onClick={toggleUserMenu}
                 iconSize={16}
                 leftIconName={"FaUser"}
               />
+
+              <UserMenuBridge $isOpen={isUserMenuOpen} />
 
               <UserMenuDropdown $isOpen={isUserMenuOpen}>
                 <UserEmail>

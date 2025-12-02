@@ -12,7 +12,6 @@ const AuthenticatedLayout = () => {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "16px",
           }}
         >
           <Outlet />

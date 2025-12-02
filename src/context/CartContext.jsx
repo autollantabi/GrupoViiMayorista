@@ -125,6 +125,7 @@ export function CartProvider({ children }) {
                   brand: product.DMA_MARCA || "Sin marca",
                   discount: product.DMA_DESCUENTO_PROMOCIONAL || 0,
                   iva: TAXES.IVA_PERCENTAGE,
+                  lineaNegocio: product.DMA_LINEANEGOCIO || "DEFAULT",
                 };
               }
 
@@ -330,6 +331,7 @@ export function CartProvider({ children }) {
             apiProduct.DMA_DESCUENTO_PROMOCIONAL ||
             product.promotionalDiscount ||
             0,
+          lineaNegocio: apiProduct.DMA_LINEANEGOCIO || product.lineaNegocio || "DEFAULT",
         };
       } else {
         console.warn(
@@ -393,6 +395,7 @@ export function CartProvider({ children }) {
         brand: product.brand || "Sin marca",
         iva: product.iva || TAXES.IVA_PERCENTAGE,
         promotionalDiscount: product.promotionalDiscount || 0,
+        lineaNegocio: product.lineaNegocio || "DEFAULT",
       };
 
       setCart((prevCart) => {

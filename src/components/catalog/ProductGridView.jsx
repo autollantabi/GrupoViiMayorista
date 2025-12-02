@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import ProductCard from "../ui/ProductCard";
 import { PRODUCT_LINE_CONFIG } from "../../constants/productLineConfig";
@@ -14,6 +15,7 @@ const ProductGridContainer = styled.div`
   min-height: 0;
   min-width: 0;
   height: 100%;
+  padding: 10px 0 0 10px;
 
   @media (max-width: 768px) {
     padding: 16px;
@@ -51,21 +53,6 @@ const GridScrollableContent = styled.div`
   scrollbar-width: thin;
   scrollbar-color: ${({ theme }) => theme.colors.border}
     ${({ theme }) => theme.colors.background};
-`;
-
-const GridHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    margin-bottom: 20px;
-  }
 `;
 
 const ResultsInfo = styled.div`
@@ -182,14 +169,10 @@ const SortContainer = styled.div`
 `;
 
 const ProductsInfo = styled.div`
+  width: 100%;
+  text-align: left;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-
-  @media (max-width: 768px) {
-    justify-content: center;
-  }
+  justify-content: flex-start;
 `;
 
 const SelectsContainer = styled.div`
@@ -197,6 +180,7 @@ const SelectsContainer = styled.div`
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+  flex-direction: row;
 
   @media (max-width: 768px) {
     justify-content: center;
@@ -294,6 +278,7 @@ const PaginationJumpRow = styled.div`
   gap: 8px;
   width: 100%;
   margin-top: 16px;
+  margin-bottom: 16px;
 `;
 
 const PaginationLabel = styled.span`
@@ -307,29 +292,162 @@ const ProductGridView = ({
   onProductSelect,
   initialSort = "default",
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     selectedLinea,
     selectedValues,
     searchQuery: catalogSearch = "",
   } = catalogState || {};
-  const [sortBy, setSortBy] = useState(initialSort);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageInput, setPageInput] = useState("1");
-console.log(products);
+
+  // Leer valores iniciales desde la URL
+  const urlSort = searchParams.get("sort") || initialSort || "default";
+  const urlPage = parseInt(searchParams.get("page") || "1", 10);
+  const urlLimit = parseInt(searchParams.get("limit") || "144", 10);
+
+  const [sortBy, setSortBy] = useState(urlSort);
+  // Validar que el límite inicial sea mínimo 144
+  const validInitialLimit = urlLimit < 144 ? 144 : urlLimit;
+  const [itemsPerPage, setItemsPerPage] = useState(validInitialLimit);
+  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [pageInput, setPageInput] = useState(urlPage.toString());
+
+  // Ref para rastrear si estamos actualizando desde la URL
+  const isUpdatingFromURL = React.useRef(false);
+  const lastSyncedState = React.useRef({
+    sortBy: urlSort,
+    currentPage: urlPage,
+    itemsPerPage: validInitialLimit,
+  });
+
+  // Flag para saber si es el primer render
+  const isFirstRender = React.useRef(true);
+
   // Referencia para el contenedor de paginación
   const paginationContainerRef = React.useRef(null);
+  // Referencia para el contenedor con scroll
+  const scrollContainerRef = React.useRef(null);
 
   // Función para solicitar acceso a una empresa
   const handleRequestAccess = (empresaId) => {
     // Aquí podrías implementar la lógica para solicitar acceso
   };
 
-  React.useEffect(() => {
-    setSortBy(initialSort || "default");
-    setCurrentPage(1);
-    setPageInput("1");
-  }, [initialSort]);
+  // Sincronizar estado local con URL cuando cambien los searchParams (solo lectura desde URL)
+  useEffect(() => {
+    const urlSortValue = searchParams.get("sort") || initialSort || "default";
+    const urlPageValue = parseInt(searchParams.get("page") || "1", 10);
+    const urlLimitValue = parseInt(searchParams.get("limit") || "144", 10);
+
+    // Solo actualizar si los valores de la URL son diferentes a los que tenemos sincronizados
+    if (
+      urlSortValue !== lastSyncedState.current.sortBy ||
+      urlPageValue !== lastSyncedState.current.currentPage ||
+      urlLimitValue !== lastSyncedState.current.itemsPerPage
+    ) {
+      isUpdatingFromURL.current = true;
+
+      if (urlSortValue !== sortBy) {
+        setSortBy(urlSortValue);
+      }
+      if (urlPageValue !== currentPage) {
+        setCurrentPage(urlPageValue);
+        setPageInput(urlPageValue.toString());
+      }
+      // Validar que el valor de la URL sea mínimo 144
+      const validUrlLimit = urlLimitValue < 144 ? 144 : urlLimitValue;
+      if (validUrlLimit !== itemsPerPage) {
+        setItemsPerPage(validUrlLimit);
+      }
+
+      lastSyncedState.current = {
+        sortBy: urlSortValue,
+        currentPage: urlPageValue,
+        itemsPerPage: validUrlLimit,
+      };
+
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isUpdatingFromURL.current = false;
+      }, 100);
+    }
+  }, [searchParams.toString()]); // Solo cuando cambie la URL como string
+
+  // Sincronizar URL con estado local - SIEMPRE asegurar que los parámetros estén presentes
+  useEffect(() => {
+    // En el primer render, asegurar que los parámetros estén presentes
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      const params = new URLSearchParams(searchParams);
+      let needsInit = false;
+
+      if (!params.has("sort")) {
+        params.set("sort", sortBy);
+        needsInit = true;
+      }
+      if (!params.has("page")) {
+        params.set("page", currentPage.toString());
+        needsInit = true;
+      }
+      if (!params.has("limit")) {
+        const validLimit = itemsPerPage < 144 ? 144 : itemsPerPage;
+        params.set("limit", validLimit.toString());
+        if (itemsPerPage !== validLimit) {
+          setItemsPerPage(validLimit);
+        }
+        needsInit = true;
+      }
+
+      if (needsInit) {
+        lastSyncedState.current = {
+          sortBy,
+          currentPage,
+          itemsPerPage,
+        };
+        setSearchParams(params, { replace: true });
+        return;
+      }
+    }
+
+    // No actualizar si el cambio viene de la URL
+    if (isUpdatingFromURL.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams);
+    let needsUpdate = false;
+
+    // SIEMPRE asegurar que sort esté presente en URL
+    if (!params.has("sort") || params.get("sort") !== sortBy) {
+      params.set("sort", sortBy);
+      needsUpdate = true;
+    }
+
+    // SIEMPRE asegurar que page esté presente en URL
+    if (!params.has("page") || params.get("page") !== currentPage.toString()) {
+      params.set("page", currentPage.toString());
+      needsUpdate = true;
+    }
+
+    // SIEMPRE asegurar que limit esté presente en URL
+    // Validar que sea mínimo 144
+    const validLimit = itemsPerPage < 144 ? 144 : itemsPerPage;
+    if (!params.has("limit") || params.get("limit") !== validLimit.toString()) {
+      params.set("limit", validLimit.toString());
+      if (itemsPerPage !== validLimit) {
+        setItemsPerPage(validLimit);
+      }
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      lastSyncedState.current = {
+        sortBy,
+        currentPage,
+        itemsPerPage,
+      };
+      setSearchParams(params, { replace: true });
+    }
+  }, [sortBy, currentPage, itemsPerPage, searchParams, setSearchParams]);
 
   // Filtrar y ordenar productos
   const processedProducts = useMemo(() => {
@@ -391,13 +509,93 @@ console.log(products);
     return { items, totalItems, totalPages };
   }, [products, sortBy, itemsPerPage, currentPage]);
 
-  // Resetear página cuando cambien los filtros
-  React.useEffect(() => {
-    setCurrentPage(1);
-    setPageInput("1");
-  }, [sortBy, itemsPerPage]);
+  // Resetear página si la página actual excede el total de páginas disponibles
+  useEffect(() => {
+    if (
+      processedProducts.totalPages > 0 &&
+      currentPage > processedProducts.totalPages
+    ) {
+      isUpdatingFromURL.current = true;
+      setCurrentPage(1);
+      setPageInput("1");
 
-  // Efecto para hacer scroll automático a la página actual
+      // Actualizar el estado sincronizado
+      lastSyncedState.current = {
+        ...lastSyncedState.current,
+        currentPage: 1,
+      };
+
+      // Actualizar la URL directamente
+      const params = new URLSearchParams(searchParams);
+      params.set("page", "1");
+      setSearchParams(params, { replace: true });
+
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isUpdatingFromURL.current = false;
+      }, 100);
+    }
+  }, [
+    processedProducts.totalPages,
+    currentPage,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  // Resetear página cuando cambien los filtros del catálogo (selectedLinea, selectedValues)
+  // Usar un ref para rastrear los valores anteriores y solo resetear cuando realmente cambien
+  const prevFiltersRef = React.useRef({
+    selectedLinea,
+    selectedValues: JSON.stringify(selectedValues),
+  });
+
+  useEffect(() => {
+    const currentFilters = {
+      selectedLinea,
+      selectedValues: JSON.stringify(selectedValues),
+    };
+
+    // Solo resetear si realmente cambiaron los filtros (no solo la página)
+    if (
+      prevFiltersRef.current.selectedLinea !== currentFilters.selectedLinea ||
+      prevFiltersRef.current.selectedValues !== currentFilters.selectedValues
+    ) {
+      // Cuando cambian los filtros del catálogo, resetear a página 1
+      // Marcar que estamos actualizando desde el reset para evitar conflictos
+      isUpdatingFromURL.current = true;
+      setCurrentPage(1);
+      setPageInput("1");
+      prevFiltersRef.current = currentFilters;
+
+      // Actualizar el estado sincronizado
+      lastSyncedState.current = {
+        ...lastSyncedState.current,
+        currentPage: 1,
+      };
+
+      // Actualizar la URL directamente para asegurar que page=1 esté presente
+      const params = new URLSearchParams(searchParams);
+      params.set("page", "1");
+      setSearchParams(params, { replace: true });
+
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isUpdatingFromURL.current = false;
+      }, 100);
+    }
+  }, [selectedLinea, selectedValues, searchParams, setSearchParams]);
+
+  // Efecto para hacer scroll hacia arriba cuando cambie la página
+  useEffect(() => {
+    if (scrollContainerRef.current && currentPage > 0) {
+      scrollContainerRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [currentPage]);
+
+  // Efecto para hacer scroll automático a la página actual en la paginación
   React.useEffect(() => {
     if (paginationContainerRef.current && currentPage > 0) {
       const container = paginationContainerRef.current;
@@ -498,14 +696,9 @@ console.log(products);
 
   return (
     <ProductGridContainer>
-      <GridScrollableContent>
+      <GridScrollableContent ref={scrollContainerRef}>
         <SortContainer>
-          <ProductsInfo>
-            <ResultsInfo>
-              Mostrando {processedProducts.totalItems} producto
-              {processedProducts.totalItems !== 1 ? "s" : ""}
-            </ResultsInfo>
-          </ProductsInfo>
+         
 
           {/* Solo mostrar el selector de ordenación si hay productos */}
           {processedProducts && processedProducts.items.length > 0 && (
@@ -520,25 +713,33 @@ console.log(products);
                 ]}
                 value={sortBy}
                 onChange={handleSortChange}
-                preValue="Ordenar por:"
+                preValue="Ord:"
                 placeholder="Ordenar por..."
+                width="auto"
               />
 
               <Select
                 options={[
-                  { value: 12, label: "12" },
-                  { value: 36, label: "36" },
-                  { value: 72, label: "72" },
                   { value: 144, label: "144" },
+                  { value: 288, label: "288" },
+                  { value: 432, label: "432" },
+                  { value: 576, label: "576" },
                 ]}
                 value={itemsPerPage}
                 onChange={handleItemsPerPageChange}
-                preValue="Mostrar: "
-                postValue=" items por página"
+                preValue="Ver:"
+                postValue=" productos"
                 placeholder="Mostrar items"
+                width="auto"
               />
             </SelectsContainer>
           )}
+           <ProductsInfo>
+            <ResultsInfo>
+              Mostrando {processedProducts.totalItems} producto
+              {processedProducts.totalItems !== 1 ? "s" : ""}
+            </ResultsInfo>
+          </ProductsInfo>
         </SortContainer>
 
         <ProductsGrid>

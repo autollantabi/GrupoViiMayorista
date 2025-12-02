@@ -16,6 +16,7 @@ import DetallePedidoCoordinador from "../pages/coordinadora/DetallePedidoCoordin
 import EditarPedidoCoordinador from "../pages/coordinadora/EditarPedido";
 import UsersAdministration from "../pages/admin/UsersAdministration";
 import ClientHomeComponent from "../pages/client/ClientHomeComponent";
+import AppShell from "../pages/client/AppShell";
 import CoordinadorHomeComponent from "../pages/coordinadora/CoordinadorHomeComponent";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import CoordinadorAdminComponent from "../pages/admin/CoordinadorAdminComponent";
@@ -98,6 +99,16 @@ export const ecommerceRoutes = [
   {
     path: ROUTES.ECOMMERCE.REENCAUCHE,
     element: <ClientesReencauche />,
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.APP_SHELL,
+    element: <AppShell />,
     allowedRoles: [
       ROLES.CLIENTE,
       ROLES.ADMIN,

@@ -12,7 +12,6 @@ import Select from "../../components/ui/Select";
 import SearchBar from "../../components/ui/SearchBar";
 import PageContainer from "../../components/layout/PageContainer";
 
-
 const PageTitle = styled.h1`
   margin: 0 0 24px 0;
   color: ${({ theme }) => theme.colors.text};
@@ -253,8 +252,27 @@ const MisPedidos = () => {
       CONFIRMADO: "Confirmado",
       ENTREGADO: "Entregado",
       CANCELADO: "Cancelado",
+      RECIBIDO: "Recibido",
     };
     return statusMap[status] || status;
+  };
+
+  // Formatear línea de negocio a formato oración
+  const formatBusinessLine = (businessLine) => {
+    if (!businessLine || businessLine === "N/A") return businessLine;
+
+    // Caso especial: LLANTAS MOTO se muestra como "Moto"
+    const businessLineUpper = businessLine.toUpperCase().trim();
+    if (businessLineUpper === "LLANTAS MOTO") {
+      return "Moto";
+    }
+
+    // Convertir a formato oración: primera letra mayúscula, resto minúsculas
+    return businessLine
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   // Función para obtener los pedidos del usuario
@@ -262,13 +280,14 @@ const MisPedidos = () => {
     try {
       setLoading(true);
       const response = await api_order_getOrdersByAccount(user.ACCOUNT_USER);
+      console.log("response", response);
       if (response.success && response.data) {
         // Transformar los datos de la API al formato que espera nuestro componente
         const formattedOrders = response.data.map((order) => {
           // Calcular el total si está vacío
           const total = order.CABECERA.TOTAL || order.CABECERA.SUBTOTAL;
           const subtotal = order.CABECERA.SUBTOTAL;
-          
+
           // Calcular el IVA
           const ivaPercentage = order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
           const ivaAmount = total - subtotal; // El IVA es la diferencia entre total y subtotal
@@ -289,6 +308,7 @@ const MisPedidos = () => {
             status: order.CABECERA.STATUS, // Usar directamente el valor de la API
             paymentMethod: "Pendiente", // Este dato no viene en la API
             empresaId: order.CABECERA.ENTERPRISE,
+            businessLine: order.CABECERA.BUSINESS_LINE || "N/A", // Línea de negocio
             // Guardamos la información original para mostrarla en detalles
             originalData: order,
           };
@@ -311,11 +331,11 @@ const MisPedidos = () => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
@@ -332,9 +352,10 @@ const MisPedidos = () => {
             // Calcular el total si está vacío
             const total = order.CABECERA.TOTAL;
             const subtotal = order.CABECERA.SUBTOTAL;
-            
+
             // Calcular el IVA
-            const ivaPercentage = order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
+            const ivaPercentage =
+              order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
             const ivaAmount = total - subtotal; // El IVA es la diferencia entre total y subtotal
 
             // Calcular la cantidad total de items
@@ -354,6 +375,7 @@ const MisPedidos = () => {
               status: order.CABECERA.STATUS, // Usar directamente el valor de la API
               paymentMethod: "Pendiente", // Este dato no viene en la API
               empresaId: order.CABECERA.ENTERPRISE,
+              businessLine: order.CABECERA.BUSINESS_LINE || "N/A", // Línea de negocio
               // Guardamos la información original para mostrarla en detalles
               originalData: order,
             };
@@ -438,7 +460,12 @@ const MisPedidos = () => {
     {
       header: "Nº de Pedido",
       field: "id",
-      render: (row) => row.id.substring(0, 8) + "...",
+      render: (row) => {
+        const idString = String(row.id || "");
+        return idString.length > 8
+          ? idString.substring(0, 8) + "..."
+          : idString;
+      },
     },
     {
       header: "Fecha",
@@ -465,6 +492,11 @@ const MisPedidos = () => {
     {
       header: "Proveedor",
       field: "empresaId",
+    },
+    {
+      header: "Línea de negocio",
+      field: "businessLine",
+      render: (row) => formatBusinessLine(row.businessLine),
     },
     // {
     //   header: "Subtotal",
@@ -507,11 +539,6 @@ const MisPedidos = () => {
       ),
       align: "center",
     },
-    {
-      header: "Pago",
-      field: "paymentMethod",
-      sortable: false,
-    },
   ];
 
   // Función para renderizar acciones por fila
@@ -529,11 +556,8 @@ const MisPedidos = () => {
   };
   const statusOptions = [
     { value: "todos", label: "Todos" },
-    { value: "PENDIENTE", label: "Pendiente" },
-    { value: "PENDIENTE CARTERA", label: "Revisión" },
-    { value: "CONFIRMADO", label: "Confirmado" },
-    { value: "ENTREGADO", label: "Entregado" },
     { value: "CANCELADO", label: "Cancelado" },
+    { value: "RECIBIDO", label: "Recibido" },
   ];
 
   const dateOptions = [
@@ -556,12 +580,21 @@ const MisPedidos = () => {
   // Función para renderizar el modo lista móvil
   const renderMobileOrderList = () => {
     return (
-      <div style={{ padding: '0 4px' }}>
+      <div style={{ padding: "0 4px" }}>
         {filteredOrders.map((order) => (
-          <MobileOrderCard key={order.id} onClick={() => handleViewDetails(order)}>
+          <MobileOrderCard
+            key={order.id}
+            onClick={() => handleViewDetails(order)}
+          >
             <MobileOrderHeader>
               <MobileOrderId>
-                #{order.id.substring(0, 8)}...
+                #
+                {(() => {
+                  const idString = String(order.id || "");
+                  return idString.length > 8
+                    ? idString.substring(0, 8) + "..."
+                    : idString;
+                })()}
               </MobileOrderId>
               <MobileOrderStatus>
                 <StatusBadge status={order.status}>
@@ -569,7 +602,7 @@ const MisPedidos = () => {
                 </StatusBadge>
               </MobileOrderStatus>
             </MobileOrderHeader>
-            
+
             <MobileOrderInfo>
               <MobileOrderRow>
                 <MobileOrderLabel>Fecha:</MobileOrderLabel>
@@ -580,7 +613,9 @@ const MisPedidos = () => {
                     const hoursAgo = differenceInHours(now, date);
 
                     if (hoursAgo >= 1) {
-                      return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
+                      return format(date, "d 'de' MMMM, yyyy HH:mm", {
+                        locale: es,
+                      });
                     } else {
                       return formatDistance(date, now, {
                         addSuffix: true,
@@ -590,23 +625,23 @@ const MisPedidos = () => {
                   })()}
                 </MobileOrderValue>
               </MobileOrderRow>
-              
+
               <MobileOrderRow>
                 <MobileOrderLabel>Proveedor:</MobileOrderLabel>
                 <MobileOrderValue>{order.empresaId}</MobileOrderValue>
               </MobileOrderRow>
-              
+
               <MobileOrderRow>
                 <MobileOrderLabel>Total:</MobileOrderLabel>
                 <MobileOrderValue>${order.total.toFixed(2)}</MobileOrderValue>
               </MobileOrderRow>
-              
+
               <MobileOrderRow>
                 <MobileOrderLabel>Productos:</MobileOrderLabel>
                 <MobileOrderValue>{order.items} items</MobileOrderValue>
               </MobileOrderRow>
             </MobileOrderInfo>
-            
+
             <MobileOrderActions>
               <Button
                 text="Ver detalle"
@@ -627,8 +662,12 @@ const MisPedidos = () => {
   return (
     <PageContainer
       style={{
-        padding: window.innerWidth <= 768 ? "16px" : 
-                window.innerWidth <= 480 ? "12px" : "24px"
+        padding:
+          window.innerWidth <= 768
+            ? "16px"
+            : window.innerWidth <= 480
+            ? "12px"
+            : "24px",
       }}
     >
       <PageTitle>Mis Pedidos</PageTitle>

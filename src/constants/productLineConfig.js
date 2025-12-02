@@ -13,6 +13,7 @@ export const CATEGORY_TYPE_ORDER = {
   DEFAULT: ["categoria"],
   LLANTAS: ["categoria", "aplicacion", "segmento"],
   LUBRICANTES: ["categoria", "tipo", "viscosidad"],
+  HERRAMIENTAS: ["grupo", "subgrupo", "subgrupo2", "tipo"],
   LUCES: ["categoria", "tipo"],
   // Añadir otras líneas de negocio según sea necesario
 };

@@ -41,6 +41,33 @@ const GlobalStyle = createGlobalStyle`
     background-color: ${({ theme }) => theme.colors.background};
     color: ${({ theme }) => theme.colors.text};
   }
+
+  /* Estilos globales para scrollbar personalizado - Webkit (Chrome, Safari, Edge) */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.colors.background};
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border};
+    border-radius: 4px;
+    border: 1px solid ${({ theme }) => theme.colors.background};
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.colors.textLight};
+  }
+
+  /* Para Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: ${({ theme }) => theme.colors.border} ${({ theme }) => theme.colors.background};
+  }
   
   // Añadir transición para todos los elementos que usan colores temáticos
   button, a, input, select, textarea, div, span, p, h1, h2, h3, h4, h5, h6 {

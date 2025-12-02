@@ -11,91 +11,108 @@ import RenderIcon from "../../components/ui/RenderIcon";
 import SEO from "../../components/seo/SEO";
 import { ROUTES } from "../../constants/routes";
 
-const WelcomeSection = styled.div`
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem 1rem;
-  background: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
-`;
-
-const WelcomeTitle = styled.h2`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 2rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
+const HeroSection = styled.section`
+  min-height: calc(100vh - 45px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
+      : "linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)"};
 
   @media (max-width: 768px) {
-    font-size: 1.6rem;
+    min-height: auto;
+    padding: 2rem 0.5rem;
+    justify-content: flex-start;
   }
 `;
 
-const WelcomeSubtitle = styled.p`
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 1rem;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.5;
-
-  @media (max-width: 768px) {
-    font-size: 0.9rem;
-  }
-`;
-
-const NewCatalogSection = styled.div`
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.primary} 0%,
-    ${({ theme }) => theme.colors.primaryLight} 100%
-  );
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
-`;
-
-const NewCatalogTitle = styled.h3`
-  color: white;
-  font-size: 1.5rem;
+const HeroTitle = styled.h1`
+  font-size: 2.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
-`;
+  color: ${({ theme }) => theme.colors.text};
+  text-align: center;
+  margin-bottom: 1rem;
 
-const NewCatalogDescription = styled.p`
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.5;
-`;
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
 
-const NewCatalogButton = styled(Button)`
-  background: white;
-  color: ${({ theme }) => theme.colors.primary};
-  border: 2px solid white;
-  font-weight: 600;
-  padding: 12px 24px;
-  font-size: 1rem;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.9);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
   }
 `;
 
-const CompaniesSection = styled.div`
-  margin-top: 1rem;
+const HeroSubtitle = styled.p`
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 600px;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
 `;
 
 const CompaniesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.5rem;
   padding: 0.5rem 0;
-  justify-items: center;
-  justify-content: center;
+  width: 100%;
+  max-width: 1400px;
+  justify-items: stretch;
+
+  /* Desktop: Layout especial con 3 arriba y 2 abajo centrados */
+  @media (min-width: 1025px) {
+    /* Los primeros 3 elementos ocupan 2 columnas cada uno (total 6 columnas) */
+    > *:nth-child(1) {
+      grid-column: 1 / 3;
+    }
+
+    > *:nth-child(2) {
+      grid-column: 3 / 5;
+    }
+
+    > *:nth-child(3) {
+      grid-column: 5 / 7;
+    }
+
+    /* El 4to elemento: centrado entre el espacio del 1er y 2do elemento */
+    > *:nth-child(4):nth-last-child(2) {
+      grid-column: 2 / 4;
+    }
+
+    /* El 5to elemento: centrado entre el espacio del 2do y 3er elemento */
+    > *:nth-child(5):nth-last-child(1) {
+      grid-column: 4 / 6;
+    }
+  }
+
+  /* Tablet: 2 columnas simples */
+  @media (max-width: 1024px) and (min-width: 769px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+
+    > * {
+      grid-column: span 1 !important;
+    }
+  }
+
+  /* Móvil: 1 columna */
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+
+    > * {
+      grid-column: span 1 !important;
+    }
+  }
 `;
 
 const CompanyCard = styled.div`
@@ -108,6 +125,8 @@ const CompanyCard = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 400px;
 
   &:hover {
     transform: translateY(-5px);
@@ -115,26 +134,39 @@ const CompanyCard = styled.div`
   }
 `;
 
-const CardBody = styled.div`
-  padding: 1.5rem;
+const CardContent = styled.div`
+  overflow: hidden;
+  border-radius: 12px;
   flex: 1;
   display: flex;
   flex-direction: column;
 `;
 
-const CardFooter = styled.div`
-  padding: 1rem 1.5rem;
+const CardBody = styled.div`
+  padding: 1.5rem;
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: ${({ theme }) =>
-    theme.mode === "dark" ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)"};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  flex-direction: column;
+  justify-content: center;
 `;
 
 const ProductCount = styled.span`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 0.75rem;
+  border-radius: 20px;
+  padding: 6px 12px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.white};
+  font-weight: 600;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 `;
 
 // Cinta para destacar visualmente las empresas con acceso
@@ -145,6 +177,7 @@ const AccessRibbon = styled.div`
   height: 200px;
   overflow: hidden;
   pointer-events: none;
+  z-index: 20;
 `;
 
 const RibbonContent = styled.div`
@@ -158,10 +191,11 @@ const RibbonContent = styled.div`
   transform: rotate(45deg) translateX(30%) translateY(-80%);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
   width: 150px;
+  z-index: 21;
 `;
 
 const CompanyLogo = styled.div`
-  height: 140px;
+  height: 170px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -172,6 +206,7 @@ const CompanyLogo = styled.div`
       ? "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
       : "linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)"};
 
+  position: relative;
   img {
     max-width: 100%;
     max-height: 100%;
@@ -183,43 +218,61 @@ const CompanyDescription = styled.p`
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 0.9rem;
   line-height: 1.5;
+  text-align: center;
 `;
 
 // Estilos para la sección de Reencauche
-const ReencaucheSection = styled.div`
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+const ReencaucheSection = styled.section`
+  padding: 4rem 2rem;
   background: linear-gradient(
     135deg,
     ${({ theme }) => theme.colors.success}15,
     ${({ theme }) => theme.colors.success}25
   );
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.success}30;
-  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
+  border-top: 1px solid ${({ theme }) => theme.colors.success}30;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.success}30;
+
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+  }
 `;
 
 const ReencaucheHeader = styled.div`
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
-const ReencaucheTitle = styled.h3`
+const ReencaucheTitle = styled.h2`
   color: ${({ theme }) => theme.colors.success};
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const ReencaucheDescription = styled.p`
   color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 1rem;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.5;
+  font-size: 1.2rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const ReencaucheActions = styled.div`
@@ -244,21 +297,87 @@ const ReencaucheButton = styled(Button)`
   }
 `;
 
+// Estilos para la sección de App Shell
+const AppShellSection = styled.section`
+  padding: 4rem 2rem;
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => theme.colors.primary}15,
+    ${({ theme }) => theme.colors.primary}25
+  );
+  border-top: 1px solid ${({ theme }) => theme.colors.primary}30;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.primary}30;
+
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+  }
+`;
+
+const AppShellHeader = styled.div`
+  text-align: center;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const AppShellTitle = styled.h2`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const AppShellDescription = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1.2rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const AppShellActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+`;
+
+const AppShellButton = styled(Button)`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) =>
+      theme.colors.primaryDark || theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${({ theme }) => theme.colors.primary}40;
+  }
+`;
+
 const ClientHomeComponent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [productsInfo, setProductsInfo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Función para formatear el nombre en modo título (cada palabra con mayúscula)
-  const formatNameToTitle = (name) => {
-    if (!name) return "Cliente";
-
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  };
 
   useEffect(() => {
     const fetchProductsInfo = async () => {
@@ -292,6 +411,9 @@ const ClientHomeComponent = () => {
   // Obtener accesos del usuario y convertir a mayúsculas para comparación
   const userAccess = user?.EMPRESAS || [];
 
+  // Verificar si el usuario tiene acceso a MAXXIMUNDO
+  const hasMaxximundoAccess = userAccess.includes("MAXXIMUNDO");
+
   const handleCardClick = (empresa) => {
     navigate(`/catalogo/${empresa.nombre}`);
   };
@@ -304,6 +426,7 @@ const ClientHomeComponent = () => {
     const productsInf = productsInfo.filter(
       (product) => product.ENTERPRISE === empresaName
     );
+    console.log("productsInf", productsInf);
     if (!productsInf || productsInf.length === 0) {
       return 0;
     }
@@ -333,61 +456,32 @@ const ClientHomeComponent = () => {
         description={`Portal de cliente ViiCommerce. Accede a catálogos de neumáticos, lubricantes y herramientas. Gestiona bonos de reencauche y explora productos de las mejores empresas.`}
         keywords="portal cliente, catálogo productos, bonos reencauche, neumáticos, lubricantes, herramientas, ViiCommerce"
       />
-      <PageContainer>
-        <WelcomeSection>
-          <WelcomeTitle>
-            ¡Bienvenido de vuelta,
-            <br /> {formatNameToTitle(user?.NAME_USER)}!
-          </WelcomeTitle>
-          <WelcomeSubtitle>
-            Estamos emocionados de tenerte aquí. Explora nuestros catálogos y
-            descubre productos increíbles de las mejores empresas.
-          </WelcomeSubtitle>
-        </WelcomeSection>
+      {/* Hero Section - Grid de Empresas */}
+      <HeroSection>
+        <HeroTitle>Nuestras Empresas</HeroTitle>
+        <HeroSubtitle>
+          Explora los catálogos de productos de las mejores empresas del sector
+        </HeroSubtitle>
+        <CompaniesGrid>
+          {empresas.map((empresa) => {
+            // Verificar si el usuario tiene acceso (comparando en mayúsculas)
+            const hasAccess = userAccess.includes(empresa.nombre.toUpperCase());
+            const productCount = getProductCount(empresa.nombre);
 
-        {/* Sección de Reencauche */}
-        <ReencaucheSection>
-          <ReencaucheHeader>
-            <ReencaucheTitle>
-              <RenderIcon name="FaTicketAlt" size={24} />
-              Sistema de Bonos
-            </ReencaucheTitle>
-            <ReencaucheDescription>
-              Gestiona los bonos de neumáticos de tus clientes de manera fácil y
-              eficiente. Registra bonos por CI/RUC y mantén un control completo.
-            </ReencaucheDescription>
-          </ReencaucheHeader>
+            return (
+              <CompanyCard
+                key={empresa.id}
+                onClick={() => handleCardClick(empresa)}
+              >
+                <AccessRibbon>
+                  <RibbonContent $hasAccess={hasAccess}>
+                    {hasAccess ? "ACCESO" : "SIN ACCESO"}
+                  </RibbonContent>
+                </AccessRibbon>
 
-          <ReencaucheActions>
-            <ReencaucheButton
-              text="Acceder al Sistema de Bonos"
-              leftIconName="FaTicketAlt"
-              onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE)}
-            />
-          </ReencaucheActions>
-        </ReencaucheSection>
-
-        <CompaniesSection>
-          <CompaniesGrid>
-            {empresas.map((empresa) => {
-              // Verificar si el usuario tiene acceso (comparando en mayúsculas)
-              const hasAccess = userAccess.includes(
-                empresa.nombre.toUpperCase()
-              );
-              const productCount = getProductCount(empresa.nombre);
-
-              return (
-                <CompanyCard
-                  key={empresa.id}
-                  onClick={() => handleCardClick(empresa)}
-                >
-                  <AccessRibbon>
-                    <RibbonContent $hasAccess={hasAccess}>
-                      {hasAccess ? "ACCESO" : "SIN ACCESO"}
-                    </RibbonContent>
-                  </AccessRibbon>
-
+                <CardContent>
                   <CompanyLogo>
+                    <ProductCount>{productCount} productos</ProductCount>
                     <img src={empresa.logo} alt={`Logo de ${empresa.nombre}`} />
                   </CompanyLogo>
                   <CardBody>
@@ -395,29 +489,63 @@ const ClientHomeComponent = () => {
                       {empresa.descripcion}
                     </CompanyDescription>
                   </CardBody>
-                  <CardFooter>
-                    <ProductCount>{productCount} productos</ProductCount>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        text={hasAccess ? "Ver catálogo" : "Solicitar acceso"}
-                        variant={hasAccess ? "solid" : "outlined"}
-                        onClick={() => handleCardClick(empresa)}
-                      />
-                    </div>
-                  </CardFooter>
-                </CompanyCard>
-              );
-            })}
-          </CompaniesGrid>
-        </CompaniesSection>
-      </PageContainer>
+                </CardContent>
+              </CompanyCard>
+            );
+          })}
+        </CompaniesGrid>
+      </HeroSection>
+
+      {/* Sección de App Shell (solo si tiene acceso a MAXXIMUNDO) */}
+      {hasMaxximundoAccess && (
+        <AppShellSection>
+          <AppShellHeader>
+            <AppShellTitle>
+              <img
+                src={"/shell/ShellLogo.png"}
+                style={{ objectFit: "cover", width: "60px" }}
+                alt="Logo de Shell"
+              />
+              App Shell
+            </AppShellTitle>
+            <AppShellDescription>
+              Accede a la aplicación móvil de Maxximundo. Gestiona tus pedidos,
+              productos y más desde cualquier dispositivo.
+            </AppShellDescription>
+          </AppShellHeader>
+
+          <AppShellActions>
+            <AppShellButton
+              text="Acceder a App Shell"
+              leftIconName="FaMobileAlt"
+              onClick={() => navigate(ROUTES.ECOMMERCE.APP_SHELL)}
+            />
+          </AppShellActions>
+        </AppShellSection>
+      )}
+
+      {/* Sección de Sistema de Bonos */}
+      <ReencaucheSection>
+        <ReencaucheHeader>
+          <ReencaucheTitle>
+            <RenderIcon name="FaTicketAlt" size={32} />
+            Sistema de Bonos
+          </ReencaucheTitle>
+          <ReencaucheDescription>
+            Gestiona los bonos de neumáticos de tus clientes de manera fácil y
+            eficiente. Registra bonos por CI/RUC y mantén un control completo de
+            todas tus transacciones.
+          </ReencaucheDescription>
+        </ReencaucheHeader>
+
+        <ReencaucheActions>
+          <ReencaucheButton
+            text="Acceder al Sistema de Bonos"
+            leftIconName="FaTicketAlt"
+            onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE)}
+          />
+        </ReencaucheActions>
+      </ReencaucheSection>
     </>
   );
 };

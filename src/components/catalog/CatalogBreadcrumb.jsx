@@ -1,33 +1,31 @@
 import React from "react";
 import styled from "styled-components";
 import RenderIcon from "../ui/RenderIcon";
-import Button from "../ui/Button";
 
 const BreadcrumbContainer = styled.nav`
   position: sticky;
   top: 0;
   z-index: 100;
   background: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 10px 24px;
 
   @media (max-width: 768px) {
     padding: 16px 20px;
-    margin-bottom: 20px;
+    margin-bottom: 2px;
   }
 `;
 
 const BreadcrumbContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2px;
+  align-items: stretch;
 
   @media (min-width: 1024px) {
     flex-direction: row;
     gap: 24px;
+    align-items: center;
+    min-height: 100%;
   }
 `;
 
@@ -36,9 +34,12 @@ const BreadcrumbSection = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 
   @media (min-width: 1024px) {
     margin-bottom: 0;
+    height: 100%;
   }
 
   &:last-child {
@@ -47,20 +48,6 @@ const BreadcrumbSection = styled.div`
 
   @media (max-width: 768px) {
     margin-bottom: 12px;
-  }
-`;
-
-const BreadcrumbSectionTitle = styled.h3`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
-  margin: 0 0 8px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
-    margin-bottom: 6px;
   }
 `;
 
@@ -195,6 +182,7 @@ const CatalogBreadcrumb = ({
       DMA_TIPO: "Tipo",
       DMA_MODELO: "Modelo",
       DMA_SUBGRUPO: "Subgrupo",
+      DMA_GRUPO: "Grupo",
       DMA_CLASIFICACION: "Clasificación",
       DMA_SAE: "SAE",
     };
@@ -206,7 +194,7 @@ const CatalogBreadcrumb = ({
       <BreadcrumbContent>
         {/* Sección de líneas disponibles */}
         <BreadcrumbSection>
-          <BreadcrumbSectionTitle>Líneas de Negocio</BreadcrumbSectionTitle>
+          {/* <BreadcrumbSectionTitle>Líneas de Negocio</BreadcrumbSectionTitle> */}
           <BreadcrumbList>
             {availableLines.map((linea) => (
               <BreadcrumbItem key={linea.key}>
@@ -225,7 +213,7 @@ const CatalogBreadcrumb = ({
         {/* Sección de filtros aplicados */}
         {(selectedLinea || Object.keys(selectedValues).length > 0) && (
           <BreadcrumbSection>
-            <BreadcrumbSectionTitle>Filtros Aplicados</BreadcrumbSectionTitle>
+            {/* <BreadcrumbSectionTitle>Filtros Aplicados</BreadcrumbSectionTitle> */}
             <BreadcrumbList>
               {/* Mostrar filtros del flujo principal */}
               {flowConfig?.steps?.map((step, index) => {

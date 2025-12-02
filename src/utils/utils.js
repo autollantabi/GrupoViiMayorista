@@ -23,3 +23,15 @@ export const copyToClipboard = async (text) => {
     console.error("Error al copiar al portapapeles:", error);
   }
 };
+
+/**
+ * Funcion para cambiar la opacidad de un color hex a rgba
+ * @param {string} color - Color hex
+ * @param {number} opacity - Opacidad
+ * @returns {string} Color rgba
+ */
+export const getRGBA = (color, opacity) => {
+  return `rgba(${color
+    .match(/\w\w/g)
+    .map((x) => parseInt(x, 16))}, ${opacity})`;
+};

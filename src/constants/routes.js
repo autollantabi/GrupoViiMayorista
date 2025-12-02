@@ -27,6 +27,7 @@ export const ROUTES = {
     PERFIL: "/perfil",
     SEARCH: "/busqueda",
     REENCAUCHE: "/reencauche",
+    APP_SHELL: "/app-shell",
   },
   REENCAUCHE: {
     HOME: "/reencauche/home",

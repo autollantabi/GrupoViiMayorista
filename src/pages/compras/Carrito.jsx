@@ -598,6 +598,31 @@ const CartItem = ({
   );
 };
 
+// Función para mapear la línea de producto a la clave de descuento
+const mapLineaToDiscountKey = (lineaNegocio) => {
+  if (!lineaNegocio) return null;
+
+  const lineaUpper = lineaNegocio.toUpperCase().trim();
+
+  // LLANTAS y LLANTAS MOTO mapean a LLANTAS
+  if (lineaUpper === "LLANTAS" || lineaUpper === "LLANTAS MOTO") {
+    return "LLANTAS";
+  }
+
+  // HERRAMIENTAS mapea a HERRAMIENTAS
+  if (lineaUpper === "HERRAMIENTAS") {
+    return "HERRAMIENTAS";
+  }
+
+  // LUBRICANTES mapea a LUBRICANTES
+  if (lineaUpper === "LUBRICANTES") {
+    return "LUBRICANTES";
+  }
+
+  // Para otras líneas, usar el nombre tal cual
+  return lineaUpper;
+};
+
 // Añadir esta función para encontrar la mejor dirección disponible
 const findBestAvailableAddress = (addresses, company, type) => {
   // 1. Buscar predeterminada para esta empresa
@@ -645,7 +670,7 @@ const Carrito = () => {
   // Estados para manejar direcciones
   const [addresses, setAddresses] = useState([]);
 
-  // Estados para agrupar el carrito por empresa
+  // Estados para agrupar el carrito por empresa (y dentro por línea)
   const [groupedCart, setGroupedCart] = useState({});
   const [selectedCompany, setSelectedCompany] = useState(null);
 
@@ -659,11 +684,10 @@ const Carrito = () => {
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [companyToCheckout, setCompanyToCheckout] = useState(null);
-  const [isCheckoutAll, setIsCheckoutAll] = useState(false);
 
-  // Nueva función para confirmar el pago de una empresa
-  const handleCompanyCheckoutClick = (company) => {
-    setCompanyToCheckout(company);
+  // Nueva función para confirmar el pago de una línea
+  const handleLineCheckoutClick = (company, line) => {
+    setCompanyToCheckout(`${company}_${line}`);
     setShowConfirmModal(true);
   };
 
@@ -726,19 +750,25 @@ const Carrito = () => {
     }
   }, [user]);
 
-  // Agrupar items del carrito por empresa
+  // Agrupar items del carrito por empresa (y dentro por línea)
   useEffect(() => {
     const groupByCompany = () => {
       const grouped = {};
 
       cart.forEach((item) => {
         const company = item.empresaId || "Sin empresa";
+        const lineaNegocio = item.lineaNegocio || "DEFAULT";
+        // Usar la línea original para visualización (separar LLANTAS de LLANTAS MOTO)
+        const displayLine = lineaNegocio.toUpperCase().trim();
+        // Usar la clave de descuento para cálculos
+        const discountKey = mapLineaToDiscountKey(lineaNegocio) || "DEFAULT";
 
         if (!grouped[company]) {
           // Verificar si ya existía esta empresa en el agrupamiento anterior
           // y mantener sus direcciones seleccionadas
           grouped[company] = {
             items: [],
+            lines: {}, // Agrupar por línea dentro de la empresa (usando línea original)
             total: 0,
             // Mantener las direcciones previamente seleccionadas si existían
             shippingAddressId: groupedCart[company]?.shippingAddressId || null,
@@ -746,16 +776,35 @@ const Carrito = () => {
           };
         }
 
+        // Agrupar por línea original (para visualización separada)
+        if (!grouped[company].lines[displayLine]) {
+          grouped[company].lines[displayLine] = {
+            items: [],
+            total: 0,
+            discountKey: discountKey, // Guardar la clave de descuento para usar en cálculos
+          };
+        }
+
         grouped[company].items.push(item);
+        grouped[company].lines[displayLine].items.push(item);
         grouped[company].total += item.price * item.quantity;
+        grouped[company].lines[displayLine].total += item.price * item.quantity;
       });
 
-      // Ordenar productos alfabéticamente por nombre dentro de cada empresa
+      // Ordenar productos alfabéticamente por nombre dentro de cada empresa y línea
       Object.keys(grouped).forEach((company) => {
         grouped[company].items.sort((a, b) => {
           const nameA = (a.name || "").toLowerCase();
           const nameB = (b.name || "").toLowerCase();
           return nameA.localeCompare(nameB);
+        });
+
+        Object.keys(grouped[company].lines).forEach((line) => {
+          grouped[company].lines[line].items.sort((a, b) => {
+            const nameA = (a.name || "").toLowerCase();
+            const nameB = (b.name || "").toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
         });
       });
 
@@ -842,38 +891,55 @@ const Carrito = () => {
   const hasInsufficientStockForCompany = (company) => {
     return false;
   };
-  const handleCheckoutAll = async () => {
-    // Verificar que todas las empresas tienen direcciones seleccionadas
-    if (!isAllAddressesSelected()) {
-      toast.error(
-        "Por favor, selecciona direcciones de envío y facturación para todas las empresas"
-      );
+  // Función para procesar todos los grupos de una empresa (por línea)
+  const handleCheckoutAllLinesForCompany = async (company) => {
+    const companyData = groupedCart[company];
+    if (!companyData) return;
+
+    // Verificar direcciones
+    if (!companyData.shippingAddressId || !companyData.billingAddressId) {
+      toast.error("Faltan direcciones para esta empresa");
       return;
     }
 
-    // Iniciar proceso de pedidos múltiples
-    const companiesToProcess = Object.keys(groupedCart);
-    setTotalOrdersToProcess(companiesToProcess.length);
+    // Iniciar proceso de pedidos múltiples por línea
+    const linesToProcess = Object.keys(companyData.lines);
+    setTotalOrdersToProcess(linesToProcess.length);
     setCompletedOrders(0);
     setIsProcessingOrders(true);
 
-    // Guardar las empresas que se van a procesar
-    setLastProcessedCompanies([...companiesToProcess]);
+    // Guardar los grupos que se van a procesar
+    const groupsToProcess = linesToProcess.map((line) => `${company}_${line}`);
+    setLastProcessedCompanies(groupsToProcess);
 
-    // Procesar cada empresa secuencialmente
-    for (const company of companiesToProcess) {
-      // Actualizar la empresa actual que se está procesando
-      setCurrentProcessingCompany(company);
+    // Procesar cada línea secuencialmente
+    for (const line of linesToProcess) {
+      const groupKey = `${company}_${line}`;
+      setCurrentProcessingCompany(`${company} - ${line}`);
 
       try {
-        // Llamar a la función existente para procesar el pedido de esta empresa
-        await handleCheckoutSingleCompanyInternal(company);
+        // Crear un objeto temporal con la estructura esperada
+        const lineData = companyData.lines[line];
+        const tempGroupData = {
+          company,
+          line: line,
+          items: lineData.items,
+          shippingAddressId: companyData.shippingAddressId,
+          billingAddressId: companyData.billingAddressId,
+          discountKey: lineData.discountKey, // Incluir la clave de descuento
+        };
+
+        // Procesar el pedido para esta línea
+        await handleCheckoutSingleLineInternal(tempGroupData, company, line);
 
         // Incrementar contador de órdenes completadas
         setCompletedOrders((prev) => prev + 1);
       } catch (error) {
-        console.error(`Error al procesar pedido para ${company}:`, error);
-        toast.error(`Error al procesar pedido para ${company}`);
+        console.error(
+          `Error al procesar pedido para ${company} - ${line}:`,
+          error
+        );
+        toast.error(`Error al procesar pedido para ${company} - ${line}`);
         setIsProcessingOrders(false);
         return;
       }
@@ -884,29 +950,31 @@ const Carrito = () => {
     setShowSuccessCard(true);
   };
 
-  // Versión interna de handleCheckoutSingleCompany que no muestra toast individuales
-  const handleCheckoutSingleCompanyInternal = async (company) => {
-    const companyData = groupedCart[company];
-
-    if (!companyData) {
-      throw new Error("No se encontró información para esta empresa");
+  // Versión interna para procesar una línea específica
+  const handleCheckoutSingleLineInternal = async (
+    lineData,
+    company,
+    displayLine
+  ) => {
+    if (!lineData || !lineData.items || lineData.items.length === 0) {
+      throw new Error("No se encontró información para esta línea");
     }
 
     // Verificar direcciones
-    if (!companyData.shippingAddressId || !companyData.billingAddressId) {
-      throw new Error("Faltan direcciones para esta empresa");
+    if (!lineData.shippingAddressId || !lineData.billingAddressId) {
+      throw new Error("Faltan direcciones para esta línea");
     }
 
-    // Preparar orden para esta empresa
+    // Preparar orden para esta línea
     const shippingAddress = addresses.find(
-      (addr) => addr.id === companyData.shippingAddressId
+      (addr) => addr.id === lineData.shippingAddressId
     );
     const billingAddress = addresses.find(
-      (addr) => addr.id === companyData.billingAddressId
+      (addr) => addr.id === lineData.billingAddressId
     );
 
     // Calcular total con IVA incluido para cada item
-    const itemsWithIVA = companyData.items.map((item) => {
+    const itemsWithIVA = lineData.items.map((item) => {
       const discount = item?.discount || 0;
       const discountedPrice = discount
         ? item.price * (1 - discount / 100)
@@ -928,12 +996,14 @@ const Carrito = () => {
       0
     );
 
-    // Aplicar descuento de empresa (userDiscount)
-    const userDiscount = user?.DESCUENTOS?.[company] || 0;
+    // Aplicar descuento de empresa y línea (userDiscount)
+    // Usar discountKey para buscar el descuento correcto
+    const discountKey = lineData.discountKey || displayLine;
+    const userDiscount = user?.DESCUENTOS?.[company]?.[discountKey] || 0;
     const discountAmount = subtotalWithIVA * (userDiscount / 100);
     const totalConIva = subtotalWithIVA - discountAmount;
 
-    const productsToProcess = companyData.items.map((item) => ({
+    const productsToProcess = lineData.items.map((item) => ({
       PRODUCT_CODE: item.id,
       QUANTITY: item.quantity,
       PRICE: item.price,
@@ -946,9 +1016,7 @@ const Carrito = () => {
       SHIPPING_ADDRESS_ID: parseInt(shippingAddress.id),
       BILLING_ADDRESS_ID: parseInt(billingAddress.id),
       SUBTOTAL: subtotalWithIVA, // Subtotal con IVA incluido
-      DISCOUNT: userDiscount, // Descuento de empresa
       TOTAL: totalConIva, // Total final después del descuento
-      STATUS: "PENDIENTE",
       PRODUCTOS: productsToProcess,
     };
 
@@ -964,24 +1032,40 @@ const Carrito = () => {
     return responseOrder;
   };
 
-  // Modificar la función handleCheckoutSingleCompany existente
-  const handleCheckoutSingleCompany = async (company) => {
+  // Función para procesar una línea específica de una empresa
+  const handleCheckoutSingleLine = async (company, line) => {
     try {
-      setCurrentProcessingCompany(company);
+      const companyData = groupedCart[company];
+      if (!companyData || !companyData.lines[line]) {
+        throw new Error("No se encontró información para esta línea");
+      }
+
+      setCurrentProcessingCompany(`${company} - ${line}`);
       setIsProcessingOrders(true);
       setTotalOrdersToProcess(1);
       setCompletedOrders(0);
 
-      await handleCheckoutSingleCompanyInternal(company);
+      const lineDataObj = companyData.lines[line];
+      const lineData = {
+        items: lineDataObj.items,
+        shippingAddressId: companyData.shippingAddressId,
+        billingAddressId: companyData.billingAddressId,
+        discountKey: lineDataObj.discountKey, // Incluir la clave de descuento
+      };
+
+      await handleCheckoutSingleLineInternal(lineData, company, line);
 
       setCompletedOrders(1);
       setIsProcessingOrders(false);
       setShowSuccessCard(true);
 
-      // Guardar la empresa que se procesó para limpiarla cuando se cierre el modal
-      setLastProcessedCompanies([company]);
+      // Guardar el grupo que se procesó para limpiarlo cuando se cierre el modal
+      setLastProcessedCompanies([`${company}_${line}`]);
     } catch (error) {
-      console.error(`Error al procesar pedido para ${company}:`, error);
+      console.error(
+        `Error al procesar pedido para ${company} - ${line}:`,
+        error
+      );
       toast.error(`Error al procesar pedido: ${error.message}`);
       setIsProcessingOrders(false);
     }
@@ -989,16 +1073,17 @@ const Carrito = () => {
 
   // Agregar función para cerrar la tarjeta de éxito e ir a Mis Pedidos
   const handleGoToOrders = () => {
-    // Limpiar el carrito solo de las empresas procesadas
-    if (lastProcessedCompanies.length === Object.keys(groupedCart).length) {
-      // Si se procesaron todas las empresas, limpiar todo
-      clearCart();
-    } else {
-      // Si solo se procesaron algunas empresas, limpiar selectivamente
-      lastProcessedCompanies.forEach((company) => {
-        removeItemsByCompany(company);
-      });
-    }
+    // Limpiar el carrito solo de los grupos procesados
+    lastProcessedCompanies.forEach((groupKey) => {
+      const [company, line] = groupKey.split("_");
+      const companyData = groupedCart[company];
+      if (companyData && companyData.lines[line]) {
+        // Eliminar items de esta línea
+        companyData.lines[line].items.forEach((item) => {
+          removeFromCart(item.id);
+        });
+      }
+    });
 
     setShowSuccessCard(false);
     navigate(ROUTES.ECOMMERCE.MIS_PEDIDOS);
@@ -1007,13 +1092,16 @@ const Carrito = () => {
   // Agregar función para cerrar la tarjeta de éxito y seguir comprando
   const handleContinueShopping = () => {
     // Aplicar la misma lógica de limpieza
-    if (lastProcessedCompanies.length === Object.keys(groupedCart).length) {
-      clearCart();
-    } else {
-      lastProcessedCompanies.forEach((company) => {
-        removeItemsByCompany(company);
-      });
-    }
+    lastProcessedCompanies.forEach((groupKey) => {
+      const [company, line] = groupKey.split("_");
+      const companyData = groupedCart[company];
+      if (companyData && companyData.lines[line]) {
+        // Eliminar items de esta línea
+        companyData.lines[line].items.forEach((item) => {
+          removeFromCart(item.id);
+        });
+      }
+    });
 
     setShowSuccessCard(false);
     // navigate("/");
@@ -1040,20 +1128,42 @@ const Carrito = () => {
 
       <CartLayout>
         <div>
-          {/* Mostrar productos solo de la empresa seleccionada */}
-          <CartItemsList>
-            {selectedCompany &&
-              groupedCart[selectedCompany]?.items.map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  handleQuantityChange={handleQuantityChange}
-                  removeFromCart={removeFromCart}
-                  theme={theme}
-                  navigate={navigate}
-                />
-              ))}
-          </CartItemsList>
+          {/* Mostrar productos agrupados por línea dentro de la empresa seleccionada */}
+          {selectedCompany && groupedCart[selectedCompany] && (
+            <>
+              {Object.entries(groupedCart[selectedCompany].lines).map(
+                ([line, lineData]) => (
+                  <div key={line} style={{ marginBottom: "24px" }}>
+                    <h3
+                      style={{
+                        marginBottom: "12px",
+                        padding: "8px 16px",
+                        backgroundColor: theme.colors.surface,
+                        borderRadius: "6px",
+                        color: theme.colors.text,
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {line}
+                    </h3>
+                    <CartItemsList>
+                      {lineData.items.map((item) => (
+                        <CartItem
+                          key={item.id}
+                          item={item}
+                          handleQuantityChange={handleQuantityChange}
+                          removeFromCart={removeFromCart}
+                          theme={theme}
+                          navigate={navigate}
+                        />
+                      ))}
+                    </CartItemsList>
+                  </div>
+                )
+              )}
+            </>
+          )}
 
           {/* Sección de dirección de envío para la empresa seleccionada */}
           <ShippingSection>
@@ -1062,7 +1172,8 @@ const Carrito = () => {
               Dirección de envío para {selectedCompany}
             </SectionTitle>
 
-            {addresses.filter(
+            {selectedCompany &&
+            addresses.filter(
               (addr) => addr.type === "S" && addr.empresa === selectedCompany
             ).length > 0 ? (
               <div>
@@ -1071,93 +1182,96 @@ const Carrito = () => {
                     (addr) =>
                       addr.type === "S" && addr.empresa === selectedCompany
                   )
-                  .map((address) => (
-                    <AddressCard
-                      key={address.id}
-                      selected={
-                        groupedCart[selectedCompany]?.shippingAddressId ===
-                        address.id
-                      }
-                      onClick={() => {
-                        const updated = { ...groupedCart };
-                        updated[selectedCompany].shippingAddressId = address.id;
-                        setGroupedCart(updated);
-                      }}
-                    >
-                      <AddressInfo>
-                        <AddressName>
-                          {address.name}{" "}
-                          {address.origen === "SAP" && (
-                            <span
-                              style={{
-                                marginLeft: "8px",
-                                fontSize: "0.75rem",
-                                padding: "2px 6px",
-                                backgroundColor: "transparent",
-                                border: `solid 1px ${theme.colors.primary}`,
-                                borderRadius: "4px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                color: theme.colors.primary,
+                  .map((address) => {
+                    const companyData = groupedCart[selectedCompany];
+                    return (
+                      <AddressCard
+                        key={address.id}
+                        selected={companyData?.shippingAddressId === address.id}
+                        onClick={() => {
+                          const updated = { ...groupedCart };
+                          if (updated[selectedCompany]) {
+                            updated[selectedCompany].shippingAddressId =
+                              address.id;
+                          }
+                          setGroupedCart(updated);
+                        }}
+                      >
+                        <AddressInfo>
+                          <AddressName>
+                            {address.name}{" "}
+                            {address.origen === "SAP" && (
+                              <span
+                                style={{
+                                  marginLeft: "8px",
+                                  fontSize: "0.75rem",
+                                  padding: "2px 6px",
+                                  backgroundColor: "transparent",
+                                  border: `solid 1px ${theme.colors.primary}`,
+                                  borderRadius: "4px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  color: theme.colors.primary,
+                                }}
+                              >
+                                {/* <RenderIcon name="FaLock" size={10} /> */}
+                                <span>Registrada</span>
+                              </span>
+                            )}
+                          </AddressName>
+                          <AddressDetails>
+                            {address.street} {address.number}, {address.city},{" "}
+                            {address.state}
+                            {address.zipCode && ` (${address.zipCode})`}
+                            {address.isDefault && (
+                              <span
+                                style={{
+                                  marginLeft: 8,
+                                  color: theme.colors.success,
+                                }}
+                              >
+                                • Predeterminada
+                              </span>
+                            )}
+                          </AddressDetails>
+                        </AddressInfo>
+                        <AddressActions>
+                          {address.origen === "SAP" ? (
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.info(
+                                  "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
+                                );
                               }}
-                            >
-                              {/* <RenderIcon name="FaLock" size={10} /> */}
-                              <span>Registrada</span>
-                            </span>
-                          )}
-                        </AddressName>
-                        <AddressDetails>
-                          {address.street} {address.number}, {address.city},{" "}
-                          {address.state}
-                          {address.zipCode && ` (${address.zipCode})`}
-                          {address.isDefault && (
-                            <span
                               style={{
-                                marginLeft: 8,
-                                color: theme.colors.success,
+                                color: theme.colors.textLight,
                               }}
-                            >
-                              • Predeterminada
-                            </span>
+                              // leftIconName={"FaLock"}
+                              size="small"
+                            />
+                          ) : (
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Redirigir a la página de perfil con los parámetros para editar esta dirección
+                                navigate(ROUTES.ECOMMERCE.PERFIL, {
+                                  state: {
+                                    activeTab: "addresses",
+                                    editAddressId: address.id,
+                                    empresa: address.empresa,
+                                  },
+                                });
+                              }}
+                              leftIconName={"FaPencilAlt"}
+                              size="small"
+                            />
                           )}
-                        </AddressDetails>
-                      </AddressInfo>
-                      <AddressActions>
-                        {address.origen === "SAP" ? (
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toast.info(
-                                "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
-                              );
-                            }}
-                            style={{
-                              color: theme.colors.textLight,
-                            }}
-                            // leftIconName={"FaLock"}
-                            size="small"
-                          />
-                        ) : (
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Redirigir a la página de perfil con los parámetros para editar esta dirección
-                              navigate(ROUTES.ECOMMERCE.PERFIL, {
-                                state: {
-                                  activeTab: "addresses",
-                                  editAddressId: address.id,
-                                  empresa: address.empresa,
-                                },
-                              });
-                            }}
-                            leftIconName={"FaPencilAlt"}
-                            size="small"
-                          />
-                        )}
-                      </AddressActions>
-                    </AddressCard>
-                  ))}
+                        </AddressActions>
+                      </AddressCard>
+                    );
+                  })}
               </div>
             ) : (
               <EmptyAddressState>
@@ -1189,7 +1303,8 @@ const Carrito = () => {
               Dirección de facturación
             </SectionTitle>
 
-            {addresses.filter(
+            {selectedCompany &&
+            addresses.filter(
               (addr) => addr.type === "B" && addr.empresa === selectedCompany
             ).length > 0 ? (
               <div>
@@ -1198,90 +1313,93 @@ const Carrito = () => {
                     (addr) =>
                       addr.type === "B" && addr.empresa === selectedCompany
                   )
-                  .map((address) => (
-                    <AddressCard
-                      key={address.id}
-                      selected={
-                        groupedCart[selectedCompany]?.billingAddressId ===
-                        address.id
-                      }
-                      onClick={() => {
-                        const updated = { ...groupedCart };
-                        updated[selectedCompany].billingAddressId = address.id;
-                        setGroupedCart(updated);
-                      }}
-                    >
-                      <AddressInfo>
-                        <AddressName>
-                          {address.name}{" "}
-                          {address.origen === "SAP" && (
-                            <span
-                              style={{
-                                marginLeft: "8px",
-                                fontSize: "0.75rem",
-                                padding: "2px 6px",
-                                backgroundColor: "transparent",
-                                border: `solid 1px ${theme.colors.primary}`,
-                                borderRadius: "4px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                color: theme.colors.primary,
+                  .map((address) => {
+                    const companyData = groupedCart[selectedCompany];
+                    return (
+                      <AddressCard
+                        key={address.id}
+                        selected={companyData?.billingAddressId === address.id}
+                        onClick={() => {
+                          const updated = { ...groupedCart };
+                          if (updated[selectedCompany]) {
+                            updated[selectedCompany].billingAddressId =
+                              address.id;
+                          }
+                          setGroupedCart(updated);
+                        }}
+                      >
+                        <AddressInfo>
+                          <AddressName>
+                            {address.name}{" "}
+                            {address.origen === "SAP" && (
+                              <span
+                                style={{
+                                  marginLeft: "8px",
+                                  fontSize: "0.75rem",
+                                  padding: "2px 6px",
+                                  backgroundColor: "transparent",
+                                  border: `solid 1px ${theme.colors.primary}`,
+                                  borderRadius: "4px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  color: theme.colors.primary,
+                                }}
+                              >
+                                {/* <RenderIcon name="FaLock" size={10} /> */}
+                                <span>Registrada</span>
+                              </span>
+                            )}
+                          </AddressName>
+                          <AddressDetails>
+                            {address.street} {address.number}, {address.city},{" "}
+                            {address.state}
+                            {address.zipCode && ` (${address.zipCode})`}
+                            {address.isDefault && (
+                              <span
+                                style={{
+                                  marginLeft: 8,
+                                  color: theme.colors.info,
+                                }}
+                              >
+                                • Predeterminada
+                              </span>
+                            )}
+                          </AddressDetails>
+                        </AddressInfo>
+                        <AddressActions>
+                          {address.origen === "SAP" ? (
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.info(
+                                  "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
+                                );
                               }}
-                            >
-                              {/* <RenderIcon name="FaLock" size={10} /> */}
-                              <span>Registrada</span>
-                            </span>
-                          )}
-                        </AddressName>
-                        <AddressDetails>
-                          {address.street} {address.number}, {address.city},{" "}
-                          {address.state}
-                          {address.zipCode && ` (${address.zipCode})`}
-                          {address.isDefault && (
-                            <span
-                              style={{
-                                marginLeft: 8,
-                                color: theme.colors.info,
+                              style={{ color: theme.colors.textLight }}
+                              // leftIconName={"FaLock"}
+                              size="small"
+                            />
+                          ) : (
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(ROUTES.ECOMMERCE.PERFIL, {
+                                  state: {
+                                    activeTab: "addresses",
+                                    editAddressId: address.id,
+                                    empresa: address.empresa,
+                                  },
+                                });
                               }}
-                            >
-                              • Predeterminada
-                            </span>
+                              leftIconName={"FaPencilAlt"}
+                              size="small"
+                            />
                           )}
-                        </AddressDetails>
-                      </AddressInfo>
-                      <AddressActions>
-                        {address.origen === "SAP" ? (
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toast.info(
-                                "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
-                              );
-                            }}
-                            style={{ color: theme.colors.textLight }}
-                            // leftIconName={"FaLock"}
-                            size="small"
-                          />
-                        ) : (
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(ROUTES.ECOMMERCE.PERFIL, {
-                                state: {
-                                  activeTab: "addresses",
-                                  editAddressId: address.id,
-                                  empresa: address.empresa,
-                                },
-                              });
-                            }}
-                            leftIconName={"FaPencilAlt"}
-                            size="small"
-                          />
-                        )}
-                      </AddressActions>
-                    </AddressCard>
-                  ))}
+                        </AddressActions>
+                      </AddressCard>
+                    );
+                  })}
               </div>
             ) : (
               <EmptyAddressState>
@@ -1310,39 +1428,10 @@ const Carrito = () => {
         <OrderSummary>
           <SummaryTitle>Resumen del pedido</SummaryTitle>
 
-          {Object.keys(groupedCart).length > 1 && (
-            <TotalRow>
-              <SummaryLabel>Total General</SummaryLabel>
-              <SummaryValue $bold>${cartTotal.toFixed(2)}</SummaryValue>
-            </TotalRow>
-          )}
-          {/* Mostrar alerta solo si hay más de una empresa */}
-          {Object.keys(groupedCart).length > 1 && (
-            <StockAlertBanner style={{ marginBottom: 12 }}>
-              <b>¡Importante!</b> Al pedir todo junto se generará un pedido
-              independiente por cada empresa. Antes de continuar, revisa que las
-              direcciones de envío y facturación estén correctas para todas las
-              empresas.
-            </StockAlertBanner>
-          )}
-          {/* Botón para pagar todo junto, solo si hay más de una empresa */}
-          {Object.keys(groupedCart).length > 1 && (
-            <Button
-              text="Pedir todo junto"
-              variant="solid"
-              backgroundColor={theme.colors.success}
-              style={{ width: "100%", marginTop: "0px" }}
-              onClick={() => {
-                setIsCheckoutAll(true);
-                setShowConfirmModal(true);
-              }}
-              disabled={!isAllAddressesSelected()}
-            />
-          )}
           <Button
             text="Seguir comprando"
             variant="outlined"
-            style={{ width: "100%", marginTop: "12px", marginBottom: "12px" }}
+            style={{ width: "100%", marginTop: "0px", marginBottom: "12px" }}
             onClick={() => navigate("/")}
           />
           <div
@@ -1351,107 +1440,135 @@ const Carrito = () => {
               marginBottom: "12px",
             }}
           ></div>
-          {/* Resumen por empresa */}
-          {Object.entries(groupedCart).map(([company, data]) => {
-            // Calcular total con IVA incluido para cada item
-            const itemsWithIVA = data.items.map((item) => {
-              const discount = item?.discount || 0;
-              const discountedPrice = discount
-                ? item.price * (1 - discount / 100)
-                : item.price;
-              const priceWithIVA = calculatePriceWithIVA(
-                discountedPrice,
-                item.iva || TAXES.IVA_PERCENTAGE
-              );
-              return {
-                ...item,
-                priceWithIVA,
-                totalWithIVA: priceWithIVA * item.quantity,
-              };
-            });
+          {/* Resumen por empresa y línea */}
+          {selectedCompany && groupedCart[selectedCompany] && (
+            <>
+              {Object.entries(groupedCart[selectedCompany].lines).map(
+                ([line, lineData]) => {
+                  // Calcular total con IVA incluido para cada item
+                  const itemsWithIVA = lineData.items.map((item) => {
+                    const discount = item?.discount || 0;
+                    const discountedPrice = discount
+                      ? item.price * (1 - discount / 100)
+                      : item.price;
+                    const priceWithIVA = calculatePriceWithIVA(
+                      discountedPrice,
+                      item.iva || TAXES.IVA_PERCENTAGE
+                    );
+                    return {
+                      ...item,
+                      priceWithIVA,
+                      totalWithIVA: priceWithIVA * item.quantity,
+                    };
+                  });
 
-            // Subtotal con IVA incluido
-            const subtotalWithIVA = itemsWithIVA.reduce(
-              (acc, item) => acc + item.totalWithIVA,
-              0
-            );
+                  // Subtotal con IVA incluido
+                  const subtotalWithIVA = itemsWithIVA.reduce(
+                    (acc, item) => acc + item.totalWithIVA,
+                    0
+                  );
 
-            // Aplicar descuento de empresa (userDiscount)
-            const userDiscount = user?.DESCUENTOS?.[company] || 0;
-            const discountAmount = subtotalWithIVA * (userDiscount / 100);
-            const totalConIva = subtotalWithIVA - discountAmount;
+                  // Aplicar descuento de empresa y línea (userDiscount)
+                  // Usar discountKey para buscar el descuento correcto
+                  const discountKey = lineData.discountKey || line;
+                  const userDiscount =
+                    user?.DESCUENTOS?.[selectedCompany]?.[discountKey] || 0;
+                  const discountAmount = subtotalWithIVA * (userDiscount / 100);
+                  const totalConIva = subtotalWithIVA - discountAmount;
 
-            return (
-              <CompanySummary key={company}>
-                <CompanyName>{company}</CompanyName>
-                <SummaryRow>
-                  <SummaryLabel>
-                    Subtotal ({data.items.length} productos)
-                  </SummaryLabel>
-                  <SummaryValue>${subtotalWithIVA.toFixed(2)}</SummaryValue>
-                </SummaryRow>
-                {userDiscount > 0 && (
-                  <SummaryRow>
-                    <SummaryLabel>Descuento empresa:</SummaryLabel>
-                    <SummaryValue>-${discountAmount.toFixed(2)}</SummaryValue>
-                  </SummaryRow>
-                )}
-                <SummaryRow>
-                  <SummaryLabel
-                    style={{ fontSize: "0.8rem", fontStyle: "italic" }}
-                  >
-                    * Precios con IVA incluido
-                  </SummaryLabel>
-                </SummaryRow>
-                <TotalRow>
-                  <SummaryLabel>Total</SummaryLabel>
-                  <SummaryValue $bold>${totalConIva.toFixed(2)}</SummaryValue>
-                </TotalRow>
+                  const companyData = groupedCart[selectedCompany];
 
-                {/* Validación de direcciones por empresa */}
-                {!data.shippingAddressId && (
-                  <ValidationWarning>
-                    Falta dirección de envío
-                  </ValidationWarning>
-                )}
-                {!data.billingAddressId && (
-                  <ValidationWarning>
-                    Falta dirección de facturación
-                  </ValidationWarning>
-                )}
+                  return (
+                    <CompanySummary key={line}>
+                      <CompanyName>
+                        {selectedCompany} {line}
+                      </CompanyName>
+                      <SummaryRow>
+                        <SummaryLabel>
+                          Subtotal ({lineData.items.length} productos)
+                        </SummaryLabel>
+                        <SummaryValue>
+                          ${subtotalWithIVA.toFixed(2)}
+                        </SummaryValue>
+                      </SummaryRow>
+                      {userDiscount > 0 && (
+                        <SummaryRow>
+                          <SummaryLabel>Descuento {line}:</SummaryLabel>
+                          <SummaryValue>
+                            -${discountAmount.toFixed(2)}
+                          </SummaryValue>
+                        </SummaryRow>
+                      )}
+                      <SummaryRow>
+                        <SummaryLabel
+                          style={{ fontSize: "0.8rem", fontStyle: "italic" }}
+                        >
+                          * Precios con IVA incluido
+                        </SummaryLabel>
+                      </SummaryRow>
+                      <TotalRow>
+                        <SummaryLabel>Total</SummaryLabel>
+                        <SummaryValue $bold>
+                          ${totalConIva.toFixed(2)}
+                        </SummaryValue>
+                      </TotalRow>
 
-                {/* Botón para pagar solo esta empresa */}
-                <CompanyCheckoutButton
-                  text={`Proceder al pedido`}
-                  color={theme.colors.white}
-                  variant="outlined"
-                  size="small"
-                  leftIconName={"FaShoppingCart"}
-                  backgroundColor={theme.colors.primary}
-                  style={{ width: "100%" }}
-                  onClick={() => handleCompanyCheckoutClick(company)}
-                  disabled={!data.shippingAddressId || !data.billingAddressId}
-                />
-              </CompanySummary>
-            );
-          })}
+                      {/* Validación de direcciones */}
+                      {!companyData.shippingAddressId && (
+                        <ValidationWarning>
+                          Falta dirección de envío
+                        </ValidationWarning>
+                      )}
+                      {!companyData.billingAddressId && (
+                        <ValidationWarning>
+                          Falta dirección de facturación
+                        </ValidationWarning>
+                      )}
+
+                      {/* Botón para pagar solo esta línea */}
+                      <CompanyCheckoutButton
+                        text={`Proceder al pedido`}
+                        color={theme.colors.white}
+                        variant="outlined"
+                        size="small"
+                        leftIconName={"FaShoppingCart"}
+                        backgroundColor={theme.colors.primary}
+                        style={{ width: "100%" }}
+                        onClick={() =>
+                          handleLineCheckoutClick(selectedCompany, line)
+                        }
+                        disabled={
+                          !companyData.shippingAddressId ||
+                          !companyData.billingAddressId
+                        }
+                      />
+                    </CompanySummary>
+                  );
+                }
+              )}
+            </>
+          )}
           {/* Modal de confirmación */}
           {showConfirmModal && (
             <ProcessingOverlay>
               <ProcessingCard>
                 <ProcessingTitle>
-                  ¿Está seguro que desea confirmar
-                  {isCheckoutAll ? "todas las órdenes" : "esta orden"}?
+                  ¿Está seguro que desea confirmar esta orden?
                 </ProcessingTitle>
                 <ProcessingMessage>
-                  {isCheckoutAll ? (
-                    "Se generarán pedidos independientes para cada empresa en tu carrito."
-                  ) : (
-                    <>
-                      Se generará el pedido para la empresa{" "}
-                      <b>{companyToCheckout}</b>.
-                    </>
-                  )}
+                  {companyToCheckout &&
+                    (() => {
+                      const [company, line] = companyToCheckout.split("_");
+                      return (
+                        <>
+                          Se generará el pedido para{" "}
+                          <b>
+                            {company} - {line}
+                          </b>
+                          .
+                        </>
+                      );
+                    })()}
                 </ProcessingMessage>
                 <Button
                   text="Confirmar"
@@ -1460,11 +1577,9 @@ const Carrito = () => {
                   style={{ width: "100%", marginBottom: "12px" }}
                   onClick={async () => {
                     setShowConfirmModal(false);
-                    if (isCheckoutAll) {
-                      setIsCheckoutAll(false);
-                      await handleCheckoutAll();
-                    } else if (companyToCheckout) {
-                      await handleCheckoutSingleCompany(companyToCheckout);
+                    if (companyToCheckout) {
+                      const [company, line] = companyToCheckout.split("_");
+                      await handleCheckoutSingleLine(company, line);
                       setCompanyToCheckout(null);
                     }
                   }}
@@ -1476,7 +1591,6 @@ const Carrito = () => {
                   style={{ width: "100%" }}
                   onClick={() => {
                     setShowConfirmModal(false);
-                    setIsCheckoutAll(false);
                     setCompanyToCheckout(null);
                   }}
                   leftIconName="FaTimes"

@@ -19,14 +19,19 @@ const ProductLayout = styled.div`
   grid-template-columns: 35% 1fr;
   gap: 40px;
   background-color: ${({ theme }) => theme.colors.background};
+  align-items: start;
 
   @media (max-width: 992px) {
     grid-template-columns: 1fr;
     gap: 32px;
   }
 
-  @media (max-width: 576px) {
+  @media (max-width: 768px) {
     gap: 24px;
+  }
+
+  @media (max-width: 576px) {
+    gap: 20px;
   }
 `;
 
@@ -42,6 +47,11 @@ const Category = styled.div`
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 0.9rem;
   margin-bottom: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
 `;
 
 const ProductTitle = styled.h1`
@@ -49,33 +59,32 @@ const ProductTitle = styled.h1`
   color: ${({ theme }) => theme.colors.text};
   font-size: 1.8rem;
   word-break: break-word;
+  line-height: 1.3;
+
+  @media (max-width: 768px) {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
 
   @media (max-width: 480px) {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 `;
 
-const Brand = styled.div`
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-bottom: 4px;
-`;
-
-const Enterprise = styled.div`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-bottom: 8px;
-  opacity: 0.8;
-`;
 
 const PriceContainer = styled.div`
   margin-bottom: 10px;
   display: flex;
   align-items: baseline;
   gap: 10px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 
   @media (max-width: 480px) {
-    flex-wrap: wrap;
     gap: 6px;
   }
 `;
@@ -85,8 +94,12 @@ const CurrentPrice = styled.span`
   font-weight: bold;
   color: ${({ theme }) => theme.colors.primary};
 
+  @media (max-width: 768px) {
+    font-size: 1.75rem;
+  }
+
   @media (max-width: 480px) {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 `;
 
@@ -106,37 +119,50 @@ const OriginalPrice = styled.span`
   font-size: 1.2rem;
   text-decoration: line-through;
   color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const Discount = styled.span`
   background-color: ${({ theme }) => theme.colors.tertiary};
-  color: ${({ theme }) => theme.colors.white}; // Solo una definición de color
+  color: ${({ theme }) => theme.colors.white};
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: bold;
   font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    padding: 3px 6px;
+  }
 `;
 
 const Description = styled.div`
   line-height: 1.6;
   color: ${({ theme }) => theme.colors.text};
   white-space: pre-line;
-  /* margin-bottom: 24px; */
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
 
   @media (max-width: 480px) {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 `;
 const StockIndicator = styled.div`
   margin: 10px 0;
   padding: 12px 16px;
   border-radius: 6px;
-  background-color: ${
-    ({ theme, $inStock }) =>
-      $inStock
-        ? `${theme.colors.success}10` // Color verde con 10% de opacidad
-        : `${theme.colors.error}10` // Color rojo con 10% de opacidad
-  };
+  background-color: ${({ theme, $inStock }) =>
+    $inStock ? `${theme.colors.success}10` : `${theme.colors.error}10`};
   display: flex;
   align-items: center;
   width: max-content;
@@ -144,9 +170,15 @@ const StockIndicator = styled.div`
   max-width: 100%;
   flex-wrap: wrap;
 
-  @media (max-width: 480px) {
-    padding: 10px 12px;
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px 14px;
     gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    gap: 6px;
   }
 `;
 
@@ -180,7 +212,70 @@ const StockMessage = styled.span`
 const QuantitySelector = styled.div`
   display: flex;
   align-items: center;
-  /* margin: 20px 0; */
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const QuantityControlsContainer = styled.div`
+  margin-top: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+`;
+
+const QuantityWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
+const QuantityLabel = styled.div`
+  font-weight: 500;
+  min-width: 80px;
+
+  @media (max-width: 768px) {
+    min-width: auto;
+  }
+`;
+
+const CartCount = styled.span`
+  font-size: 0.85em;
+  color: #666;
+  margin-left: 8px;
+
+  @media (max-width: 768px) {
+    margin-left: auto;
+  }
+`;
+
+const AddToCartButtonWrapper = styled.div`
+  min-width: 180px;
+  max-width: 250px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
 `;
 
 const QuantityButton = styled(Button)`
@@ -197,6 +292,8 @@ const QuantityButton = styled(Button)`
   font-size: 1.2rem;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   opacity: ${({ disabled }) => (disabled ? 0.7 : 1)};
+  min-width: 36px;
+  padding: 0;
 
   &:first-child {
     border-radius: 4px 0 0 4px;
@@ -208,6 +305,12 @@ const QuantityButton = styled(Button)`
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.background};
+  }
+
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
   }
 `;
 
@@ -224,16 +327,11 @@ const QuantityInput = styled.input`
   color: ${({ theme, disabled }) =>
     disabled ? theme.colors.textLight : theme.colors.text};
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "text")};
-`;
 
-const ButtonsContainer = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-top: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
+  @media (max-width: 480px) {
+    width: 70px;
+    height: 40px;
+    font-size: 1.1rem;
   }
 `;
 
@@ -242,12 +340,22 @@ const SpecificationsSection = styled.div`
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    margin-top: 20px;
+    padding-top: 12px;
+  }
 `;
 
 const SpecificationsTitle = styled.h3`
   margin: 0 0 16px 0;
   font-size: 1.1rem;
   color: ${({ theme }) => theme.colors.text};
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
 `;
 
 const SpecificationsTable = styled.table`
@@ -268,11 +376,33 @@ const SpecLabel = styled.td`
   font-weight: 500;
   width: 40%;
   color: ${({ theme }) => theme.colors.textLight};
+
+  @media (max-width: 768px) {
+    padding: 6px 0;
+    font-size: 0.9rem;
+    width: 45%;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    padding: 5px 0;
+  }
 `;
 
 const SpecValue = styled.td`
   padding: 8px 0;
   color: ${({ theme }) => theme.colors.text};
+  word-break: break-word;
+
+  @media (max-width: 768px) {
+    padding: 6px 0;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    padding: 5px 0;
+  }
 `;
 
 // Componentes para los breadcrumbs
@@ -280,6 +410,11 @@ const BreadcrumbsContainer = styled.nav`
   margin-bottom: 24px;
   padding: 16px 0;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+    padding: 12px 0;
+  }
 `;
 
 const BreadcrumbsList = styled.ol`
@@ -289,6 +424,11 @@ const BreadcrumbsList = styled.ol`
   margin: 0;
   padding: 0;
   gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
 `;
 
 const BreadcrumbItem = styled.li`
@@ -307,6 +447,15 @@ const BreadcrumbLink = styled.button`
   padding: 4px 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+  }
 
   &:hover:not([disabled]) {
     background-color: ${({ theme }) => theme.colors.background};
@@ -322,6 +471,11 @@ const BreadcrumbSeparator = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
   margin: 0 4px;
   font-size: 0.8rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    margin: 0 3px;
+  }
 `;
 
 // Estilos adicionales para el zoom de la imagen
@@ -331,33 +485,56 @@ const ImageSection = styled.div`
   position: relative;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 `;
 
 const MainImageContainer = styled.div`
   position: relative;
   width: 100%;
+  max-width: 100%;
   cursor: crosshair;
-  overflow: visible;
+  overflow: hidden;
   border-radius: 8px;
   background-color: ${({ theme }) => theme.colors.white};
   box-shadow: 0 4px 10px ${({ theme }) => theme.colors.shadow};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    cursor: default;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px ${({ theme }) => theme.colors.shadow};
+    overflow: hidden;
+  }
 `;
 
 const MainImage = styled.img`
   width: 100%;
-  max-width: 550px;
+  max-width: 100%;
   height: auto;
+  max-height: 500px;
   object-fit: contain;
   display: block;
 
+  @media (max-width: 992px) {
+    max-height: 450px;
+  }
+
   @media (max-width: 768px) {
-    max-width: 100%;
+    max-height: 350px;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    max-height: 280px;
   }
 `;
 
 const ImagePlaceholder = styled.div`
   width: 100%;
-  max-width: 550px;
+  max-width: 100%;
   height: 400px;
   display: flex;
   align-items: center;
@@ -370,10 +547,21 @@ const ImagePlaceholder = styled.div`
   border-radius: 8px;
   border: 2px dashed ${({ theme }) => theme.colors.border};
 
+  @media (max-width: 992px) {
+    height: 350px;
+  }
+
   @media (max-width: 768px) {
-    max-width: 100%;
     padding: 24px;
-    height: auto;
+    height: 300px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+  }
+
+  @media (max-width: 480px) {
+    height: 250px;
+    padding: 20px;
+    font-size: 0.85rem;
   }
 `;
 
@@ -921,7 +1109,7 @@ const DetalleProducto = () => {
         type="product"
         structuredData={structuredData}
       />
-      <PageContainer>
+      <PageContainer style={{ padding: "0 16px" }}>
         {renderBreadcrumbs()}
         <ProductLayout>
           <ImageSection>
@@ -1026,29 +1214,10 @@ const DetalleProducto = () => {
             </StockIndicator>
             {/* Sección de cantidad y botón en la misma línea */}
             {isClient && !isVisualizacion && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  marginBottom: "20px",
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: "20px",
-                  flexWrap: "wrap",
-                }}
-              >
+              <QuantityControlsContainer>
                 {/* Controles de cantidad */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <div style={{ fontWeight: "500", minWidth: "80px" }}>
-                    Cantidad:
-                  </div>
+                <QuantityWrapper>
+                  <QuantityLabel>Cantidad:</QuantityLabel>
                   <QuantitySelector>
                     <QuantityButton
                       onClick={decreaseQuantity}
@@ -1069,36 +1238,27 @@ const DetalleProducto = () => {
                     />
                   </QuantitySelector>
                   {currentInCart > 0 && (
-                    <span
-                      style={{
-                        fontSize: "0.85em",
-                        color: "#666",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {currentInCart} en carrito
-                    </span>
+                    <CartCount>{currentInCart} en carrito</CartCount>
                   )}
-                </div>
+                </QuantityWrapper>
 
                 {/* Botón de agregar al carrito */}
-                <Button
-                  text={
-                    isAddingToCart
-                      ? "Agregando..."
-                      : `Agregar ${quantity} al carrito`
-                  }
-                  variant="solid"
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart}
-                  backgroundColor={({ theme }) => theme.colors.primary}
-                  size="medium"
-                  style={{
-                    minWidth: "180px",
-                    maxWidth: "250px",
-                  }}
-                />
-              </div>
+                <AddToCartButtonWrapper>
+                  <Button
+                    text={
+                      isAddingToCart
+                        ? "Agregando..."
+                        : `Agregar ${quantity} al carrito`
+                    }
+                    variant="solid"
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                    backgroundColor={({ theme }) => theme.colors.primary}
+                    size="medium"
+                    style={{ width: "100%" }}
+                  />
+                </AddToCartButtonWrapper>
+              </QuantityControlsContainer>
             )}
 
             <Description>
@@ -1111,7 +1271,13 @@ const DetalleProducto = () => {
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ marginBottom: "10px", fontSize: "1.1em" }}>
+                  <span
+                    style={{
+                      marginBottom: "10px",
+                      fontSize: "1.1em",
+                      fontWeight: 600,
+                    }}
+                  >
                     Descripción
                   </span>
                   <div
@@ -1119,12 +1285,21 @@ const DetalleProducto = () => {
                       color: "#666",
                       fontSize: "0.85em",
                       marginBottom: "10px",
+                      wordBreak: "break-word",
                     }}
                   >
                     Marca: {product.brand} · Empresa:{" "}
                     {product.empresa || product.empresaId}
                   </div>
-                  <span style={{ color: "#666" }}>{product.description}</span>
+                  <span
+                    style={{
+                      color: "#666",
+                      fontSize: "1rem",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    {product.description}
+                  </span>
                 </div>
               </div>
             </Description>

@@ -1,6 +1,11 @@
 import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import FilterCards from "../../components/catalog/FilterCards";
 import ProductGridView from "../../components/catalog/ProductGridView";
 import AdditionalFilters from "../../components/catalog/AdditionalFilters";
@@ -8,7 +13,6 @@ import CatalogBreadcrumb from "../../components/catalog/CatalogBreadcrumb";
 import useCatalogFlow from "../../hooks/useCatalogFlow";
 import { useProductCatalog } from "../../context/ProductCatalogContext";
 import RenderIcon from "../../components/ui/RenderIcon";
-import ProductDetail from "../../components/catalog/ProductDetail";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { api_email_solicitudEmpresa } from "../../api/email/apiEmail";
@@ -16,8 +20,7 @@ import { api_email_solicitudEmpresa } from "../../api/email/apiEmail";
 const CatalogContainer = styled.div`
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
-  height: calc(100vh - 77px);
-  max-height: calc(100vh - 77px);
+  height: calc(100vh - 45px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -26,7 +29,7 @@ const CatalogContainer = styled.div`
 const MainContent = styled.div`
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
-  max-height: calc(100vh - 77px);
+  height: calc(100vh - 45px);
   overflow-y: auto;
   overflow-x: hidden;
 `;
@@ -48,7 +51,6 @@ const ContentWithFilters = styled.div`
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  gap: 16px;
   align-items: stretch;
 
   @media (min-width: 1024px) {
@@ -109,15 +111,18 @@ const LinesGrid = styled.div`
   grid-template-columns: 1fr;
   gap: 20px;
   margin-top: 40px;
+  justify-items: center;
 
   @media (min-width: 640px) {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 24px;
     margin-top: 60px;
+    justify-content: center;
   }
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    justify-content: center;
   }
 `;
 
@@ -126,6 +131,9 @@ const LineCard = styled.div`
   border-radius: 12px;
   padding: 32px 24px;
   cursor: pointer;
+  min-width: 350px;
+  max-width: 360px;
+  width: 100%;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -139,6 +147,8 @@ const LineCard = styled.div`
 
   @media (max-width: 768px) {
     padding: 24px 20px;
+    min-width: 100%;
+    max-width: 100%;
   }
 `;
 
@@ -403,6 +413,7 @@ const Catalog = () => {
   const { empresaName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
     useProductCatalog();
@@ -448,6 +459,60 @@ const Catalog = () => {
     }
   }, [empresaName]);
 
+  // Función para actualizar la URL - MERGE con parámetros existentes
+  const updateURL = useCallback(
+    (params, isCompleteUpdate = false) => {
+      // Crear nuevos params basados en los existentes (para preservar page, sort, limit)
+      const newParams = new URLSearchParams(searchParams);
+
+      if (isCompleteUpdate) {
+        // Si es una actualización completa, primero eliminar todos los parámetros de filtros
+        // pero preservar page, sort, limit
+        const preservedParams = {
+          page: newParams.get("page"),
+          sort: newParams.get("sort"),
+          limit: newParams.get("limit"),
+        };
+
+        // Eliminar todos los parámetros de filtros (filtro_* y dma_*)
+        const keysToDelete = [];
+        newParams.forEach((value, key) => {
+          if (
+            key.startsWith("filtro_") ||
+            key.startsWith("dma_") ||
+            key === "linea" ||
+            key === "step" ||
+            key === "search"
+          ) {
+            keysToDelete.push(key);
+          }
+        });
+        keysToDelete.forEach((key) => newParams.delete(key));
+
+        // Restaurar parámetros preservados
+        Object.entries(preservedParams).forEach(([key, value]) => {
+          if (value) {
+            newParams.set(key, value);
+          }
+        });
+      }
+
+      // Agregar o actualizar solo los parámetros que se pasan
+      // URLSearchParams.set() codifica automáticamente los valores
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          newParams.set(key, value);
+        } else {
+          // Si el valor es vacío/null, eliminar el parámetro
+          newParams.delete(key);
+        }
+      });
+
+      setSearchParams(newParams, { replace: true });
+    },
+    [setSearchParams, searchParams]
+  );
+
   const {
     selectedLinea,
     selectedValues,
@@ -472,7 +537,9 @@ const Catalog = () => {
     setCurrentStepIndex,
   } = useCatalogFlow(
     empresaName,
-    empresaName ? catalogByEmpresa[empresaName] : null
+    empresaName ? catalogByEmpresa[empresaName] : null,
+    searchParams,
+    updateURL
   );
 
   const handleLineaSelect = (linea) => {
@@ -524,55 +591,15 @@ const Catalog = () => {
     clearAdditionalFilter(filterId);
   };
 
+  // Ya no necesitamos el sistema de restore desde location.state
+  // porque ahora todo se maneja a través de la URL
+  // Mantenemos este código por compatibilidad pero ya no se usará
   useEffect(() => {
     if (location.state?.filters) {
-      setPendingRestore({
-        filters: location.state.filters,
-        search: location.state.searchTerm || "",
-        sort: location.state.sortBy || "default",
-      });
-      setInitialSort(location.state.sortBy || "default");
-      setRestoreApplied(false);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    if (pendingRestore && isInitialized) {
-      if (pendingRestore.filters?.selectedLinea) {
-        selectLinea(pendingRestore.filters.selectedLinea);
-      }
-      handleSearchChange(pendingRestore.search || "");
-    }
-  }, [pendingRestore, isInitialized, selectLinea, handleSearchChange]);
-
-  useEffect(() => {
-    if (
-      pendingRestore &&
-      pendingRestore.filters?.selectedLinea &&
-      selectedLinea === pendingRestore.filters.selectedLinea
-    ) {
-      setSelectedValues(pendingRestore.filters.selectedValues || {});
-
-      if (flowConfig?.steps?.length) {
-        setCurrentStepIndex(flowConfig.steps.length - 1);
-      }
-
-      setPendingRestore(null);
-      setRestoreApplied(true);
-    }
-  }, [
-    pendingRestore,
-    selectedLinea,
-    flowConfig,
-    setSelectedValues,
-    setCurrentStepIndex,
-  ]);
-
-  useEffect(() => {
-    if (restoreApplied) {
+      // Si hay estado en location, limpiarlo ya que ahora usamos URL
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [restoreApplied, navigate, location.pathname]);
+  }, [location.state, location.pathname, navigate]);
 
   // Funciones para el formulario de solicitud de acceso
   const handleFormChange = (e) => {
@@ -858,25 +885,16 @@ const Catalog = () => {
     );
   }
 
-  // Si hay un producto seleccionado, mostrar el detalle
+  // Si hay un producto seleccionado, redirigir a la página de detalle
   if (selectedProduct) {
-    return (
-      <ProductDetail
-        product={selectedProduct}
-        onBack={handleBackToCatalog}
-        onLineaSelect={handleBreadcrumbLineaSelect}
-        onFilterSelect={handleBreadcrumbFilterSelect}
-        onProductsSelect={handleBreadcrumbProductsSelect}
-        catalogState={{
-          selectedLinea,
-          selectedValues,
-          availableLines,
-          flowConfig,
-        }}
-        isAtProductView={isAtProductView}
-        empresaName={empresaName}
-      />
-    );
+    navigate(`/productos/${selectedProduct.id}`, {
+      state: {
+        product: selectedProduct,
+        empresaId: empresaName,
+        prevUrl: `/catalogo/${empresaName || ""}`,
+      },
+    });
+    return null;
   }
 
   // Pantalla de productos cuando se han completado todos los filtros
