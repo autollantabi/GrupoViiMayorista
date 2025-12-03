@@ -45,6 +45,12 @@ const FiltersContainer = styled.div`
     scrollbar-color: ${({ theme }) => theme.colors.border}
       ${({ theme }) => theme.colors.background};
   }
+
+  @media (min-width: 1024px) and (max-width: 1280px) {
+    width: 240px;
+    flex: 0 0 240px;
+    padding: 12px 18px;
+  }
 `;
 
 const FilterHeader = styled.div`
@@ -59,6 +65,11 @@ const FilterTitle = styled.h3`
   display: flex;
   align-items: center;
   gap: 12px;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+    gap: 10px;
+  }
 `;
 
 const FilterOptionLabel = styled.span`
@@ -67,6 +78,10 @@ const FilterOptionLabel = styled.span`
     $isSelected ? theme.colors.primary : theme.colors.text};
   font-weight: ${({ $isSelected }) => ($isSelected ? "600" : "400")};
   flex: 1;
+
+  @media (max-width: 1024px) {
+    font-size: 13px;
+  }
 `;
 
 const FilterOptionCount = styled.span`
@@ -79,6 +94,12 @@ const FilterOptionCount = styled.span`
   border-radius: 4px;
   margin-left: 8px;
   font-weight: ${({ $isSelected }) => ($isSelected ? "600" : "400")};
+
+  @media (max-width: 1024px) {
+    font-size: 11px;
+    padding: 2px 5px;
+    margin-left: 6px;
+  }
 `;
 
 const ClearButton = styled.button`
@@ -226,6 +247,10 @@ const ModalTitle = styled.h3`
   color: ${({ theme }) => theme.colors.text};
   margin: 0;
   font-weight: 600;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -270,6 +295,10 @@ const AccordionHeader = styled.div`
     background: ${({ theme }) =>
       theme.colors.backgroundHover || theme.colors.border};
   }
+
+  @media (max-width: 1024px) {
+    padding: 10px 14px;
+  }
 `;
 
 const AccordionTitle = styled.h4`
@@ -282,7 +311,7 @@ const AccordionTitle = styled.h4`
   gap: 8px;
 
   @media (min-width: 1024px) {
-    font-size: 16px;
+    font-size: 15px;
   }
 `;
 
@@ -325,6 +354,10 @@ const FilterSearchInput = styled(Input)`
   font-size: 14px;
   width: 100%;
   min-width: 0;
+
+  @media (max-width: 1024px) {
+    font-size: 13px;
+  }
 `;
 
 const FilterOptionsContainer = styled.div`
@@ -380,8 +413,8 @@ const FilterOption = styled.div`
   font-size: 14px;
 
   @media (min-width: 1024px) {
-    padding: 12px;
-    font-size: 16px;
+    padding: 10px;
+    font-size: 14px;
   }
 
   &:hover {
@@ -418,6 +451,10 @@ const InfoMessage = styled.p`
   font-size: 14px;
   margin: 0;
   padding: ${({ $withPadding }) => ($withPadding ? "8px" : "0")};
+
+  @media (max-width: 1024px) {
+    font-size: 13px;
+  }
 `;
 
 const ClearSection = styled.div`
@@ -441,6 +478,12 @@ const ClearAllButton = styled.button`
   width: 100%;
   justify-content: center;
   margin: 0 0 10px 0;
+
+  @media (max-width: 1024px) {
+    font-size: 13px;
+    padding: 8px 14px;
+    gap: 6px;
+  }
 
   &:hover {
     background: ${({ theme }) => theme.colors.errorDark || "#dc2626"};
@@ -589,10 +632,13 @@ const AdditionalFilters = ({
               <SearchContainer>
                 <Input
                   type="text"
+                  id="search-products-modal"
+                  name="search-products-modal"
                   placeholder="Buscar productos..."
                   value={localSearchQuery}
                   onChange={handleSearchChange}
                   leftIconName="FaSearch"
+                  autoComplete="off"
                 />
               </SearchContainer>
 
@@ -615,10 +661,13 @@ const AdditionalFilters = ({
           <SearchContainer>
             <Input
               type="text"
+              id="search-products-sidebar-empty"
+              name="search-products-sidebar-empty"
               placeholder="Buscar productos..."
               value={localSearchQuery}
               onChange={handleSearchChange}
               leftIconName="FaSearch"
+              autoComplete="off"
             />
           </SearchContainer>
 
@@ -661,10 +710,13 @@ const AdditionalFilters = ({
             <SearchContainer>
               <Input
                 type="text"
+                id="search-products-modal-filters"
+                name="search-products-modal-filters"
                 placeholder="Buscar productos..."
                 value={localSearchQuery}
                 onChange={handleSearchChange}
                 leftIconName="FaSearch"
+                autoComplete="off"
               />
             </SearchContainer>
 
@@ -704,11 +756,14 @@ const AdditionalFilters = ({
                           <SearchInputContainer>
                             <FilterSearchInput
                               type="text"
+                              id={`filter-search-${filter.id}-modal`}
+                              name={`filter-search-${filter.id}-modal`}
                               placeholder={`Buscar ...`}
                               value={filterSearches[filter.id] || ""}
                               onChange={(e) =>
                                 handleFilterSearch(filter.id, e.target.value)
                               }
+                              autoComplete="off"
                             />
                           </SearchInputContainer>
                           {selectedValues[filter.id] && (
@@ -780,10 +835,13 @@ const AdditionalFilters = ({
         <SearchContainer>
           <Input
             type="text"
+            id="search-products-sidebar"
+            name="search-products-sidebar"
             placeholder="Buscar productos..."
             value={localSearchQuery}
             onChange={handleSearchChange}
             leftIconName="FaSearch"
+            autoComplete="off"
           />
         </SearchContainer>
 
@@ -818,11 +876,14 @@ const AdditionalFilters = ({
                     <SearchInputContainer>
                       <FilterSearchInput
                         type="text"
+                        id={`filter-search-${filter.id}-sidebar`}
+                        name={`filter-search-${filter.id}-sidebar`}
                         placeholder={`Buscar ...`}
                         value={filterSearches[filter.id] || ""}
                         onChange={(e) =>
                           handleFilterSearch(filter.id, e.target.value)
                         }
+                        autoComplete="off"
                       />
                     </SearchInputContainer>
                     {selectedValues[filter.id] && (

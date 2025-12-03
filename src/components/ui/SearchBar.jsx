@@ -151,12 +151,15 @@ const SearchBar = ({
       
       <SearchInput
         type="text"
+        id={props.id || "search-bar"}
+        name={props.name || "search-bar"}
         placeholder={placeholder}
         value={internalValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         $iconPosition={iconPosition}
         height={height}
+        autoComplete="off"
       />
       
       {iconPosition === "right" && <RenderIcon name={iconName} size={16} />}

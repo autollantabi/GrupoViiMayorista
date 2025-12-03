@@ -384,7 +384,6 @@ const ClientHomeComponent = () => {
       try {
         setIsLoading(true);
         const response = await api_products_getInfoProductos();
-        console.log("response", response);
 
         if (response.success && response.data) {
           // Asegurar que siempre sea un array
@@ -426,7 +425,6 @@ const ClientHomeComponent = () => {
     const productsInf = productsInfo.filter(
       (product) => product.ENTERPRISE === empresaName
     );
-    console.log("productsInf", productsInf);
     if (!productsInf || productsInf.length === 0) {
       return 0;
     }

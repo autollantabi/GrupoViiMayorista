@@ -178,6 +178,7 @@ const Select = ({
   postValue = "",
   label,
   name = "",
+  id = "",
   disabled = false,
   maxHeight = 300,
   dropDirection = "auto", // "auto", "down", "up"
@@ -318,10 +319,13 @@ const Select = ({
             <SearchInput
               ref={searchInputRef}
               type="text"
+              id={id ? `select-search-${id}` : (name ? `select-search-${name}` : 'select-search-default')}
+              name={name ? `select-search-${name}` : (id ? `select-search-${id}` : 'select-search-default')}
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              autoComplete="off"
             />
           </SearchInputWrapper>
         )}

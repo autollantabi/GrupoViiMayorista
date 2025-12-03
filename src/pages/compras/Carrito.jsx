@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../../context/CartContext";
@@ -462,6 +462,59 @@ const CompanyCheckoutButton = styled(Button)`
   }
 `;
 
+// Componente memoizado para la imagen del producto en el carrito
+const MemoizedProductImage = memo(({ src, alt }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Resetear estados solo cuando cambia la src
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(!!src);
+  }, [src]);
+
+  const imageSrc = src ? `${baseLinkImages}${src}` : "";
+
+  if (imageError || !src) {
+    return (
+      <ImagePlaceholder>
+        <div>
+          <div>Imagen no disponible</div>
+        </div>
+      </ImagePlaceholder>
+    );
+  }
+
+  return (
+    <>
+      {imageLoading && (
+        <ImagePlaceholder>
+          <div>Cargando...</div>
+        </ImagePlaceholder>
+      )}
+      <ItemImage
+        src={imageSrc}
+        alt={alt}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        style={{ display: imageLoading ? "none" : "block" }}
+      />
+    </>
+  );
+});
+
+MemoizedProductImage.displayName = "MemoizedProductImage";
+
 const CartItem = ({
   item,
   handleQuantityChange,
@@ -471,6 +524,13 @@ const CartItem = ({
 }) => {
   const discount = item?.discount || 0;
   const maxStock = item?.stock || 0;
+  const quantityIntervalRef = useRef(null);
+  const currentQuantityRef = useRef(item.quantity);
+
+  // Actualizar el ref cuando cambia la cantidad del item
+  useEffect(() => {
+    currentQuantityRef.current = item.quantity;
+  }, [item.quantity]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice = discount
@@ -495,53 +555,92 @@ const CartItem = ({
     });
   };
 
-  // Componente para manejar la imagen con fallback
-  const ProductImageWithFallback = ({ src, alt }) => {
-    const [imageError, setImageError] = useState(false);
-    const [imageLoading, setImageLoading] = useState(true);
+  // Calcular el máximo de cantidad basado en el stock disponible
+  const maxQuantity = maxStock > 0 ? maxStock : 5000;
 
-    const handleImageLoad = () => {
-      setImageLoading(false);
-      setImageError(false);
-    };
-
-    const handleImageError = () => {
-      setImageLoading(false);
-      setImageError(true);
-    };
-
-    const imageSrc = `${baseLinkImages}${src}`;
-    if (imageError || !src) {
-      return (
-        <ImagePlaceholder>
-          <div>
-            <div>Imagen no disponible</div>
-          </div>
-        </ImagePlaceholder>
-      );
+  // Funciones para manejar el mantenimiento presionado del botón
+  const handleDecreaseMouseDown = (e) => {
+    e.preventDefault();
+    if (item.quantity > 1) {
+      handleQuantityChange(item.id, item.quantity - 1);
     }
 
-    return (
-      <>
-        {imageLoading && (
-          <ImagePlaceholder>
-            <div>Cargando...</div>
-          </ImagePlaceholder>
-        )}
-        <ItemImage
-          src={imageSrc}
-          alt={alt}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={{ display: imageLoading ? "none" : "block" }}
-        />
-      </>
-    );
+    // Iniciar intervalo después de un pequeño delay
+    quantityIntervalRef.current = setTimeout(() => {
+      const interval = setInterval(() => {
+        const currentQuantity = currentQuantityRef.current;
+        if (currentQuantity > 1) {
+          const newQuantity = currentQuantity - 1;
+          currentQuantityRef.current = newQuantity;
+          handleQuantityChange(item.id, newQuantity);
+        } else {
+          clearInterval(interval);
+        }
+      }, 100); // Repetir cada 100ms
+
+      quantityIntervalRef.current = interval;
+    }, 300); // Delay inicial de 300ms
   };
+
+  const handleIncreaseMouseDown = (e) => {
+    e.preventDefault();
+    if (item.quantity < maxQuantity) {
+      handleQuantityChange(item.id, item.quantity + 1);
+    }
+
+    // Iniciar intervalo después de un pequeño delay
+    quantityIntervalRef.current = setTimeout(() => {
+      const interval = setInterval(() => {
+        const currentQuantity = currentQuantityRef.current;
+        if (currentQuantity < maxQuantity) {
+          const newQuantity = currentQuantity + 1;
+          currentQuantityRef.current = newQuantity;
+          handleQuantityChange(item.id, newQuantity);
+        } else {
+          clearInterval(interval);
+        }
+      }, 100); // Repetir cada 100ms
+
+      quantityIntervalRef.current = interval;
+    }, 300); // Delay inicial de 300ms
+  };
+
+  const handleQuantityButtonMouseUp = () => {
+    // Limpiar timeout si aún no se ejecutó
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
+    }
+  };
+
+  const handleQuantityButtonMouseLeave = () => {
+    // Limpiar cuando el mouse sale del botón
+    handleQuantityButtonMouseUp();
+  };
+
+  // Limpiar intervalos al desmontar
+  useEffect(() => {
+    return () => {
+      if (quantityIntervalRef.current) {
+        if (typeof quantityIntervalRef.current === "number") {
+          clearTimeout(quantityIntervalRef.current);
+        } else {
+          clearInterval(quantityIntervalRef.current);
+        }
+      }
+    };
+  }, []);
+
+  // Componente memoizado para manejar la imagen con fallback
+  // Se mueve fuera del render para evitar recrearlo en cada cambio de cantidad
 
   return (
     <CartItemContainer>
-      <ProductImageWithFallback src={item?.image} alt={item?.name} />
+      <MemoizedProductImage src={item?.image} alt={item?.name} />
 
       <ItemDetails>
         <ItemName onClick={handleItemClick}>{item?.name}</ItemName>
@@ -550,6 +649,11 @@ const CartItem = ({
         <ItemQuantityControl>
           <QuantityButton
             onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+            onMouseDown={handleDecreaseMouseDown}
+            onMouseUp={handleQuantityButtonMouseUp}
+            onMouseLeave={handleQuantityButtonMouseLeave}
+            onTouchStart={handleDecreaseMouseDown}
+            onTouchEnd={handleQuantityButtonMouseUp}
             disabled={item.quantity <= 1}
             text={"-"}
             size="small"
@@ -558,16 +662,23 @@ const CartItem = ({
           <QuantityInput
             type="number"
             min="1"
-            max={5000}
+            max={maxQuantity}
             value={item.quantity}
             onChange={(e) => {
               const newQuantity = parseInt(e.target.value) || 1;
-              handleQuantityChange(item.id, newQuantity);
+              // Limitar al máximo disponible
+              const limitedQuantity = Math.min(newQuantity, maxQuantity);
+              handleQuantityChange(item.id, limitedQuantity);
             }}
           />
           <QuantityButton
             onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-            disabled={item.quantity >= 5000}
+            onMouseDown={handleIncreaseMouseDown}
+            onMouseUp={handleQuantityButtonMouseUp}
+            onMouseLeave={handleQuantityButtonMouseLeave}
+            onTouchStart={handleIncreaseMouseDown}
+            onTouchEnd={handleQuantityButtonMouseUp}
+            disabled={item.quantity >= maxQuantity}
             text={"+"}
             size="small"
           />
@@ -1023,7 +1134,6 @@ const Carrito = () => {
     await new Promise((resolve) => setTimeout(resolve, 3000)); // Simular un delay para el procesamiento
 
     const responseOrder = await api_order_createOrder(orderToProcess);
-    console.log("responseOrder", responseOrder);
 
     if (!responseOrder.success) {
       throw new Error(responseOrder.message || "Error al procesar el pedido");
@@ -1108,7 +1218,7 @@ const Carrito = () => {
   };
 
   return (
-    <PageContainer>
+    <PageContainer style={{ padding: "16px" }}>
       <PageTitle>
         <h1>Carrito de compras</h1>
       </PageTitle>

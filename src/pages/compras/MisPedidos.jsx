@@ -287,7 +287,7 @@ const MisPedidos = () => {
           // Calcular el total si está vacío
           const total = order.CABECERA.TOTAL || order.CABECERA.SUBTOTAL;
           const subtotal = order.CABECERA.SUBTOTAL;
-
+          
           // Calcular el IVA
           const ivaPercentage = order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
           const ivaAmount = total - subtotal; // El IVA es la diferencia entre total y subtotal
@@ -331,10 +331,10 @@ const MisPedidos = () => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
+    
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
+    
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -352,7 +352,7 @@ const MisPedidos = () => {
             // Calcular el total si está vacío
             const total = order.CABECERA.TOTAL;
             const subtotal = order.CABECERA.SUBTOTAL;
-
+            
             // Calcular el IVA
             const ivaPercentage =
               order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
@@ -602,7 +602,7 @@ const MisPedidos = () => {
                 </StatusBadge>
               </MobileOrderStatus>
             </MobileOrderHeader>
-
+            
             <MobileOrderInfo>
               <MobileOrderRow>
                 <MobileOrderLabel>Fecha:</MobileOrderLabel>
@@ -625,23 +625,23 @@ const MisPedidos = () => {
                   })()}
                 </MobileOrderValue>
               </MobileOrderRow>
-
+              
               <MobileOrderRow>
                 <MobileOrderLabel>Proveedor:</MobileOrderLabel>
                 <MobileOrderValue>{order.empresaId}</MobileOrderValue>
               </MobileOrderRow>
-
+              
               <MobileOrderRow>
                 <MobileOrderLabel>Total:</MobileOrderLabel>
                 <MobileOrderValue>${order.total.toFixed(2)}</MobileOrderValue>
               </MobileOrderRow>
-
+              
               <MobileOrderRow>
                 <MobileOrderLabel>Productos:</MobileOrderLabel>
                 <MobileOrderValue>{order.items} items</MobileOrderValue>
               </MobileOrderRow>
             </MobileOrderInfo>
-
+            
             <MobileOrderActions>
               <Button
                 text="Ver detalle"

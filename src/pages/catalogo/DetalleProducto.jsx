@@ -165,8 +165,11 @@ const StockIndicator = styled.div`
   margin: 10px 0;
   padding: 12px 16px;
   border-radius: 6px;
-  background-color: ${({ theme, $inStock }) =>
-    $inStock ? `${theme.colors.success}10` : `${theme.colors.error}10`};
+  background-color: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return `${theme.colors.success}10`;
+    if ($lowStock) return `${theme.colors.warning || "#fbbf24"}10`;
+    return `${theme.colors.error}10`;
+  }};
   display: flex;
   align-items: center;
   width: max-content;
@@ -192,16 +195,22 @@ const StockBadge = styled.span`
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
-  background-color: ${({ theme, $inStock }) =>
-    $inStock ? theme.colors.success : theme.colors.error};
+  background-color: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return theme.colors.success;
+    if ($lowStock) return theme.colors.warning || "#fbbf24";
+    return theme.colors.error;
+  }};
   color: ${({ theme }) => theme.colors.white};
   white-space: nowrap;
 `;
 
 const StockMessage = styled.span`
   font-size: 0.9rem;
-  color: ${({ theme, $inStock }) =>
-    $inStock ? theme.colors.success : theme.colors.error};
+  color: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return theme.colors.success;
+    if ($lowStock) return theme.colors.warning || "#fbbf24";
+    return theme.colors.error;
+  }};
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -650,6 +659,7 @@ const DetalleProducto = () => {
   const { addToCart, cart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
   // Intentar obtener el producto del estado de navegación primero
   const [product, setProduct] = useState(location.state?.product || null);
 
@@ -678,6 +688,7 @@ const DetalleProducto = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const hoverTimeoutRef = useRef(null);
   const hasFetchedProductRef = useRef(false);
+  const quantityIntervalRef = useRef(null);
 
   // Función para renderizar los breadcrumbs dinámicos según el origen
   const renderBreadcrumbs = () => {
@@ -1055,26 +1066,108 @@ const DetalleProducto = () => {
     return <div>Cargando...</div>;
   }
 
+  // Calcular el máximo de cantidad basado en el stock disponible
+  const maxQuantity = useMemo(() => {
+    if (!product) return 5000;
+    // Si hay stock, usar el stock como máximo, sino permitir hasta 5000
+    return product.stock > 0 ? product.stock : 5000;
+  }, [product]);
+
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    const max = 5000; // Eliminar restricción de stock
-    if (!isNaN(value) && value > 0 && value <= max) {
+    if (!isNaN(value) && value > 0 && value <= maxQuantity) {
       setQuantity(value);
     }
   };
 
   const decreaseQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
+    setQuantity((prev) => {
+      if (prev > 1) {
+        return prev - 1;
+      }
+      return prev;
+    });
   };
 
   const increaseQuantity = () => {
-    if (quantity < 5000) {
-      // Eliminar restricción de stock
-      setQuantity(quantity + 1);
+    setQuantity((prev) => {
+      if (prev < maxQuantity) {
+        return prev + 1;
+      }
+      return prev;
+    });
+  };
+
+  // Funciones para manejar el mantenimiento presionado del botón
+  const handleDecreaseMouseDown = (e) => {
+    e.preventDefault();
+    decreaseQuantity(); // Primera acción inmediata
+
+    // Iniciar intervalo después de un pequeño delay
+    quantityIntervalRef.current = setTimeout(() => {
+      const interval = setInterval(() => {
+        setQuantity((prev) => {
+          if (prev > 1) {
+            return prev - 1;
+          }
+          clearInterval(interval);
+          return prev;
+        });
+      }, 100); // Repetir cada 100ms
+
+      quantityIntervalRef.current = interval;
+    }, 300); // Delay inicial de 300ms
+  };
+
+  const handleIncreaseMouseDown = (e) => {
+    e.preventDefault();
+    increaseQuantity(); // Primera acción inmediata
+
+    // Iniciar intervalo después de un pequeño delay
+    quantityIntervalRef.current = setTimeout(() => {
+      const interval = setInterval(() => {
+        setQuantity((prev) => {
+          if (prev < maxQuantity) {
+            return prev + 1;
+          }
+          clearInterval(interval);
+          return prev;
+        });
+      }, 100); // Repetir cada 100ms
+
+      quantityIntervalRef.current = interval;
+    }, 300); // Delay inicial de 300ms
+  };
+
+  const handleQuantityButtonMouseUp = () => {
+    // Limpiar timeout si aún no se ejecutó
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
     }
   };
+
+  const handleQuantityButtonMouseLeave = () => {
+    // Limpiar cuando el mouse sale del botón
+    handleQuantityButtonMouseUp();
+  };
+
+  // Limpiar intervalos al desmontar
+  useEffect(() => {
+    return () => {
+      if (quantityIntervalRef.current) {
+        if (typeof quantityIntervalRef.current === "number") {
+          clearTimeout(quantityIntervalRef.current);
+        } else {
+          clearInterval(quantityIntervalRef.current);
+        }
+      }
+    };
+  }, []);
 
   const handleAddToCart = () => {
     if (!isAddingToCart) {
@@ -1180,7 +1273,6 @@ const DetalleProducto = () => {
                 : "Producto sin categoría"}
             </Category>
             <ProductTitle>{product.name}</ProductTitle>
-            {console.log(product)}
             {product.originalData?.DMA_MATERIAL && (
               <span style={{ fontSize: "0.9rem", color: "#666" }}>
                 Cod: {product.originalData.DMA_MATERIAL}
@@ -1217,35 +1309,16 @@ const DetalleProducto = () => {
             </PriceContainer>
 
             {/* Nuevo indicador de stock posicionado debajo del precio */}
-            <StockIndicator $inStock={product.stock > 0}>
-              <StockBadge $inStock={product.stock > 0}>
-                {product.stock > 0 ? "DISPONIBLE" : "CONSULTAR STOCK"}
+            <StockIndicator
+              $inStock={product.stock > 1}
+              $lowStock={product.stock <= 1 && product.stock >= 0}
+            >
+              <StockBadge
+                $inStock={product.stock > 1}
+                $lowStock={product.stock <= 1 && product.stock >= 0}
+              >
+                {product.stock > 1 ? "DISPONIBLE" : "POCO STOCK"}
               </StockBadge>
-              <StockMessage $inStock={product.stock > 0}>
-                {product.stock > 0 ? (
-                  <>
-                    {product.stock < 100 && `${product.stock}`}{" "}
-                    {product.stock === 1
-                      ? "unidad disponible"
-                      : product.stock < 100
-                      ? "unidades disponibles"
-                      : "Stock disponible"}
-                    {currentInCart > 0 && (
-                      <span
-                        style={{
-                          marginLeft: "5px",
-                          fontSize: "0.85em",
-                          opacity: 0.9,
-                        }}
-                      >
-                        (Ya tienes {currentInCart} en el carrito)
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  "Stock a consultar. Puedes agregar al carrito y confirmaremos disponibilidad."
-                )}
-              </StockMessage>
             </StockIndicator>
             {/* Sección de cantidad y botón en la misma línea */}
             {isClient && !isVisualizacion && (
@@ -1256,39 +1329,59 @@ const DetalleProducto = () => {
                   <QuantitySelector>
                     <QuantityButton
                       onClick={decreaseQuantity}
+                      onMouseDown={handleDecreaseMouseDown}
+                      onMouseUp={handleQuantityButtonMouseUp}
+                      onMouseLeave={handleQuantityButtonMouseLeave}
+                      onTouchStart={handleDecreaseMouseDown}
+                      onTouchEnd={handleQuantityButtonMouseUp}
                       disabled={quantity <= 1}
                       text={"-"}
                     />
                     <QuantityInput
                       type="number"
                       min="1"
-                      max={5000}
+                      max={maxQuantity}
                       value={quantity}
                       onChange={handleQuantityChange}
                     />
                     <QuantityButton
                       onClick={increaseQuantity}
-                      disabled={quantity >= 5000}
+                      onMouseDown={handleIncreaseMouseDown}
+                      onMouseUp={handleQuantityButtonMouseUp}
+                      onMouseLeave={handleQuantityButtonMouseLeave}
+                      onTouchStart={handleIncreaseMouseDown}
+                      onTouchEnd={handleQuantityButtonMouseUp}
+                      disabled={quantity >= maxQuantity}
                       text={"+"}
                     />
                   </QuantitySelector>
-                  {currentInCart > 0 && (
-                    <CartCount>{currentInCart} en carrito</CartCount>
-                  )}
                 </QuantityWrapper>
 
                 {/* Botón de agregar al carrito */}
                 <AddToCartButtonWrapper>
                   <Button
+                    leftIconName={
+                      currentInCart > 0 && !isButtonHovered
+                        ? "FaCheck"
+                        : "FaShoppingCart"
+                    }
                     text={
                       isAddingToCart
                         ? "Agregando..."
-                        : `Agregar ${quantity} al carrito`
+                        : currentInCart > 0 && !isButtonHovered
+                        ? `${currentInCart} en carrito`
+                        : "Agregar"
                     }
                     variant="solid"
                     onClick={handleAddToCart}
                     disabled={isAddingToCart}
-                    backgroundColor={({ theme }) => theme.colors.primary}
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                    backgroundColor={({ theme }) =>
+                      currentInCart > 0 && !isButtonHovered
+                        ? theme.colors.success
+                        : theme.colors.primary
+                    }
                     size="medium"
                     style={{ width: "100%" }}
                   />

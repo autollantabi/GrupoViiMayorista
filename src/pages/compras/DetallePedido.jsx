@@ -841,6 +841,7 @@ const DetallePedido = () => {
     <PageContainer
       backButtonText="Regresar"
       backButtonOnClick={() => navigate("/mis-pedidos")}
+      style={{ padding: "16px" }}
     >
       <PageHeader>
         <OrderTitle>

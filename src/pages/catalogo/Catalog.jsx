@@ -417,11 +417,9 @@ const Catalog = () => {
   const { user } = useAuth();
   const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
     useProductCatalog();
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [pendingRestore, setPendingRestore] = useState(null);
   const [initialSort, setInitialSort] = useState("default");
   const [restoreApplied, setRestoreApplied] = useState(false);
-  const isNavigatingRef = useRef(false);
 
   // Estados para el formulario de solicitud de acceso
   const [accessRequestForm, setAccessRequestForm] = useState({
@@ -430,28 +428,8 @@ const Catalog = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
 
-  // Funciones para manejar localStorage del producto seleccionado
-  const saveSelectedProduct = useCallback((product) => {
-    try {
-      if (product) {
-        localStorage.setItem("selectedProduct", JSON.stringify(product));
-      } else {
-        localStorage.removeItem("selectedProduct");
-      }
-    } catch (error) {
-      console.warn("Error saving selected product to localStorage:", error);
-    }
-  }, []);
-
-  const loadSelectedProduct = useCallback(() => {
-    try {
-      const saved = localStorage.getItem("selectedProduct");
-      return saved ? JSON.parse(saved) : null;
-    } catch (error) {
-      console.warn("Error loading selected product from localStorage:", error);
-      return null;
-    }
-  }, []);
+  // Ya no necesitamos las funciones de localStorage para selectedProduct
+  // La navegación se hace directamente desde handleProductSelect
 
   // Cargar productos de la empresa cuando hay empresaName
   useEffect(() => {
@@ -466,35 +444,47 @@ const Catalog = () => {
       // Crear nuevos params basados en los existentes (para preservar page, sort, limit)
       const newParams = new URLSearchParams(searchParams);
 
+      // Verificar qué parámetros se están agregando/actualizando
+      const paramsToAdd = Object.keys(params).filter(
+        (key) =>
+          params[key] !== null &&
+          params[key] !== undefined &&
+          params[key] !== ""
+      );
+
       if (isCompleteUpdate) {
         // Si es una actualización completa, primero eliminar todos los parámetros de filtros
-        // pero preservar page, sort, limit
+        // pero preservar page, sort, limit, y stock
         const preservedParams = {
-          page: newParams.get("page"),
-          sort: newParams.get("sort"),
-          limit: newParams.get("limit"),
+          page: newParams.get("page") || "1",
+          sort: newParams.get("sort") || "default",
+          limit: newParams.get("limit") || "144",
+          stock: newParams.get("stock") || "all",
         };
 
         // Eliminar todos los parámetros de filtros (filtro_* y dma_*)
+        // y también linea, step, search para reemplazarlos con los nuevos valores
+        // PERO NO eliminar linea si se está agregando en esta misma llamada
         const keysToDelete = [];
         newParams.forEach((value, key) => {
           if (
             key.startsWith("filtro_") ||
             key.startsWith("dma_") ||
-            key === "linea" ||
             key === "step" ||
             key === "search"
           ) {
             keysToDelete.push(key);
           }
+          // Solo eliminar linea si NO se está agregando en esta llamada
+          if (key === "linea" && !paramsToAdd.includes("linea")) {
+            keysToDelete.push(key);
+          }
         });
         keysToDelete.forEach((key) => newParams.delete(key));
 
-        // Restaurar parámetros preservados
+        // Restaurar parámetros preservados (siempre con valores por defecto si no existen)
         Object.entries(preservedParams).forEach(([key, value]) => {
-          if (value) {
-            newParams.set(key, value);
-          }
+          newParams.set(key, value);
         });
       }
 
@@ -552,7 +542,6 @@ const Catalog = () => {
   };
 
   const handleBreadcrumbLineaSelect = (linea) => {
-    setSelectedProduct(null); // Limpiar el producto seleccionado
     if (linea === null) {
       selectLinea(null); // Volver a bienvenidos solo si se pasa null
     } else {
@@ -561,8 +550,6 @@ const Catalog = () => {
   };
 
   const handleBreadcrumbFilterSelect = (filterId) => {
-    setSelectedProduct(null); // Limpiar el producto seleccionado
-
     // Si es un filtro adicional (DMA_*), usar goToAdditionalFilter
     // Si es un filtro del flujo principal, usar goToFilterStep
     if (filterId.startsWith("DMA_")) {
@@ -573,15 +560,34 @@ const Catalog = () => {
   };
 
   const handleBreadcrumbProductsSelect = () => {
-    setSelectedProduct(null); // Limpiar el producto seleccionado para regresar al ProductGrid
+    // Ya no necesitamos limpiar selectedProduct ya que no lo usamos
   };
 
   const handleProductSelect = (product) => {
-    setSelectedProduct(product);
+    // Navegar directamente sin usar estado intermedio para evitar re-renderizados
+    if (!product || !product.id) {
+      console.error("Error: Producto o ID inválido", product);
+      return;
+    }
+
+    // Construir la URL completa con todos los parámetros de búsqueda actuales
+    const currentUrl = `/catalogo/${empresaName || ""}${location.search}`;
+
+    // Navegar directamente al detalle del producto
+    navigate(
+      `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+      {
+        state: {
+          product: product,
+          empresaId: empresaName,
+        },
+        replace: false,
+      }
+    );
   };
 
   const handleBackToCatalog = () => {
-    setSelectedProduct(null);
+    // Ya no necesitamos limpiar selectedProduct ya que no lo usamos
   };
 
   const handleAdditionalFilterSelect = (filterId, value) => {
@@ -659,48 +665,8 @@ const Catalog = () => {
     });
   }, [empresaName, user]);
 
-  // Cargar producto seleccionado desde localStorage al inicializar
-  useEffect(() => {
-    const savedProduct = loadSelectedProduct();
-    if (savedProduct) {
-      setSelectedProduct(savedProduct);
-    }
-  }, [loadSelectedProduct]);
-
-  // Guardar producto seleccionado cuando cambie
-  useEffect(() => {
-    saveSelectedProduct(selectedProduct);
-  }, [selectedProduct, saveSelectedProduct]);
-
-  // Si hay un producto seleccionado, redirigir a la página de detalle
-  // Usar useEffect para evitar múltiples navegaciones
-  // IMPORTANTE: Este useEffect debe estar ANTES de cualquier return condicional
-  useEffect(() => {
-    if (selectedProduct && !isNavigatingRef.current) {
-      isNavigatingRef.current = true;
-      // Construir la URL completa con todos los parámetros de búsqueda actuales
-      // Esto asegura que al regresar, todos los filtros y parámetros se mantengan
-      const currentUrl = `/catalogo/${empresaName || ""}${location.search}`;
-      navigate(
-        `/productos/${selectedProduct.id}?prevUrl=${encodeURIComponent(
-          currentUrl
-        )}`,
-        {
-          state: {
-            product: selectedProduct,
-            empresaId: empresaName,
-          },
-          replace: false,
-        }
-      );
-      // Limpiar el producto seleccionado después de navegar para evitar re-navegaciones
-      setSelectedProduct(null);
-      // Resetear el flag después de un pequeño delay
-      setTimeout(() => {
-        isNavigatingRef.current = false;
-      }, 100);
-    }
-  }, [selectedProduct, empresaName, location.search, navigate]);
+  // Ya no necesitamos los useEffect para manejar selectedProduct
+  // La navegación se hace directamente desde handleProductSelect
 
   // Verificar si el usuario tiene acceso a la empresa
   if (empresaName && user) {
@@ -916,10 +882,7 @@ const Catalog = () => {
     );
   }
 
-  // Si hay un producto seleccionado, mostrar null mientras se navega
-  if (selectedProduct) {
-    return null;
-  }
+  // Ya no necesitamos verificar selectedProduct ya que la navegación es directa
 
   // Pantalla de productos cuando se han completado todos los filtros
   if (isAtProductView) {

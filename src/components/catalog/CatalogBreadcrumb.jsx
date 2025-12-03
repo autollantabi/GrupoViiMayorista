@@ -114,6 +114,9 @@ const BreadcrumbLink = styled.button`
   display: flex;
   align-items: center;
   gap: 6px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 
   &:hover {
     background: ${({ theme }) => theme.colors.primaryLight};
@@ -122,6 +125,11 @@ const BreadcrumbLink = styled.button`
 
   &:active {
     transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   ${({ $active, theme }) =>
@@ -202,6 +210,19 @@ const CatalogBreadcrumb = ({
     return names[filterId] || filterId;
   };
 
+  // Función para obtener el nombre corto de la línea (sin "Neumáticos")
+  const getShortLineName = (lineName) => {
+    // Si el nombre contiene "Neumáticos Moto", mostrar solo "Moto"
+    if (lineName && lineName.includes("Neumáticos Moto")) {
+      return "Moto";
+    }
+    // Si el nombre contiene "Neumáticos ", mostrar solo la parte después
+    if (lineName && lineName.startsWith("Neumáticos ")) {
+      return lineName.replace("Neumáticos ", "");
+    }
+    return lineName;
+  };
+
   return (
     <BreadcrumbContainer>
       <BreadcrumbContent>
@@ -212,11 +233,18 @@ const CatalogBreadcrumb = ({
             {availableLines.map((linea) => (
               <BreadcrumbItem key={linea.key}>
                 <BreadcrumbLink
-                  onClick={() => onLineaSelect(linea.key)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (onLineaSelect) {
+                      onLineaSelect(linea.key);
+                    }
+                  }}
                   $active={selectedLinea === linea.key}
                 >
                   <RenderIcon name={linea.icon} size={14} />
-                  {linea.name}
+                  {getShortLineName(linea.name)}
                 </BreadcrumbLink>
               </BreadcrumbItem>
             ))}
@@ -236,7 +264,14 @@ const CatalogBreadcrumb = ({
                 return (
                   <BreadcrumbItemWithSeparator key={step.id}>
                     <BreadcrumbLink
-                      onClick={() => onFilterSelect(step.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onFilterSelect) {
+                          onFilterSelect(step.id);
+                        }
+                      }}
                       title={`Editar ${step.displayName || step.name}`}
                     >
                       <RenderIcon name="FaTag" size={14} />
@@ -252,7 +287,14 @@ const CatalogBreadcrumb = ({
                 .map(([filterId, value]) => (
                   <BreadcrumbItemWithSeparator key={filterId}>
                     <BreadcrumbLink
-                      onClick={() => onFilterSelect(filterId)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onFilterSelect) {
+                          onFilterSelect(filterId);
+                        }
+                      }}
                       title={`Editar ${getDMAFilterDisplayName(filterId)}`}
                     >
                       <RenderIcon name="FaFilter" size={14} />

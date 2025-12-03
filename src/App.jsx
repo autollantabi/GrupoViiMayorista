@@ -41,7 +41,7 @@ const GlobalStyle = createGlobalStyle`
     background-color: ${({ theme }) => theme.colors.background};
     color: ${({ theme }) => theme.colors.text};
   }
-
+  
   /* Estilos globales para scrollbar personalizado - Webkit (Chrome, Safari, Edge) */
   *::-webkit-scrollbar {
     width: 8px;

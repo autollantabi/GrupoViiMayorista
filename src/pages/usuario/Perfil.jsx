@@ -52,7 +52,7 @@ const Perfil = () => {
   const [activeTab, setActiveTab] = useState("personal");
 
   return (
-    <PageContainer>
+    <PageContainer style={{ padding: "16px" }}>
       <PageTitle>Mi Perfil</PageTitle>
 
       <TabsContainer>

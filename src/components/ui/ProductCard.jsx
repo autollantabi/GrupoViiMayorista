@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../../context/CartContext";
@@ -267,14 +267,19 @@ const ProductName = styled.h3`
   line-height: 1.3;
   word-break: break-word;
 
-  @media (max-width: 768px) {
-    font-size: ${({ $restricted }) => ($restricted ? "0.9rem" : "1rem")};
+  @media (max-width: 1024px) {
+    font-size: ${({ $restricted }) => ($restricted ? "0.85rem" : "0.95rem")};
     margin-bottom: ${({ $restricted }) => ($restricted ? "6px" : "10px")};
   }
 
-  @media (max-width: 480px) {
-    font-size: ${({ $restricted }) => ($restricted ? "0.85rem" : "0.9rem")};
+  @media (max-width: 768px) {
+    font-size: ${({ $restricted }) => ($restricted ? "0.75rem" : "0.85rem")};
     margin-bottom: ${({ $restricted }) => ($restricted ? "5px" : "8px")};
+  }
+
+  @media (max-width: 480px) {
+    font-size: ${({ $restricted }) => ($restricted ? "0.7rem" : "0.8rem")};
+    margin-bottom: ${({ $restricted }) => ($restricted ? "4px" : "6px")};
   }
 `;
 
@@ -288,13 +293,18 @@ const Brand = styled.span`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
+  @media (max-width: 1024px) {
+    font-size: 0.7rem;
+    letter-spacing: 0.4px;
+  }
+
   @media (max-width: 768px) {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     letter-spacing: 0.3px;
   }
 
   @media (max-width: 480px) {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     letter-spacing: 0.2px;
   }
 `;
@@ -308,14 +318,19 @@ const Enterprise = styled.span`
   opacity: 0.8;
   font-weight: ${({ $restricted }) => ($restricted ? "500" : "400")};
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     font-size: 0.65rem;
     margin-bottom: ${({ $restricted }) => ($restricted ? "6px" : "10px")};
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 768px) {
     font-size: 0.6rem;
     margin-bottom: ${({ $restricted }) => ($restricted ? "5px" : "8px")};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.55rem;
+    margin-bottom: ${({ $restricted }) => ($restricted ? "4px" : "6px")};
   }
 `;
 
@@ -379,6 +394,12 @@ const Price = styled.div`
   padding-top: 16px;
   border-top: 1px solid ${({ theme }) => `${theme.colors.textLight}15`};
 
+  @media (max-width: 1024px) {
+    gap: 8px;
+    padding-top: 14px;
+    flex-wrap: wrap;
+  }
+
   @media (max-width: 768px) {
     gap: 8px;
     padding-top: 12px;
@@ -404,9 +425,16 @@ const PriceRight = styled.div`
   align-items: center;
   flex-shrink: 0;
 
+  @media (max-width: 1024px) {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 100%;
+  }
+
   @media (max-width: 768px) {
     width: 100%;
     justify-content: center;
+    flex-shrink: 0;
   }
 `;
 
@@ -415,12 +443,16 @@ const CurrentPrice = styled.span`
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     font-size: 1.1rem;
   }
 
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+  }
+
   @media (max-width: 480px) {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 `;
 
@@ -429,6 +461,18 @@ const OriginalPrice = styled.span`
   text-decoration: line-through;
   color: ${({ theme }) => theme.colors.textLight};
   opacity: 0.7;
+
+  @media (max-width: 1024px) {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const IVAIndicator = styled.span`
@@ -436,6 +480,18 @@ const IVAIndicator = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
   font-style: italic;
   opacity: 0.8;
+
+  @media (max-width: 1024px) {
+    font-size: 0.65rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.6rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.55rem;
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -459,9 +515,17 @@ const QuantitySelector = styled.div`
   border-radius: 6px;
   overflow: hidden;
   background-color: ${({ theme }) => theme.colors.surface};
+  max-width: 100%;
+
+  @media (max-width: 1024px) {
+    max-width: 120px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
 
   @media (max-width: 768px) {
     width: 100%;
+    max-width: 100%;
     justify-content: center;
   }
 `;
@@ -481,6 +545,7 @@ const QuantityButton = styled.button`
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   transition: background-color 0.2s ease;
+  flex-shrink: 0;
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.background};
@@ -492,6 +557,12 @@ const QuantityButton = styled.button`
 
   &:last-child {
     border-left: 1px solid ${({ theme }) => theme.colors.border};
+  }
+
+  @media (max-width: 1024px) {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 
   @media (max-width: 768px) {
@@ -511,9 +582,17 @@ const QuantityInput = styled.input`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
   padding: 0;
+  min-width: 0;
+  flex: 1;
 
   &:focus {
     outline: none;
+  }
+
+  @media (max-width: 1024px) {
+    width: 45px;
+    height: 28px;
+    font-size: 0.85rem;
   }
 
   @media (max-width: 768px) {
@@ -548,16 +627,22 @@ const SpecItem = styled.li`
   gap: 4px;
   font-size: 0.85rem;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     margin-bottom: 5px;
     gap: 3px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 4px;
+    gap: 2px;
+    font-size: 0.7rem;
   }
 
   @media (max-width: 480px) {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     gap: 2px;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
   }
 `;
 
@@ -630,14 +715,20 @@ const StockText = styled.span`
   align-items: center;
   gap: 4px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     font-size: 0.65rem;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.25px;
     gap: 3px;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 768px) {
     font-size: 0.6rem;
+    letter-spacing: 0.2px;
+    gap: 2px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.55rem;
     letter-spacing: 0.1px;
     gap: 2px;
   }
@@ -751,6 +842,66 @@ const SupportButton = styled.button`
   }
 `;
 
+// Componente memoizado para la imagen del producto
+const MemoizedProductImage = memo(({ src, alt, restricted }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const loadedSrcRef = useRef(null);
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+    loadedSrcRef.current = src;
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+    loadedSrcRef.current = null;
+  };
+
+  // Resetear estados solo cuando cambia la src realmente
+  useEffect(() => {
+    // Solo resetear si la src realmente cambió y no está ya cargada
+    if (src && src !== loadedSrcRef.current) {
+      setImageError(false);
+      setImageLoading(true);
+    } else if (!src) {
+      setImageLoading(false);
+    }
+  }, [src]);
+
+  if (imageError || !src) {
+    return (
+      <ImagePlaceholder $restricted={restricted}>
+        <div>
+          <div>Imágen no disponible</div>
+        </div>
+      </ImagePlaceholder>
+    );
+  }
+
+  return (
+    <>
+      {imageLoading && (
+        <ImagePlaceholder $restricted={restricted}>
+          <div>Cargando...</div>
+        </ImagePlaceholder>
+      )}
+      <ProductImage
+        src={src}
+        alt={alt}
+        $restricted={restricted}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        style={{ display: imageLoading ? "none" : "block" }}
+      />
+    </>
+  );
+});
+
+MemoizedProductImage.displayName = "MemoizedProductImage";
+
 const ProductCard = ({
   product,
   lineConfig,
@@ -768,6 +919,7 @@ const ProductCard = ({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   // Buscar el producto en el carrito
   const cartItem = cart.find((item) => item?.id === product.id);
@@ -935,55 +1087,14 @@ const ProductCard = ({
     }
   };
 
-  // Componente para manejar la imagen con fallback
-  const ProductImageWithFallback = ({ src, alt, restricted }) => {
-    const [imageError, setImageError] = useState(false);
-    const [imageLoading, setImageLoading] = useState(true);
-
-    const handleImageLoad = () => {
-      setImageLoading(false);
-      setImageError(false);
-    };
-
-    const handleImageError = () => {
-      setImageLoading(false);
-      setImageError(true);
-    };
-
-    if (imageError || !src) {
-      return (
-        <ImagePlaceholder $restricted={restricted}>
-          <div>
-            <div>Imágen no disponible</div>
-          </div>
-        </ImagePlaceholder>
-      );
-    }
-
-    return (
-      <>
-        {imageLoading && (
-          <ImagePlaceholder $restricted={restricted}>
-            <div>Cargando...</div>
-          </ImagePlaceholder>
-        )}
-        <ProductImage
-          src={src}
-          alt={alt}
-          $restricted={restricted}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={{ display: imageLoading ? "none" : "block" }}
-        />
-      </>
-    );
-  };
+  // Componente memoizado para manejar la imagen con fallback
+  // Se mueve fuera del render para evitar recrearlo en cada cambio de cantidad
 
   return (
     <>
       <StyledCard onClick={handleViewDetails} $restricted={restricted}>
         <ImageContainer $restricted={restricted}>
-          <ProductImageWithFallback
+          <MemoizedProductImage
             src={product.image}
             alt={product.name}
             restricted={restricted}
@@ -1088,11 +1199,14 @@ const ProductCard = ({
                     </QuantityButton>
                     <QuantityInput
                       type="number"
+                      id={`quantity-${product.id}`}
+                      name={`quantity-${product.id}`}
                       min="1"
                       max="5000"
                       value={quantity}
                       onChange={handleQuantityChange}
                       onClick={(e) => e.stopPropagation()}
+                      autoComplete="off"
                     />
                     <QuantityButton
                       onClick={increaseQuantity}
@@ -1108,24 +1222,28 @@ const ProductCard = ({
               <ButtonContainer>
                 <Button
                   leftIconName={
-                    quantityInCart > 0 ? "FaCheck" : "FaShoppingCart"
+                    quantityInCart > 0 && !isButtonHovered
+                      ? "FaCheck"
+                      : "FaShoppingCart"
                   }
                   text={
-                    quantityInCart > 0
-                      ? `${quantityInCart} en carrito`
-                      : isAddingToCart
+                    isAddingToCart
                       ? "Agregando..."
+                      : quantityInCart > 0 && !isButtonHovered
+                      ? `${quantityInCart} en carrito`
                       : "Agregar"
                   }
                   variant="solid"
                   size="small"
                   backgroundColor={({ theme }) =>
-                    quantityInCart > 0
+                    quantityInCart > 0 && !isButtonHovered
                       ? theme.colors.success
                       : theme.colors.primary
                   }
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
+                  onMouseEnter={() => setIsButtonHovered(true)}
+                  onMouseLeave={() => setIsButtonHovered(false)}
                   style={{ width: "100%" }}
                 />
               </ButtonContainer>
@@ -1144,4 +1262,15 @@ const ProductCard = ({
   );
 };
 
-export default ProductCard;
+// Memoizar ProductCard para evitar re-renderizados innecesarios
+export default memo(ProductCard, (prevProps, nextProps) => {
+  // Comparar props relevantes para decidir si re-renderizar
+  return (
+    prevProps.product?.id === nextProps.product?.id &&
+    prevProps.product?.image === nextProps.product?.image &&
+    prevProps.restricted === nextProps.restricted &&
+    prevProps.product?.stock === nextProps.product?.stock &&
+    prevProps.product?.price === nextProps.product?.price &&
+    prevProps.product?.discount === nextProps.product?.discount
+  );
+});

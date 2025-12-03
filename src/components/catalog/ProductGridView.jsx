@@ -15,7 +15,7 @@ const ProductGridContainer = styled.div`
   min-height: 0;
   min-width: 0;
   height: 100%;
-  padding: 10px 0 0 10px;
+  padding: 10px 0 16px 16px;
 
   @media (max-width: 768px) {
     padding: 16px;
@@ -60,8 +60,17 @@ const ResultsInfo = styled.div`
   font-size: 1.2rem;
   font-weight: 600;
 
+  @media (max-width: 1024px) {
+    font-size: 1rem;
+  }
+
   @media (max-width: 768px) {
+    font-size: 0.9rem;
     text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
   }
 `;
 
@@ -73,18 +82,18 @@ const ProductsGrid = styled.div`
   min-width: 0;
 
   @media (max-width: 1024px) {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
   }
 
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
   }
 `;
 
@@ -161,10 +170,36 @@ const SortContainer = styled.div`
   margin-bottom: 20px;
   flex-wrap: wrap;
 
+  @media (max-width: 1024px) {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  /* Ajustar tamaño de los Selects en móvil */
+  & > div {
+    @media (max-width: 1024px) {
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 0.75rem;
+    }
   }
 `;
 
@@ -240,11 +275,25 @@ const PaginationButton = styled.button`
     cursor: not-allowed;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     width: 36px;
     height: 36px;
     min-width: 36px;
-    font-size: 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 11px;
+  }
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 10px;
   }
 `;
 
@@ -252,6 +301,24 @@ const PaginationInput = styled(Input)`
   width: 80px;
   text-align: center;
   margin: 0 8px;
+
+  @media (max-width: 1024px) {
+    width: 70px;
+    margin: 0 6px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    width: 60px;
+    margin: 0 4px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    width: 50px;
+    margin: 0 4px;
+    font-size: 11px;
+  }
 `;
 
 const PaginationPagesContainer = styled.div`
@@ -289,6 +356,18 @@ const PaginationJumpRow = styled.div`
 const PaginationLabel = styled.span`
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 14px;
+
+  @media (max-width: 1024px) {
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+  }
 `;
 
 const ProductGridView = ({
@@ -308,6 +387,7 @@ const ProductGridView = ({
   const urlSort = searchParams.get("sort") || initialSort || "default";
   const urlPage = parseInt(searchParams.get("page") || "1", 10);
   const urlLimit = parseInt(searchParams.get("limit") || "144", 10);
+  const urlStockFilter = searchParams.get("stock") || "all";
 
   const [sortBy, setSortBy] = useState(urlSort);
   // Validar que el límite inicial sea mínimo 144
@@ -315,6 +395,7 @@ const ProductGridView = ({
   const [itemsPerPage, setItemsPerPage] = useState(validInitialLimit);
   const [currentPage, setCurrentPage] = useState(urlPage);
   const [pageInput, setPageInput] = useState(urlPage.toString());
+  const [stockFilter, setStockFilter] = useState(urlStockFilter);
 
   // Ref para rastrear si estamos actualizando desde la URL
   const isUpdatingFromURL = React.useRef(false);
@@ -322,6 +403,7 @@ const ProductGridView = ({
     sortBy: urlSort,
     currentPage: urlPage,
     itemsPerPage: validInitialLimit,
+    stockFilter: urlStockFilter,
   });
 
   // Flag para saber si es el primer render
@@ -469,12 +551,14 @@ const ProductGridView = ({
     const urlSortValue = searchParams.get("sort") || initialSort || "default";
     const urlPageValue = parseInt(searchParams.get("page") || "1", 10);
     const urlLimitValue = parseInt(searchParams.get("limit") || "144", 10);
+    const urlStockFilterValue = searchParams.get("stock") || "all";
 
     // Solo actualizar si los valores de la URL son diferentes a los que tenemos sincronizados
     if (
       urlSortValue !== lastSyncedState.current.sortBy ||
       urlPageValue !== lastSyncedState.current.currentPage ||
-      urlLimitValue !== lastSyncedState.current.itemsPerPage
+      urlLimitValue !== lastSyncedState.current.itemsPerPage ||
+      urlStockFilterValue !== lastSyncedState.current.stockFilter
     ) {
       isUpdatingFromURL.current = true;
 
@@ -490,11 +574,15 @@ const ProductGridView = ({
       if (validUrlLimit !== itemsPerPage) {
         setItemsPerPage(validUrlLimit);
       }
+      if (urlStockFilterValue !== stockFilter) {
+        setStockFilter(urlStockFilterValue);
+      }
 
       lastSyncedState.current = {
         sortBy: urlSortValue,
         currentPage: urlPageValue,
         itemsPerPage: validUrlLimit,
+        stockFilter: urlStockFilterValue,
       };
 
       // Resetear el flag después de un pequeño delay
@@ -528,12 +616,17 @@ const ProductGridView = ({
         }
         needsInit = true;
       }
+      if (!params.has("stock")) {
+        params.set("stock", stockFilter);
+        needsInit = true;
+      }
 
       if (needsInit) {
         lastSyncedState.current = {
           sortBy,
           currentPage,
           itemsPerPage,
+          stockFilter,
         };
         setSearchParams(params, { replace: true });
         return;
@@ -571,15 +664,29 @@ const ProductGridView = ({
       needsUpdate = true;
     }
 
+    // SIEMPRE asegurar que stock esté presente en URL
+    if (!params.has("stock") || params.get("stock") !== stockFilter) {
+      params.set("stock", stockFilter);
+      needsUpdate = true;
+    }
+
     if (needsUpdate) {
       lastSyncedState.current = {
         sortBy,
         currentPage,
         itemsPerPage,
+        stockFilter,
       };
       setSearchParams(params, { replace: true });
     }
-  }, [sortBy, currentPage, itemsPerPage, searchParams, setSearchParams]);
+  }, [
+    sortBy,
+    currentPage,
+    itemsPerPage,
+    stockFilter,
+    searchParams,
+    setSearchParams,
+  ]);
 
   // Filtrar y ordenar productos
   const processedProducts = useMemo(() => {
@@ -587,6 +694,16 @@ const ProductGridView = ({
       return { items: [], totalItems: 0, totalPages: 0 };
 
     let filtered = [...products];
+
+    // Aplicar filtro de stock
+    if (stockFilter === "available") {
+      // Solo productos con stock > 1
+      filtered = filtered.filter((product) => product.stock > 1);
+    } else if (stockFilter === "low_stock") {
+      // Solo productos con stock <= 1
+      filtered = filtered.filter((product) => product.stock <= 1);
+    }
+    // Si stockFilter === "all", no filtrar
 
     // Aplicar ordenamiento
     switch (sortBy) {
@@ -639,7 +756,7 @@ const ProductGridView = ({
     const items = filtered.slice(startIndex, endIndex);
 
     return { items, totalItems, totalPages };
-  }, [products, sortBy, itemsPerPage, currentPage]);
+  }, [products, sortBy, itemsPerPage, currentPage, stockFilter]);
 
   // Buscar y hacer scroll al producto guardado cuando se monta o cambian los productos
   React.useEffect(() => {
@@ -807,6 +924,14 @@ const ProductGridView = ({
     setItemsPerPage(parseInt(value));
   };
 
+  const handleStockFilterChange = (e) => {
+    const value = e.target.value;
+    setStockFilter(value);
+    // Resetear a página 1 cuando cambia el filtro de stock
+    setCurrentPage(1);
+    setPageInput("1");
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
     setPageInput(page.toString());
@@ -906,6 +1031,19 @@ const ProductGridView = ({
                 placeholder="Mostrar items"
                 width="auto"
               />
+
+              <Select
+                options={[
+                  { value: "all", label: "Todos" },
+                  { value: "available", label: "Disponibles" },
+                  { value: "low_stock", label: "Poco stock" },
+                ]}
+                value={stockFilter}
+                onChange={handleStockFilterChange}
+                preValue="Stock:"
+                placeholder="Filtrar por stock"
+                width="auto"
+              />
             </SelectsContainer>
           )}
         </SortContainer>
@@ -970,6 +1108,8 @@ const ProductGridView = ({
                 <PaginationLabel>Ir a:</PaginationLabel>
                 <PaginationInput
                   type="number"
+                  id="pagination-jump-page"
+                  name="pagination-jump-page"
                   min="1"
                   max={processedProducts.totalPages}
                   value={pageInput}
@@ -981,6 +1121,7 @@ const ProductGridView = ({
                     }
                   }}
                   placeholder={`1-${processedProducts.totalPages}`}
+                  autoComplete="off"
                 />
               </PaginationJumpRow>
             </PaginationContainer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Button from "../../components/ui/Button";
@@ -25,23 +25,6 @@ const PageHeader = styled.div`
   @media (max-width: 480px) {
     margin-bottom: 16px;
     gap: 10px;
-  }
-`;
-
-const BackButton = styled(Button)`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.primary};
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 0;
-  cursor: pointer;
-  font-size: 0.9rem;
-
-  &:hover {
-    text-decoration: underline;
   }
 `;
 
@@ -293,7 +276,6 @@ const FiltersTitle = styled.h3`
   align-items: center;
   gap: 12px;
 
-
   @media (max-width: 768px) {
     font-size: 1.2rem;
     gap: 10px;
@@ -464,6 +446,11 @@ const ProductsGrid = styled.div`
   }
 `;
 
+const ProductCardWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+`;
+
 const NoResultsContainer = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
@@ -617,14 +604,22 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [searchInput, setSearchInput] = useState(query); // Estado para el input de búsqueda
-  const [productsPerPage, setProductsPerPage] = useState(12); // Estado para productos por página
-  const [currentLimit, setCurrentLimit] = useState(12); // Estado para el límite actual
+  // Validar que el límite inicial sea mínimo 144
+  const initialLimit = parseInt(searchParams.get("limit") || "144", 10);
+  const validInitialLimit = initialLimit < 144 ? 144 : initialLimit;
+  const [productsPerPage, setProductsPerPage] = useState(validInitialLimit); // Estado para productos por página
+  const [currentLimit, setCurrentLimit] = useState(validInitialLimit); // Estado para el límite actual
 
   // Estado para modal de filtros móviles
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
 
   // userAccess con useMemo para evitar advertencia de dependencias
   const userAccess = React.useMemo(() => user?.EMPRESAS || [], [user]);
+
+  // Ref para saber si ya se hizo scroll al producto
+  const scrollToProductDoneRef = React.useRef(false);
+  // Ref para rastrear los filtros anteriores para limpiar producto guardado cuando cambien
+  const prevFiltersForProductRef = React.useRef(null);
 
   // Actualizar la URL cuando cambian los filtros o la página
   useEffect(() => {
@@ -634,8 +629,11 @@ const SearchResults = () => {
     if (sortOption && sortOption !== "relevance")
       params.sortOption = sortOption;
     if (currentPage && currentPage !== 1) params.page = currentPage;
-    if (productsPerPage && productsPerPage !== 12)
-      params.limit = productsPerPage;
+    // Validar que el límite sea mínimo 144
+    const validLimit = productsPerPage < 144 ? 144 : productsPerPage;
+    if (validLimit && validLimit !== 144) params.limit = validLimit;
+    // Siempre incluir limit en la URL, incluso si es 144 (valor por defecto)
+    if (!params.limit) params.limit = validLimit.toString();
     setSearchParams(params, { replace: true });
   }, [
     query,
@@ -791,10 +789,14 @@ const SearchResults = () => {
 
   // Sincronizar estados con parámetros de URL al cargar la página
   useEffect(() => {
-    const limitFromUrl = parseInt(searchParams.get("limit") || "12", 10);
-    setProductsPerPage(limitFromUrl);
-    setCurrentLimit(limitFromUrl);
-  }, [searchParams]);
+    const limitFromUrl = parseInt(searchParams.get("limit") || "144", 10);
+    // Validar que el límite sea mínimo 144
+    const validLimit = limitFromUrl < 144 ? 144 : limitFromUrl;
+    if (validLimit !== productsPerPage) {
+      setProductsPerPage(validLimit);
+      setCurrentLimit(validLimit);
+    }
+  }, [searchParams, productsPerPage]);
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
@@ -813,8 +815,10 @@ const SearchResults = () => {
 
   const handleItemsPerPageChange = (e) => {
     const newLimit = Number(e.target.value);
-    setProductsPerPage(newLimit);
-    setCurrentLimit(newLimit);
+    // Validar que el límite sea mínimo 144
+    const validLimit = newLimit < 144 ? 144 : newLimit;
+    setProductsPerPage(validLimit);
+    setCurrentLimit(validLimit);
     setCurrentPage(1); // Reiniciar a la primera página al cambiar el límite
   };
 
@@ -856,6 +860,169 @@ const SearchResults = () => {
     navigate(`/catalogo/${empresaId}`);
   };
 
+  // Función para generar una clave única basada en los filtros actuales de búsqueda
+  const getProductStorageKey = React.useCallback(() => {
+    const filtersKey = JSON.stringify({
+      query,
+      sortOption,
+      priceRange,
+    });
+    return `searchResults_lastProduct_${filtersKey}`;
+  }, [query, sortOption, priceRange]);
+
+  // Función para guardar el ID del producto que se está viendo
+  const saveLastViewedProduct = React.useCallback(
+    (productId) => {
+      const storageKey = getProductStorageKey();
+      try {
+        if (productId) {
+          localStorage.setItem(storageKey, productId.toString());
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch (error) {
+        console.warn("Error saving last viewed product:", error);
+      }
+    },
+    [getProductStorageKey]
+  );
+
+  // Función para obtener el ID del último producto visto
+  const getLastViewedProduct = React.useCallback(() => {
+    const storageKey = getProductStorageKey();
+    try {
+      const productId = localStorage.getItem(storageKey);
+      return productId ? productId : null;
+    } catch (error) {
+      console.warn("Error getting last viewed product:", error);
+      return null;
+    }
+  }, [getProductStorageKey]);
+
+  // Función para hacer scroll hasta un producto específico
+  const scrollToProduct = React.useCallback(
+    (productId) => {
+      if (!productId || scrollToProductDoneRef.current) return;
+
+      // Buscar el elemento del producto en el DOM
+      const productElement = document.querySelector(
+        `[data-product-id="${productId}"]`
+      );
+
+      if (productElement) {
+        // Usar scrollIntoView para hacer scroll hasta el producto
+        productElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        scrollToProductDoneRef.current = true;
+
+        // Limpiar el producto guardado después de hacer scroll
+        setTimeout(() => {
+          saveLastViewedProduct(null);
+        }, 1000);
+      }
+    },
+    [saveLastViewedProduct]
+  );
+
+  // Limpiar producto guardado cuando cambian los filtros de búsqueda
+  React.useEffect(() => {
+    const currentFiltersKey = JSON.stringify({
+      query,
+      sortOption,
+      priceRange,
+    });
+
+    if (
+      prevFiltersForProductRef.current !== null &&
+      prevFiltersForProductRef.current !== currentFiltersKey
+    ) {
+      // Los filtros cambiaron, limpiar el producto guardado de los filtros anteriores
+      try {
+        const oldStorageKey = `searchResults_lastProduct_${prevFiltersForProductRef.current}`;
+        localStorage.removeItem(oldStorageKey);
+      } catch (error) {
+        console.warn("Error clearing old product:", error);
+      }
+      scrollToProductDoneRef.current = false;
+    }
+
+    prevFiltersForProductRef.current = currentFiltersKey;
+  }, [query, sortOption, priceRange]);
+
+  // Hacer scroll al producto cuando se cargan los resultados
+  React.useEffect(() => {
+    if (
+      !loading &&
+      filteredResults.length > 0 &&
+      currentProducts.length > 0 &&
+      !scrollToProductDoneRef.current
+    ) {
+      const lastViewedProductId = getLastViewedProduct();
+      if (lastViewedProductId) {
+        // Esperar un poco para que el DOM se renderice completamente
+        const timer = setTimeout(() => {
+          scrollToProduct(lastViewedProductId);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [
+    loading,
+    filteredResults,
+    currentProducts,
+    getLastViewedProduct,
+    scrollToProduct,
+  ]);
+
+  // Handler para cuando se hace clic en un producto
+  const handleProductClick = React.useCallback(
+    (product) => {
+      if (!product || !product.id) return;
+
+      // Guardar el ID del producto antes de navegar
+      saveLastViewedProduct(product.id);
+
+      // Construir la URL anterior con todos los parámetros de búsqueda
+      let currentUrl = `/busqueda?q=${encodeURIComponent(query)}`;
+      if (sortOption && sortOption !== "relevance") {
+        currentUrl += `&sortOption=${sortOption}`;
+      }
+      if (priceRange && priceRange !== "all") {
+        currentUrl += `&priceRange=${priceRange}`;
+      }
+      if (currentPage && currentPage !== 1) {
+        currentUrl += `&page=${currentPage}`;
+      }
+      if (productsPerPage && productsPerPage !== 144) {
+        currentUrl += `&limit=${productsPerPage}`;
+      }
+
+      // Navegar al detalle del producto
+      navigate(
+        `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+        {
+          state: {
+            product,
+            empresaId: product.empresaId,
+          },
+          replace: false,
+        }
+      );
+    },
+    [
+      saveLastViewedProduct,
+      query,
+      sortOption,
+      priceRange,
+      currentPage,
+      productsPerPage,
+      navigate,
+    ]
+  );
+
   // Función para obtener las opciones de ordenamiento
   const getSortOptions = () => {
     return [
@@ -882,6 +1049,7 @@ const SearchResults = () => {
     <PageContainer
       backButtonText="Inicio"
       backButtonOnClick={handleNavigate}
+      style={{ padding: "16px" }}
     >
       <PageHeader>
         <div
@@ -987,9 +1155,7 @@ const SearchResults = () => {
           <FiltersBar>
             <FiltersContent>
               <FiltersHeader>
-                <FiltersTitle>
-                  Filtros y Ordenamiento
-                </FiltersTitle>
+                <FiltersTitle>Filtros y Ordenamiento</FiltersTitle>
 
                 {/* Mostrar aviso si hay productos restringidos */}
                 {results && results.some((product) => !product.hasAccess) && (
@@ -1032,11 +1198,10 @@ const SearchResults = () => {
                   <FilterGroup>
                     <Select
                       options={[
-                        { value: 12, label: "12 productos" },
-                        { value: 24, label: "24 productos" },
-                        { value: 36, label: "36 productos" },
-                        { value: 72, label: "72 productos" },
                         { value: 144, label: "144 productos" },
+                        { value: 288, label: "288 productos" },
+                        { value: 432, label: "432 productos" },
+                        { value: 576, label: "576 productos" },
                       ]}
                       value={currentLimit}
                       onChange={handleItemsPerPageChange}
@@ -1085,26 +1250,31 @@ const SearchResults = () => {
 
           <ProductsGrid>
             {currentProducts.map((product, index) => (
-              <ProductCard
+              <ProductCardWrapper
                 key={`${product.empresaId}-${product.id}-${
                   indexOfFirstProduct + index
                 }`}
-                product={product}
-                lineConfig={
-                  PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
-                  PRODUCT_LINE_CONFIG.DEFAULT
-                }
-                restricted={!product.hasAccess}
-                onRequestAccess={handleRequestAccess}
-                // Pasar información de búsqueda para preservar contexto
-                currentFilters={{
-                  searchTerm: query,
-                  sortBy: sortOption,
-                  priceRange: priceRange,
-                }}
-                currentSearch={query}
-                currentSort={sortOption}
-              />
+                data-product-id={product.id}
+              >
+                <ProductCard
+                  product={product}
+                  lineConfig={
+                    PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
+                    PRODUCT_LINE_CONFIG.DEFAULT
+                  }
+                  restricted={!product.hasAccess}
+                  onRequestAccess={handleRequestAccess}
+                  onClick={handleProductClick}
+                  // Pasar información de búsqueda para preservar contexto
+                  currentFilters={{
+                    searchTerm: query,
+                    sortBy: sortOption,
+                    priceRange: priceRange,
+                  }}
+                  currentSearch={query}
+                  currentSort={sortOption}
+                />
+              </ProductCardWrapper>
             ))}
           </ProductsGrid>
 
@@ -1260,11 +1430,10 @@ const SearchResults = () => {
                 <FilterLabel>Productos por página</FilterLabel>
                 <Select
                   options={[
-                    { value: 12, label: "12 productos" },
-                    { value: 24, label: "24 productos" },
-                    { value: 36, label: "36 productos" },
-                    { value: 72, label: "72 productos" },
                     { value: 144, label: "144 productos" },
+                    { value: 288, label: "288 productos" },
+                    { value: 432, label: "432 productos" },
+                    { value: 576, label: "576 productos" },
                   ]}
                   value={currentLimit}
                   onChange={handleItemsPerPageChange}
