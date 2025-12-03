@@ -18,46 +18,117 @@ const StyledPageContainer = styled(PageContainer)`
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 1rem;
+  padding: 2rem 1rem;
+  position: relative;
+  background: ${({ theme }) =>
+    theme.name === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface}15 50%, ${theme.colors.background} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.primary}05 50%, ${theme.colors.background} 100%)`};
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${({ theme }) =>
+      theme.name === "dark"
+        ? `radial-gradient(circle at 20% 50%, ${
+            theme.colors.primary
+          }08 0%, transparent 50%),
+           radial-gradient(circle at 80% 80%, ${
+             theme.colors.accent || theme.colors.primary
+           }06 0%, transparent 50%)`
+        : `radial-gradient(circle at 20% 50%, ${
+            theme.colors.primary
+          }08 0%, transparent 50%),
+           radial-gradient(circle at 80% 80%, ${
+             theme.colors.accent || theme.colors.primary
+           }06 0%, transparent 50%)`};
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 
   @media (max-width: 768px) {
-    padding: 0.75rem;
+    padding: 1.5rem 0.75rem;
   }
 
   @media (max-width: 480px) {
-    padding: 0.5rem;
+    padding: 1rem 0.5rem;
   }
 
   @media (max-width: 360px) {
-    padding: 0.25rem;
+    padding: 0.75rem 0.25rem;
   }
 `;
 
 const Card = styled(FlexBoxComponent)`
   border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-  padding: 2.5rem;
-  max-width: 420px;
-  width: 420px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1);
+  padding: 3.5rem 3rem;
+  max-width: 480px;
+  width: 100%;
   margin: 1rem;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s ease-out;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      ${({ theme }) => theme.colors.primary},
+      ${({ theme }) => theme.colors.accent || theme.colors.primary}
+    );
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18), 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   @media (max-width: 768px) {
     width: 90%;
-    max-width: 400px;
-    padding: 2rem;
+    max-width: 450px;
+    padding: 3rem 2.5rem;
   }
 
   @media (max-width: 480px) {
     width: 95%;
-    padding: 1.5rem;
+    padding: 2.5rem 2rem;
     margin: 0.5rem;
+    border-radius: 16px;
   }
 
   @media (max-width: 360px) {
     width: 98%;
-    padding: 1rem;
+    padding: 2rem 1.5rem;
     margin: 0.25rem;
   }
 `;
@@ -65,57 +136,69 @@ const Card = styled(FlexBoxComponent)`
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
 
   @media (max-width: 480px) {
-    gap: 14px;
+    gap: 18px;
   }
 
   @media (max-width: 360px) {
-    gap: 12px;
+    gap: 16px;
   }
 `;
 
 const Title = styled.h1`
-  font-size: 1.8rem;
-  margin-bottom: 0.25rem;
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0;
   color: ${({ theme }) => theme.colors.text};
   text-align: center;
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    ${({ theme }) => theme.colors.primary},
+    ${({ theme }) => theme.colors.accent || theme.colors.primary}
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
 
   @media (max-width: 768px) {
-    font-size: 1.6rem;
+    font-size: 2rem;
   }
 
   @media (max-width: 480px) {
-    font-size: 1.4rem;
+    font-size: 1.75rem;
   }
 
   @media (max-width: 360px) {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
   }
 `;
 
 const Subtitle = styled.h2`
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-bottom: 2.5rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
   text-align: center;
+  letter-spacing: 0.3px;
 
   @media (max-width: 768px) {
-    font-size: 1.1rem;
-    margin-bottom: 1.25rem;
+    font-size: 1rem;
+    margin-bottom: 2rem;
   }
 
   @media (max-width: 480px) {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
   }
 
   @media (max-width: 360px) {
     font-size: 0.9rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 `;
 
@@ -125,125 +208,161 @@ const BackLink = styled.div`
   gap: 8px;
   color: ${({ theme }) => theme.colors.primary};
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease;
-  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
+  align-self: flex-start;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.primaryDark};
+    color: ${({ theme }) => theme.colors.primaryDark || theme.colors.accent};
     text-decoration: underline;
+    transform: translateX(-2px);
   }
 
   @media (max-width: 768px) {
     font-size: 0.85rem;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
   }
 
   @media (max-width: 480px) {
     font-size: 0.8rem;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
     gap: 6px;
   }
 
   @media (max-width: 360px) {
     font-size: 0.75rem;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     gap: 4px;
   }
 `;
 
 const CodeInputContainer = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  margin: 10px 0;
+  margin: 16px 0;
 
   @media (max-width: 480px) {
-    gap: 6px;
-    margin: 8px 0;
+    gap: 8px;
+    margin: 14px 0;
   }
 
   @media (max-width: 360px) {
-    gap: 4px;
-    margin: 6px 0;
+    gap: 6px;
+    margin: 12px 0;
   }
 `;
 
 const CodeDigit = styled.input`
-  width: 40px;
-  height: 50px;
+  width: 45px;
+  height: 55px;
   text-align: center;
-  font-size: 1.5rem;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.background};
+  font-size: 1.6rem;
+  font-weight: 600;
+  border: 2px solid ${({ theme }) => theme.colors.border};
+  border-radius: 10px;
+  background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
+  transition: all 0.2s ease;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}33;
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}25;
+    transform: scale(1.05);
+  }
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary}80;
   }
 
   @media (max-width: 768px) {
+    width: 42px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
     width: 38px;
     height: 48px;
     font-size: 1.4rem;
   }
 
-  @media (max-width: 480px) {
-    width: 36px;
-    height: 46px;
-    font-size: 1.3rem;
-  }
-
   @media (max-width: 360px) {
-    width: 32px;
-    height: 42px;
-    font-size: 1.2rem;
+    width: 34px;
+    height: 44px;
+    font-size: 1.3rem;
   }
 `;
 
 const Message = styled.div`
   margin: 8px 0;
+  padding: 12px 16px;
   font-size: 0.9rem;
+  border-radius: 8px;
+  line-height: 1.5;
   color: ${({ theme, type }) =>
     type === "success" ? theme.colors.success : theme.colors.error};
+  background-color: ${({ theme, type }) =>
+    type === "success"
+      ? theme.colors.success + "15"
+      : theme.colors.error + "15"};
+  border-left: 4px solid
+    ${({ theme, type }) =>
+      type === "success" ? theme.colors.success : theme.colors.error};
+  box-shadow: 0 2px 8px
+    ${({ theme, type }) =>
+      type === "success"
+        ? theme.colors.success + "20"
+        : theme.colors.error + "20"};
 
   @media (max-width: 768px) {
     font-size: 0.85rem;
+    padding: 10px 14px;
   }
 
   @media (max-width: 480px) {
     font-size: 0.8rem;
     margin: 6px 0;
+    padding: 8px 12px;
   }
 
   @media (max-width: 360px) {
     font-size: 0.75rem;
     margin: 5px 0;
+    padding: 6px 10px;
   }
 `;
 
 const CodeInstructions = styled.p`
   text-align: center;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
   font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  background-color: ${({ theme }) => theme.colors.info + "15"};
+  border-left: 4px solid ${({ theme }) => theme.colors.info};
+  border-radius: 8px;
 
   @media (max-width: 768px) {
     font-size: 0.85rem;
-    margin: 0 0 14px;
+    margin: 0 0 18px;
+    padding: 12px 14px;
   }
 
   @media (max-width: 480px) {
     font-size: 0.8rem;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
+    padding: 10px 12px;
   }
 
   @media (max-width: 360px) {
     font-size: 0.75rem;
-    margin: 0 0 10px;
+    margin: 0 0 14px;
+    padding: 8px 10px;
   }
 `;
 
