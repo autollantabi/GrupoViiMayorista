@@ -13,6 +13,7 @@ import CatalogBreadcrumb from "../../components/catalog/CatalogBreadcrumb";
 import useCatalogFlow from "../../hooks/useCatalogFlow";
 import { useProductCatalog } from "../../context/ProductCatalogContext";
 import RenderIcon from "../../components/ui/RenderIcon";
+import RenderLoader from "../../components/ui/RenderLoader";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { api_email_solicitudEmpresa } from "../../api/email/apiEmail";
@@ -211,19 +212,33 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    padding: 40px 15px;
-    gap: 16px;
-  }
+  min-height: calc(100vh - 45px);
+  width: 100%;
+  gap: 1.5rem;
+  padding: 2rem;
 `;
 
 const LoadingText = styled.p`
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 1rem;
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-weight: 500;
+  margin: 0;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const UnauthorizedContainer = styled.div`
@@ -810,10 +825,10 @@ const Catalog = () => {
       <CatalogContainer>
         <MainContent>
           <LoadingContainer>
-            <RenderIcon
-              name="FaSpinner"
-              size={30}
-              style={{ animation: "spin 1s linear infinite" }}
+            <RenderLoader
+              size="64px"
+              showSpinner={true}
+              floatingSpinner={true}
             />
             <LoadingText>Cargando productos de {empresaName}...</LoadingText>
           </LoadingContainer>
@@ -843,10 +858,10 @@ const Catalog = () => {
 
             {loading ? (
               <LoadingContainer>
-                <RenderIcon
-                  name="FaSpinner"
-                  size={30}
-                  style={{ animation: "spin 1s linear infinite" }}
+                <RenderLoader
+                  size="64px"
+                  showSpinner={true}
+                  floatingSpinner={true}
                 />
                 <LoadingText>
                   Cargando líneas de negocio disponibles...
@@ -921,6 +936,7 @@ const Catalog = () => {
               }}
               onProductSelect={handleProductSelect}
               initialSort={initialSort}
+              loading={loading}
             />
           </ContentWithFilters>
         </MainContentProducts>
@@ -946,10 +962,10 @@ const Catalog = () => {
       <MainContent>
         {loading ? (
           <LoadingContainer>
-            <RenderIcon
-              name="FaSpinner"
-              size={30}
-              style={{ animation: "spin 1s linear infinite" }}
+            <RenderLoader
+              size="64px"
+              showSpinner={true}
+              floatingSpinner={true}
             />
             <LoadingText>Cargando productos...</LoadingText>
           </LoadingContainer>

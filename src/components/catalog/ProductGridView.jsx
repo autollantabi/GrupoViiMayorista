@@ -5,6 +5,7 @@ import ProductCard from "../ui/ProductCard";
 import { PRODUCT_LINE_CONFIG } from "../../constants/productLineConfig";
 import Select from "../ui/Select";
 import Input from "../ui/Input";
+import RenderLoader from "../ui/RenderLoader";
 
 const ProductGridContainer = styled.div`
   flex: 1;
@@ -370,11 +371,46 @@ const PaginationLabel = styled.span`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+  gap: 1.5rem;
+  padding: 2rem;
+`;
+
+const LoadingText = styled.p`
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-weight: 500;
+  margin: 0;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
 const ProductGridView = ({
   products,
   catalogState,
   onProductSelect,
   initialSort = "default",
+  loading = false,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -973,6 +1009,19 @@ const ProductGridView = ({
     }
   };
 
+  // Mostrar loading si está cargando
+  if (loading) {
+    return (
+      <ProductGridContainer>
+        <LoadingContainer>
+          <RenderLoader size="64px" showSpinner={true} floatingSpinner={true} />
+          <LoadingText>Cargando productos...</LoadingText>
+        </LoadingContainer>
+      </ProductGridContainer>
+    );
+  }
+
+  // Mostrar mensaje de "No se encontraron productos" solo si no está cargando y no hay productos
   if (!products || products.length === 0) {
     return (
       <ProductGridContainer>

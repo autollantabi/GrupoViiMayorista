@@ -373,6 +373,40 @@ const AppShellButton = styled(Button)`
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 45px);
+  width: 100%;
+  gap: 1.5rem;
+  padding: 2rem;
+`;
+
+const LoadingText = styled.p`
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-weight: 500;
+  margin: 0;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
 const ClientHomeComponent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -435,15 +469,10 @@ const ClientHomeComponent = () => {
 
   if (isLoading) {
     return (
-      <PageContainer
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
-      >
-        <RenderLoader size="32px" showSpinner={true} />
-      </PageContainer>
+      <LoadingContainer>
+        <RenderLoader size="64px" showSpinner={true} floatingSpinner={true} />
+        <LoadingText>Cargando empresas...</LoadingText>
+      </LoadingContainer>
     );
   }
 
