@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import styled from "styled-components";
 import {
   useParams,
@@ -421,6 +421,7 @@ const Catalog = () => {
   const [pendingRestore, setPendingRestore] = useState(null);
   const [initialSort, setInitialSort] = useState("default");
   const [restoreApplied, setRestoreApplied] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   // Estados para el formulario de solicitud de acceso
   const [accessRequestForm, setAccessRequestForm] = useState({
@@ -671,6 +672,36 @@ const Catalog = () => {
     saveSelectedProduct(selectedProduct);
   }, [selectedProduct, saveSelectedProduct]);
 
+  // Si hay un producto seleccionado, redirigir a la página de detalle
+  // Usar useEffect para evitar múltiples navegaciones
+  // IMPORTANTE: Este useEffect debe estar ANTES de cualquier return condicional
+  useEffect(() => {
+    if (selectedProduct && !isNavigatingRef.current) {
+      isNavigatingRef.current = true;
+      // Construir la URL completa con todos los parámetros de búsqueda actuales
+      // Esto asegura que al regresar, todos los filtros y parámetros se mantengan
+      const currentUrl = `/catalogo/${empresaName || ""}${location.search}`;
+      navigate(
+        `/productos/${selectedProduct.id}?prevUrl=${encodeURIComponent(
+          currentUrl
+        )}`,
+        {
+          state: {
+            product: selectedProduct,
+            empresaId: empresaName,
+          },
+          replace: false,
+        }
+      );
+      // Limpiar el producto seleccionado después de navegar para evitar re-navegaciones
+      setSelectedProduct(null);
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 100);
+    }
+  }, [selectedProduct, empresaName, location.search, navigate]);
+
   // Verificar si el usuario tiene acceso a la empresa
   if (empresaName && user) {
     const userAccess = user?.EMPRESAS || [];
@@ -885,15 +916,8 @@ const Catalog = () => {
     );
   }
 
-  // Si hay un producto seleccionado, redirigir a la página de detalle
+  // Si hay un producto seleccionado, mostrar null mientras se navega
   if (selectedProduct) {
-    navigate(`/productos/${selectedProduct.id}`, {
-      state: {
-        product: selectedProduct,
-        empresaId: empresaName,
-        prevUrl: `/catalogo/${empresaName || ""}`,
-      },
-    });
     return null;
   }
 

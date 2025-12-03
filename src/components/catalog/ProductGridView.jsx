@@ -169,10 +169,15 @@ const SortContainer = styled.div`
 `;
 
 const ProductsInfo = styled.div`
-  width: 100%;
   text-align: left;
   display: flex;
   justify-content: flex-start;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
 `;
 
 const SelectsContainer = styled.div`
@@ -327,10 +332,137 @@ const ProductGridView = ({
   // Referencia para el contenedor con scroll
   const scrollContainerRef = React.useRef(null);
 
+  // Ref para saber si ya se hizo scroll al producto
+  const scrollToProductDoneRef = React.useRef(false);
+  // Ref para rastrear los filtros anteriores para limpiar producto guardado cuando cambien
+  const prevFiltersForProductRef = React.useRef(null);
+
   // Función para solicitar acceso a una empresa
   const handleRequestAccess = (empresaId) => {
     // Aquí podrías implementar la lógica para solicitar acceso
   };
+
+  // Función para generar una clave única basada en los filtros actuales
+  const getProductStorageKey = React.useCallback(() => {
+    const filtersKey = JSON.stringify({
+      selectedLinea,
+      selectedValues,
+      searchQuery: catalogSearch,
+      sortBy,
+    });
+    return `productGrid_lastProduct_${filtersKey}`;
+  }, [selectedLinea, selectedValues, catalogSearch, sortBy]);
+
+  // Función para guardar el ID del producto que se está viendo
+  const saveLastViewedProduct = React.useCallback(
+    (productId) => {
+      const storageKey = getProductStorageKey();
+      try {
+        if (productId) {
+          localStorage.setItem(storageKey, productId.toString());
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch (error) {
+        console.warn("Error saving last viewed product:", error);
+      }
+    },
+    [getProductStorageKey]
+  );
+
+  // Función para obtener el ID del último producto visto
+  const getLastViewedProduct = React.useCallback(() => {
+    const storageKey = getProductStorageKey();
+    try {
+      const productId = localStorage.getItem(storageKey);
+      return productId ? productId : null;
+    } catch (error) {
+      console.warn("Error getting last viewed product:", error);
+      return null;
+    }
+  }, [getProductStorageKey]);
+
+  // Función para hacer scroll hasta un producto específico
+  const scrollToProduct = React.useCallback(
+    (productId) => {
+      if (!productId || scrollToProductDoneRef.current) return;
+
+      // Buscar el elemento del producto en el DOM
+      const productElement = document.querySelector(
+        `[data-product-id="${productId}"]`
+      );
+
+      if (productElement && scrollContainerRef.current) {
+        // Calcular la posición del elemento relativa al contenedor con scroll
+        const containerRect =
+          scrollContainerRef.current.getBoundingClientRect();
+        const elementRect = productElement.getBoundingClientRect();
+
+        // Calcular el scroll necesario para centrar el producto
+        const scrollTop =
+          scrollContainerRef.current.scrollTop +
+          elementRect.top -
+          containerRect.top -
+          containerRect.height / 2 +
+          elementRect.height / 2;
+
+        // Hacer scroll suave hasta el producto
+        scrollContainerRef.current.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: "smooth",
+        });
+
+        scrollToProductDoneRef.current = true;
+
+        // Limpiar el producto guardado después de hacer scroll
+        setTimeout(() => {
+          saveLastViewedProduct(null);
+        }, 1000);
+      }
+    },
+    [saveLastViewedProduct]
+  );
+
+  // Limpiar producto guardado cuando cambian los filtros
+  React.useEffect(() => {
+    const currentFiltersKey = JSON.stringify({
+      selectedLinea,
+      selectedValues,
+      searchQuery: catalogSearch,
+      sortBy,
+    });
+
+    if (
+      prevFiltersForProductRef.current !== null &&
+      prevFiltersForProductRef.current !== currentFiltersKey
+    ) {
+      // Los filtros cambiaron, limpiar el producto guardado de los filtros anteriores
+      try {
+        const oldStorageKey = `productGrid_lastProduct_${prevFiltersForProductRef.current}`;
+        localStorage.removeItem(oldStorageKey);
+      } catch (error) {
+        console.warn("Error clearing old product:", error);
+      }
+      scrollToProductDoneRef.current = false;
+    }
+
+    prevFiltersForProductRef.current = currentFiltersKey;
+  }, [selectedLinea, selectedValues, catalogSearch, sortBy]);
+
+  // Guardar el producto cuando se hace clic en él y llamar al handler original
+  const handleProductClick = React.useCallback(
+    (product) => {
+      if (product && product.id) {
+        saveLastViewedProduct(product.id);
+      }
+      // Llamar al handler original para que Catalog maneje la navegación
+      // NO navegar desde aquí para evitar múltiples navegaciones
+      if (onProductSelect) {
+        onProductSelect(product);
+      }
+    },
+    [saveLastViewedProduct, onProductSelect]
+  );
 
   // Sincronizar estado local con URL cuando cambien los searchParams (solo lectura desde URL)
   useEffect(() => {
@@ -509,6 +641,53 @@ const ProductGridView = ({
     return { items, totalItems, totalPages };
   }, [products, sortBy, itemsPerPage, currentPage]);
 
+  // Buscar y hacer scroll al producto guardado cuando se monta o cambian los productos
+  React.useEffect(() => {
+    if (processedProducts.items.length > 0 && !scrollToProductDoneRef.current) {
+      const lastProductId = getLastViewedProduct();
+
+      if (lastProductId) {
+        // Buscar el producto en la lista actual
+        const productExists = processedProducts.items.some(
+          (p) => p.id.toString() === lastProductId.toString()
+        );
+
+        if (productExists) {
+          // Intentar hacer scroll al producto después de que se rendericen
+          const scrollTimeout = setTimeout(() => {
+            scrollToProduct(lastProductId);
+          }, 300);
+
+          return () => clearTimeout(scrollTimeout);
+        } else {
+          // El producto no está en esta página, limpiar
+          saveLastViewedProduct(null);
+          scrollToProductDoneRef.current = true;
+        }
+      } else {
+        // No hay producto guardado, hacer scroll a 0 cuando cambia la página
+        if (scrollContainerRef.current && currentPage > 0) {
+          scrollContainerRef.current.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+        }
+        scrollToProductDoneRef.current = true;
+      }
+    }
+  }, [
+    processedProducts.items.length,
+    currentPage,
+    getLastViewedProduct,
+    scrollToProduct,
+    saveLastViewedProduct,
+  ]);
+
+  // Resetear flag cuando cambia la página para permitir nueva búsqueda
+  React.useEffect(() => {
+    scrollToProductDoneRef.current = false;
+  }, [currentPage]);
+
   // Resetear página si la página actual excede el total de páginas disponibles
   useEffect(() => {
     if (
@@ -584,16 +763,6 @@ const ProductGridView = ({
       }, 100);
     }
   }, [selectedLinea, selectedValues, searchParams, setSearchParams]);
-
-  // Efecto para hacer scroll hacia arriba cuando cambie la página
-  useEffect(() => {
-    if (scrollContainerRef.current && currentPage > 0) {
-      scrollContainerRef.current.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-  }, [currentPage]);
 
   // Efecto para hacer scroll automático a la página actual en la paginación
   React.useEffect(() => {
@@ -698,7 +867,12 @@ const ProductGridView = ({
     <ProductGridContainer>
       <GridScrollableContent ref={scrollContainerRef}>
         <SortContainer>
-         
+          <ProductsInfo>
+            <ResultsInfo>
+              Mostrando {processedProducts.totalItems} producto
+              {processedProducts.totalItems !== 1 ? "s" : ""}
+            </ResultsInfo>
+          </ProductsInfo>
 
           {/* Solo mostrar el selector de ordenación si hay productos */}
           {processedProducts && processedProducts.items.length > 0 && (
@@ -734,33 +908,32 @@ const ProductGridView = ({
               />
             </SelectsContainer>
           )}
-           <ProductsInfo>
-            <ResultsInfo>
-              Mostrando {processedProducts.totalItems} producto
-              {processedProducts.totalItems !== 1 ? "s" : ""}
-            </ResultsInfo>
-          </ProductsInfo>
         </SortContainer>
 
         <ProductsGrid>
           {processedProducts.items.map((product, index) => (
-            <ProductCard
+            <div
               key={`${product.empresaId}-${product.id}-${index}`}
-              product={product}
-              lineConfig={
-                PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
-                PRODUCT_LINE_CONFIG.DEFAULT
-              }
-              restricted={false}
-              onRequestAccess={handleRequestAccess}
-              // Pasar información de catálogo para preservar contexto
-              currentFilters={{
-                selectedLinea,
-                selectedValues,
-              }}
-              currentSearch={catalogSearch}
-              currentSort={sortBy}
-            />
+              data-product-id={product.id}
+            >
+              <ProductCard
+                product={product}
+                lineConfig={
+                  PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
+                  PRODUCT_LINE_CONFIG.DEFAULT
+                }
+                restricted={false}
+                onRequestAccess={handleRequestAccess}
+                // Pasar información de catálogo para preservar contexto
+                currentFilters={{
+                  selectedLinea,
+                  selectedValues,
+                }}
+                currentSearch={catalogSearch}
+                currentSort={sortBy}
+                onClick={() => handleProductClick(product)}
+              />
+            </div>
           ))}
         </ProductsGrid>
 

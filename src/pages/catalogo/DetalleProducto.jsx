@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../../context/CartContext";
 import Button from "../../components/ui/Button";
@@ -70,7 +75,6 @@ const ProductTitle = styled.h1`
     font-size: 1.25rem;
   }
 `;
-
 
 const PriceContainer = styled.div`
   margin-bottom: 10px;
@@ -451,6 +455,7 @@ const BreadcrumbLink = styled.button`
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
 
   @media (max-width: 768px) {
     font-size: 0.8rem;
@@ -464,6 +469,7 @@ const BreadcrumbLink = styled.button`
 
   &:disabled {
     cursor: default;
+    opacity: 0.6;
   }
 `;
 
@@ -638,6 +644,7 @@ const DetalleProducto = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loadProductByCodigo } = useProductCatalog();
   const { navigateToHomeByRole, isClient, isVisualizacion } = useAuth();
   const { addToCart, cart } = useCart();
@@ -645,6 +652,11 @@ const DetalleProducto = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // Intentar obtener el producto del estado de navegación primero
   const [product, setProduct] = useState(location.state?.product || null);
+
+  // Obtener prevUrl desde los parámetros de URL en lugar de location.state
+  const prevUrl = searchParams.get("prevUrl")
+    ? decodeURIComponent(searchParams.get("prevUrl"))
+    : location.state?.prevUrl || null;
 
   // SEO y datos estructurados
   const structuredData = useProductStructuredData(product);
@@ -667,8 +679,6 @@ const DetalleProducto = () => {
   const hoverTimeoutRef = useRef(null);
   const hasFetchedProductRef = useRef(false);
 
-  const prevUrl = location.state?.prevUrl;
-
   // Función para renderizar los breadcrumbs dinámicos según el origen
   const renderBreadcrumbs = () => {
     let breadcrumbs = [
@@ -686,18 +696,8 @@ const DetalleProducto = () => {
         breadcrumbs.push({
           label: `Catálogo ${product?.empresa || product?.empresaId || ""}`,
           onClick: () => {
-            const currentFilters = location.state?.filters || {};
-            const currentSearch = location.state?.searchTerm || "";
-            const currentSort = location.state?.sortBy || "";
-
-            navigate(prevUrl, {
-              state: {
-                filters: currentFilters,
-                searchTerm: currentSearch,
-                sortBy: currentSort,
-                preserveFilters: true,
-              },
-            });
+            // Navegar directamente a la URL sin pasar state, ya que todo está en la URL
+            navigate(prevUrl);
           },
           active: false,
         });
@@ -705,21 +705,33 @@ const DetalleProducto = () => {
         // Vino desde el carrito
         breadcrumbs.push({
           label: "Carrito",
-          onClick: () => navigate(prevUrl),
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(prevUrl);
+          },
           active: false,
         });
       } else if (prevUrl.includes("/mis-pedidos/")) {
         // Vino desde detalle de pedido del cliente
         breadcrumbs.push({
           label: "Detalle del Pedido",
-          onClick: () => navigate(prevUrl),
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(prevUrl);
+          },
           active: false,
         });
       } else if (prevUrl.includes("/coordinadora/pedidos/")) {
         // Vino desde detalle de pedido del coordinador
         breadcrumbs.push({
           label: "Detalle del Pedido",
-          onClick: () => navigate(prevUrl),
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(prevUrl);
+          },
           active: false,
         });
       } else if (prevUrl.includes("/busqueda")) {
@@ -728,7 +740,11 @@ const DetalleProducto = () => {
         const searchTerm = searchParams.get("q") || "Búsqueda";
         breadcrumbs.push({
           label: `Búsqueda: ${searchTerm}`,
-          onClick: () => navigate(prevUrl),
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(prevUrl);
+          },
           active: false,
         });
       } else {
@@ -737,7 +753,11 @@ const DetalleProducto = () => {
         const lastPart = pathParts[pathParts.length - 1];
         breadcrumbs.push({
           label: lastPart.charAt(0).toUpperCase() + lastPart.slice(1),
-          onClick: () => navigate(prevUrl),
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(prevUrl);
+          },
           active: false,
         });
       }
@@ -745,8 +765,11 @@ const DetalleProducto = () => {
       // Sin prevUrl - ir al catálogo de la empresa
       breadcrumbs.push({
         label: `Catálogo ${product?.empresa || product?.empresaId || ""}`,
-        onClick: () =>
-          navigate(`/catalogo/${product?.empresaId || resolvedEmpresaId}`),
+        onClick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/catalogo/${product?.empresaId || resolvedEmpresaId}`);
+        },
         active: false,
       });
     }
@@ -1157,12 +1180,24 @@ const DetalleProducto = () => {
                 : "Producto sin categoría"}
             </Category>
             <ProductTitle>{product.name}</ProductTitle>
+            {console.log(product)}
+            {product.originalData?.DMA_MATERIAL && (
+              <span style={{ fontSize: "0.9rem", color: "#666" }}>
+                Cod: {product.originalData.DMA_MATERIAL}
+              </span>
+            )}
+            {product.originalData?.DMA_CODIGOPROVEEDOR && (
+              <span style={{ fontSize: "0.9rem", color: "#666" }}>
+                Cod: {product.originalData.DMA_CODIGOPROVEEDOR}
+              </span>
+            )}
 
             {/* Precio en la parte superior */}
             <PriceContainer>
               <div
                 style={{
                   display: "flex",
+                  marginTop: "10px",
                   flexDirection: "row",
                   gap: "5px",
                   alignItems: "flex-end",

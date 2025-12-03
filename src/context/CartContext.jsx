@@ -194,13 +194,12 @@ export function CartProvider({ children }) {
     }
   }, [user?.ACCOUNT_USER]);
 
-  // NO cargar automáticamente el carrito
-  // La página de carrito será responsable de cargarlo cuando sea necesario
-  // useEffect(() => {
-  //   if (user?.ACCOUNT_USER) {
-  //     loadCartFromAPI();
-  //   }
-  // }, [user?.ACCOUNT_USER]);
+  // Cargar automáticamente el carrito cuando el usuario esté disponible
+  useEffect(() => {
+    if (user?.ACCOUNT_USER && isClient && !isVisualizacion) {
+      loadCartFromAPI();
+    }
+  }, [user?.ACCOUNT_USER, isClient, isVisualizacion, loadCartFromAPI]);
 
   // Función para sincronizar el carrito con la API
   const syncCartWithAPI = async (newCart) => {
@@ -331,7 +330,8 @@ export function CartProvider({ children }) {
             apiProduct.DMA_DESCUENTO_PROMOCIONAL ||
             product.promotionalDiscount ||
             0,
-          lineaNegocio: apiProduct.DMA_LINEANEGOCIO || product.lineaNegocio || "DEFAULT",
+          lineaNegocio:
+            apiProduct.DMA_LINEANEGOCIO || product.lineaNegocio || "DEFAULT",
         };
       } else {
         console.warn(

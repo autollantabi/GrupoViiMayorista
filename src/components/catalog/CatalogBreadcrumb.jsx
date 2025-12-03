@@ -31,7 +31,6 @@ const BreadcrumbContent = styled.div`
 
 const BreadcrumbSection = styled.div`
   margin-bottom: 16px;
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -48,6 +47,20 @@ const BreadcrumbSection = styled.div`
 
   @media (max-width: 768px) {
     margin-bottom: 12px;
+  }
+`;
+
+const BreadcrumbSectionLines = styled(BreadcrumbSection)`
+  @media (min-width: 1024px) {
+    flex: 1;
+    max-width: 33.333%;
+  }
+`;
+
+const BreadcrumbSectionFilters = styled(BreadcrumbSection)`
+  @media (min-width: 1024px) {
+    flex: 2;
+    max-width: 66.666%;
   }
 `;
 
@@ -193,7 +206,7 @@ const CatalogBreadcrumb = ({
     <BreadcrumbContainer>
       <BreadcrumbContent>
         {/* Sección de líneas disponibles */}
-        <BreadcrumbSection>
+        <BreadcrumbSectionLines>
           {/* <BreadcrumbSectionTitle>Líneas de Negocio</BreadcrumbSectionTitle> */}
           <BreadcrumbList>
             {availableLines.map((linea) => (
@@ -208,11 +221,11 @@ const CatalogBreadcrumb = ({
               </BreadcrumbItem>
             ))}
           </BreadcrumbList>
-        </BreadcrumbSection>
+        </BreadcrumbSectionLines>
 
         {/* Sección de filtros aplicados */}
         {(selectedLinea || Object.keys(selectedValues).length > 0) && (
-          <BreadcrumbSection>
+          <BreadcrumbSectionFilters>
             {/* <BreadcrumbSectionTitle>Filtros Aplicados</BreadcrumbSectionTitle> */}
             <BreadcrumbList>
               {/* Mostrar filtros del flujo principal */}
@@ -268,7 +281,7 @@ const CatalogBreadcrumb = ({
                 </BreadcrumbItem>
               )}
             </BreadcrumbList>
-          </BreadcrumbSection>
+          </BreadcrumbSectionFilters>
         )}
       </BreadcrumbContent>
     </BreadcrumbContainer>

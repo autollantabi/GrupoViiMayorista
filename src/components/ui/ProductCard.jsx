@@ -373,7 +373,8 @@ const RestrictedDivider = styled.div`
 const Price = styled.div`
   margin-top: auto;
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid ${({ theme }) => `${theme.colors.textLight}15`};
@@ -381,11 +382,31 @@ const Price = styled.div`
   @media (max-width: 768px) {
     gap: 8px;
     padding-top: 12px;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   @media (max-width: 480px) {
     gap: 6px;
     padding-top: 10px;
+  }
+`;
+
+const PriceLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+`;
+
+const PriceRight = styled.div`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
   }
 `;
 
@@ -415,22 +436,90 @@ const IVAIndicator = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
   font-style: italic;
   opacity: 0.8;
-  margin-left: 8px;
 `;
 
 const ButtonContainer = styled.div`
   margin-top: 16px;
   display: flex;
-  gap: 10px;
+  width: 100%;
 
   @media (max-width: 768px) {
     margin-top: 12px;
-    gap: 8px;
   }
 
   @media (max-width: 480px) {
     margin-top: 10px;
-    gap: 6px;
+  }
+`;
+
+const QuantitySelector = styled.div`
+  display: flex;
+  align-items: center;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: ${({ theme }) => theme.colors.surface};
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const QuantityButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme, disabled }) =>
+    disabled ? theme.colors.textLight : theme.colors.text};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  transition: background-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) => theme.colors.background};
+  }
+
+  &:first-child {
+    border-right: 1px solid ${({ theme }) => theme.colors.border};
+  }
+
+  &:last-child {
+    border-left: 1px solid ${({ theme }) => theme.colors.border};
+  }
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+`;
+
+const QuantityInput = styled.input`
+  width: 50px;
+  height: 32px;
+  border: none;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  padding: 0;
+
+  &:focus {
+    outline: none;
+  }
+
+  @media (max-width: 768px) {
+    width: 60px;
+    height: 36px;
+    font-size: 1rem;
   }
 `;
 
@@ -488,12 +577,18 @@ const StockIndicator = styled.div`
   gap: 6px;
   font-size: 0.75rem;
   padding: 3px 6px;
-  background: ${({ theme, $inStock }) =>
-    $inStock ? `${theme.colors.success}10` : `${theme.colors.error}10`};
+  background: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return `${theme.colors.success}10`;
+    if ($lowStock) return `${theme.colors.warning || "#fbbf24"}10`;
+    return `${theme.colors.error}10`;
+  }};
   border-radius: 8px;
   border: 1px solid
-    ${({ theme, $inStock }) =>
-      $inStock ? `${theme.colors.success}20` : `${theme.colors.error}20`};
+    ${({ theme, $inStock, $lowStock }) => {
+      if ($inStock) return `${theme.colors.success}20`;
+      if ($lowStock) return `${theme.colors.warning || "#fbbf24"}20`;
+      return `${theme.colors.error}20`;
+    }};
   width: fit-content;
   min-width: fit-content;
 
@@ -522,8 +617,11 @@ const StockDot = styled.span`
 `;
 
 const StockText = styled.span`
-  color: ${({ theme, $inStock }) =>
-    $inStock ? theme.colors.success : theme.colors.error};
+  color: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return theme.colors.success;
+    if ($lowStock) return theme.colors.warning || "#fbbf24";
+    return theme.colors.error;
+  }};
   font-size: 0.7rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -548,8 +646,11 @@ const StockText = styled.span`
 const StockIcon = styled.div`
   display: flex;
   align-items: center;
-  color: ${({ theme, $inStock }) =>
-    $inStock ? theme.colors.success : theme.colors.error};
+  color: ${({ theme, $inStock, $lowStock }) => {
+    if ($inStock) return theme.colors.success;
+    if ($lowStock) return theme.colors.warning || "#fbbf24";
+    return theme.colors.error;
+  }};
 `;
 
 const TopRow = styled.div`
@@ -658,13 +759,19 @@ const ProductCard = ({
   currentFilters = {},
   currentSearch = "",
   currentSort = "",
+  onClick,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isClient, isVisualizacion } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  // Buscar el producto en el carrito
+  const cartItem = cart.find((item) => item?.id === product.id);
+  const quantityInCart = cartItem ? cartItem.quantity : 0;
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -690,6 +797,14 @@ const ProductCard = ({
       return;
     }
 
+    // Si hay un onClick externo, llamarlo y NO navegar desde aquí
+    // El onClick externo se encargará de la navegación
+    if (onClick) {
+      onClick(product);
+      return;
+    }
+
+    // Si no hay onClick externo, navegar normalmente
     // Construir la URL anterior según el contexto
     let currentUrl = `${location.pathname}${location.search}`;
 
@@ -705,16 +820,16 @@ const ProductCard = ({
     }
 
     // Navegar al detalle del producto pasando la URL anterior y filtros
-    navigate(`/productos/${product.id}`, {
-      state: {
-        product,
-        empresaId: product.empresaId,
-        prevUrl: currentUrl, // Guardar la URL anterior para poder volver
-        filters: currentFilters,
-        searchTerm: currentSearch,
-        sortBy: currentSort,
-      },
-    });
+    navigate(
+      `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+      {
+        state: {
+          product,
+          empresaId: product.empresaId,
+        },
+        replace: false,
+      }
+    );
   };
 
   const handleAddToCart = async (e) => {
@@ -723,9 +838,13 @@ const ProductCard = ({
 
     setIsAddingToCart(true);
     try {
-      const result = await addToCart(product, 1);
+      const result = await addToCart(product, quantity);
       if (result?.success) {
-        toast.success(`${product.name} agregado al carrito`);
+        toast.success(
+          `${quantity} ${product.name}${quantity > 1 ? "s" : ""} agregado${
+            quantity > 1 ? "s" : ""
+          } al carrito`
+        );
       } else {
         const message =
           result?.message || "No se pudo agregar el producto al carrito";
@@ -736,6 +855,28 @@ const ProductCard = ({
       toast.error("Ocurrió un problema al agregar el producto al carrito");
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value);
+    const max = 5000;
+    if (!isNaN(value) && value > 0 && value <= max) {
+      setQuantity(value);
+    }
+  };
+
+  const decreaseQuantity = (e) => {
+    e.stopPropagation();
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const increaseQuantity = (e) => {
+    e.stopPropagation();
+    if (quantity < 5000) {
+      setQuantity(quantity + 1);
     }
   };
 
@@ -781,40 +922,16 @@ const ProductCard = ({
 
   // Función para renderizar el contenido del stock
   const renderStockContent = () => {
-    // Detectar si estamos en móvil
-    const isMobile = window.innerWidth <= 768;
-    const isSmallMobile = window.innerWidth <= 480;
-
-    if (product.stock > 0) {
-      if (product.stock >= 100) {
-        return (
-          <StockIcon $inStock={true}>
-            {isSmallMobile
-              ? "+100 unid."
-              : isMobile
-              ? "+100 unid."
-              : "+100 unid."}
-          </StockIcon>
-        );
-      } else {
-        const stockText = isSmallMobile
-          ? "unid."
-          : isMobile
-          ? "unid."
-          : "unid.";
-        return (
-          <span>
-            {product.stock} {stockText}
-          </span>
-        );
-      }
+    if (product.stock > 1) {
+      // Si hay más de 1, mostrar "DISPONIBLE" (verde)
+      return <StockIcon $inStock={true}>DISPONIBLE</StockIcon>;
     } else {
-      const noStockText = isSmallMobile
-        ? "sin stock"
-        : isMobile
-        ? "sin stock"
-        : "sin stock";
-      return <StockIcon $inStock={false}>{noStockText}</StockIcon>;
+      // Si hay 0 o 1, mostrar "POCO STOCK" (amarillo)
+      return (
+        <StockIcon $inStock={false} $lowStock={true}>
+          POCO STOCK
+        </StockIcon>
+      );
     }
   };
 
@@ -926,11 +1043,17 @@ const ProductCard = ({
                   {product.empresa || product.empresaId}
                 </Enterprise>
               </BrandEnterpriseContainer>
-              <StockIndicator $inStock={product.stock > 0}>
+              <StockIndicator
+                $inStock={product.stock > 1}
+                $lowStock={product.stock <= 1 && product.stock >= 0}
+              >
                 {/* {product.stock > 0 && product.stock < 100 && (
                   <StockDot $inStock={product.stock > 0} />
                 )} */}
-                <StockText $inStock={product.stock > 0}>
+                <StockText
+                  $inStock={product.stock > 1}
+                  $lowStock={product.stock <= 1 && product.stock >= 0}
+                >
                   {renderStockContent()}
                 </StockText>
               </StockIndicator>
@@ -939,31 +1062,74 @@ const ProductCard = ({
             <ProductName $restricted={restricted}>{product.name}</ProductName>
             {renderSpecs(config)}
             <Price>
-              <div>
-                <CurrentPrice>${(priceWithIVA || 0).toFixed(2)}</CurrentPrice>
+              <PriceLeft>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: "8px",
+                  }}
+                >
+                  <CurrentPrice>${(priceWithIVA || 0).toFixed(2)}</CurrentPrice>
+                  {product.discount > 0 && product.price != null && (
+                    <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
+                  )}
+                </div>
                 <IVAIndicator>IVA incluido</IVAIndicator>
-              </div>
-              {product.discount > 0 && product.price != null && (
-                <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
+              </PriceLeft>
+              {isClient && !isVisualizacion && (
+                <PriceRight>
+                  <QuantitySelector onClick={(e) => e.stopPropagation()}>
+                    <QuantityButton
+                      onClick={decreaseQuantity}
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </QuantityButton>
+                    <QuantityInput
+                      type="number"
+                      min="1"
+                      max="5000"
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <QuantityButton
+                      onClick={increaseQuantity}
+                      disabled={quantity >= 5000}
+                    >
+                      +
+                    </QuantityButton>
+                  </QuantitySelector>
+                </PriceRight>
               )}
             </Price>
-            <ButtonContainer>
-              <Button
-                text="Ver detalle"
-                variant="outlined"
-                size="small"
-                onClick={handleViewDetails}
-              />
-              {isClient && !isVisualizacion && (
+            {isClient && !isVisualizacion && (
+              <ButtonContainer>
                 <Button
-                  text={isAddingToCart ? "Agregando..." : "Agregar al carrito"}
+                  leftIconName={
+                    quantityInCart > 0 ? "FaCheck" : "FaShoppingCart"
+                  }
+                  text={
+                    quantityInCart > 0
+                      ? `${quantityInCart} en carrito`
+                      : isAddingToCart
+                      ? "Agregando..."
+                      : "Agregar"
+                  }
                   variant="solid"
                   size="small"
+                  backgroundColor={({ theme }) =>
+                    quantityInCart > 0
+                      ? theme.colors.success
+                      : theme.colors.primary
+                  }
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
+                  style={{ width: "100%" }}
                 />
-              )}
-            </ButtonContainer>
+              </ButtonContainer>
+            )}
           </ContentContainer>
         )}
       </StyledCard>
