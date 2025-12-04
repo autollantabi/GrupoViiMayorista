@@ -976,13 +976,17 @@ const Carrito = () => {
       <PageContainer style={{ padding: "16px" }}>
         <PageTitle>Carrito de compras</PageTitle>
         <CartEmptyState>
-          <EmptyCartIcon>🛒</EmptyCartIcon>
+          <RenderIcon
+            name="FaShoppingCart"
+            size={40}
+            color={theme.colors.primary}
+            style={{ marginBottom: "16px" }}
+          />
           <EmptyCartText>Tu carrito está vacío</EmptyCartText>
           <Button
             text="Ir al Catálogo"
-            variant="solid"
+            variant="outlined"
             onClick={() => navigate("/")}
-            backgroundColor={theme.colors.primary}
           />
         </CartEmptyState>
       </PageContainer>
