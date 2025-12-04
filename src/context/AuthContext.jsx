@@ -310,6 +310,7 @@ export function AuthProvider({ children }) {
       const response = await api_resetPassword_verifyResetCode(token, otp);
       localStorage.removeItem("resetToken");
 
+
       if (response.success) {
         // El resetToken ya se guarda en localStorage en verifyResetCode si es necesario
         localStorage.setItem("resetToken", response.resetToken);

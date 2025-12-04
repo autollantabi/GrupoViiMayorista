@@ -507,6 +507,7 @@ const AdditionalFilters = ({
   selectedValues = {},
   onFilterSelect,
   onClearFilter,
+  onClearAllFilters,
   searchQuery = "",
   onSearchChange,
 }) => {
@@ -580,19 +581,35 @@ const AdditionalFilters = ({
     );
   };
 
+  // Función helper para normalizar y comparar valores de filtros
+  const isFilterValueSelected = (filterId, optionValue) => {
+    const selectedValue = selectedValues[filterId];
+    if (!selectedValue && !optionValue) return true;
+    if (!selectedValue || !optionValue) return false;
+
+    // Normalizar ambos valores para comparación
+    const normalizedSelected = String(selectedValue).trim();
+    const normalizedOption = String(optionValue).trim();
+
+    return normalizedSelected === normalizedOption;
+  };
+
   // Función para limpiar todos los filtros adicionales
   const handleClearAllFilters = () => {
-    // Obtener todos los filtros adicionales seleccionados (los que empiezan con DMA_)
-    const additionalFilterIds = Object.keys(selectedValues).filter((key) =>
-      key.startsWith("DMA_")
-    );
+    // Si hay una función optimizada para limpiar todos, usarla
+    if (onClearAllFilters) {
+      onClearAllFilters();
+    } else if (onClearFilter) {
+      // Fallback: limpiar cada filtro individualmente
+      const additionalFilterIds = Object.keys(selectedValues).filter((key) =>
+        key.startsWith("DMA_")
+      );
 
-    // Limpiar cada filtro
-    additionalFilterIds.forEach((filterId) => {
-      if (onClearFilter) {
+      // Limpiar cada filtro
+      additionalFilterIds.forEach((filterId) => {
         onClearFilter(filterId);
-      }
-    });
+      });
+    }
   };
 
   // Verificar si hay filtros adicionales seleccionados
@@ -741,9 +758,12 @@ const AdditionalFilters = ({
                       <AccordionTitle>
                         <RenderIcon name="FaTag" size={14} />
                         {filter.name}
-                        {selectedValues[filter.id] && (
-                          <SelectedIndicator>(Seleccionado)</SelectedIndicator>
-                        )}
+                        {selectedValues[filter.id] &&
+                          String(selectedValues[filter.id]).trim() && (
+                            <SelectedIndicator>
+                              (Seleccionado)
+                            </SelectedIndicator>
+                          )}
                       </AccordionTitle>
                       <AccordionIcon $isOpen={isOpen}>
                         <RenderIcon name="FaChevronDown" size={14} />
@@ -779,35 +799,31 @@ const AdditionalFilters = ({
 
                       <FilterOptionsContainer>
                         {filteredOptions.length > 0 ? (
-                          filteredOptions.map((option) => (
-                            <FilterOption
-                              key={option.value}
-                              $isSelected={
-                                selectedValues[filter.id] === option.value
-                              }
-                              $disabled={option.disabled}
-                              onClick={() => {
-                                if (!option.disabled) {
-                                  handleFilterSelect(filter.id, option.value);
-                                }
-                              }}
-                            >
-                              <FilterOptionLabel
-                                $isSelected={
-                                  selectedValues[filter.id] === option.value
-                                }
+                          filteredOptions.map((option) => {
+                            const isSelected = isFilterValueSelected(
+                              filter.id,
+                              option.value
+                            );
+                            return (
+                              <FilterOption
+                                key={option.value}
+                                $isSelected={isSelected}
+                                $disabled={option.disabled}
+                                onClick={() => {
+                                  if (!option.disabled) {
+                                    handleFilterSelect(filter.id, option.value);
+                                  }
+                                }}
                               >
-                                {option.label}
-                              </FilterOptionLabel>
-                              <FilterOptionCount
-                                $isSelected={
-                                  selectedValues[filter.id] === option.value
-                                }
-                              >
-                                {option.count}
-                              </FilterOptionCount>
-                            </FilterOption>
-                          ))
+                                <FilterOptionLabel $isSelected={isSelected}>
+                                  {option.label}
+                                </FilterOptionLabel>
+                                <FilterOptionCount $isSelected={isSelected}>
+                                  {option.count}
+                                </FilterOptionCount>
+                              </FilterOption>
+                            );
+                          })
                         ) : (
                           <InfoMessage $withPadding>
                             No se encontraron opciones
@@ -861,9 +877,10 @@ const AdditionalFilters = ({
               <AccordionHeader onClick={() => toggleAccordion(filter.id)}>
                 <AccordionTitle>
                   {filter.name}
-                  {selectedValues[filter.id] && (
-                    <SelectedIndicator>(Seleccionado)</SelectedIndicator>
-                  )}
+                  {selectedValues[filter.id] &&
+                    String(selectedValues[filter.id]).trim() && (
+                      <SelectedIndicator>(Seleccionado)</SelectedIndicator>
+                    )}
                 </AccordionTitle>
                 <AccordionIcon $isOpen={isOpen}>
                   <RenderIcon name="FaChevronDown" size={14} />
@@ -899,33 +916,31 @@ const AdditionalFilters = ({
 
                 <FilterOptionsContainer>
                   {filteredOptions.length > 0 ? (
-                    filteredOptions.map((option) => (
-                      <FilterOption
-                        key={option.value}
-                        $isSelected={selectedValues[filter.id] === option.value}
-                        $disabled={option.disabled}
-                        onClick={() => {
-                          if (!option.disabled) {
-                            onFilterSelect(filter.id, option.value);
-                          }
-                        }}
-                      >
-                        <FilterOptionLabel
-                          $isSelected={
-                            selectedValues[filter.id] === option.value
-                          }
+                    filteredOptions.map((option) => {
+                      const isSelected = isFilterValueSelected(
+                        filter.id,
+                        option.value
+                      );
+                      return (
+                        <FilterOption
+                          key={option.value}
+                          $isSelected={isSelected}
+                          $disabled={option.disabled}
+                          onClick={() => {
+                            if (!option.disabled) {
+                              onFilterSelect(filter.id, option.value);
+                            }
+                          }}
                         >
-                          {option.label}
-                        </FilterOptionLabel>
-                        <FilterOptionCount
-                          $isSelected={
-                            selectedValues[filter.id] === option.value
-                          }
-                        >
-                          {option.count}
-                        </FilterOptionCount>
-                      </FilterOption>
-                    ))
+                          <FilterOptionLabel $isSelected={isSelected}>
+                            {option.label}
+                          </FilterOptionLabel>
+                          <FilterOptionCount $isSelected={isSelected}>
+                            {option.count}
+                          </FilterOptionCount>
+                        </FilterOption>
+                      );
+                    })
                   ) : (
                     <InfoMessage $withPadding>
                       No se encontraron opciones

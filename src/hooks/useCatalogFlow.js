@@ -602,18 +602,30 @@ const useCatalogFlow = (
     // Aplicar todos los filtros desde la URL
     // getFilterField es una función pura, no necesita estar en dependencias
     Object.entries(urlSelectedValues).forEach(([filterKey, filterValue]) => {
+      // Normalizar el valor del filtro para comparación
+      const normalizedFilterValue = String(filterValue || "").trim();
+
       // Primero intentar con los filtros del flujo principal
       const filterField = getFilterField(filterKey);
       if (filterField) {
-        filtered = filtered.filter(
-          (product) => product.originalData?.[filterField] === filterValue
-        );
+        filtered = filtered.filter((product) => {
+          const productValue = product.originalData?.[filterField];
+          if (productValue === null || productValue === undefined) return false;
+          // Normalizar y comparar
+          const normalizedProductValue = String(productValue).trim();
+          return normalizedProductValue === normalizedFilterValue;
+        });
       } else {
         // Si no es un filtro del flujo principal, es un filtro adicional (campo DMA_*)
         if (filterKey.startsWith("DMA_")) {
-          filtered = filtered.filter(
-            (product) => product.originalData?.[filterKey] === filterValue
-          );
+          filtered = filtered.filter((product) => {
+            const productValue = product.originalData?.[filterKey];
+            if (productValue === null || productValue === undefined)
+              return false;
+            // Normalizar y comparar
+            const normalizedProductValue = String(productValue).trim();
+            return normalizedProductValue === normalizedFilterValue;
+          });
         }
       }
     });
@@ -1036,9 +1048,15 @@ const useCatalogFlow = (
 
       const filterField = getFilterField(filterKey);
       if (filterField) {
-        baseFilteredProducts = baseFilteredProducts.filter(
-          (product) => product.originalData?.[filterField] === filterValue
-        );
+        // Normalizar el valor del filtro para comparación
+        const normalizedFilterValue = String(filterValue || "").trim();
+        baseFilteredProducts = baseFilteredProducts.filter((product) => {
+          const productValue = product.originalData?.[filterField];
+          if (productValue === null || productValue === undefined) return false;
+          // Normalizar y comparar
+          const normalizedProductValue = String(productValue).trim();
+          return normalizedProductValue === normalizedFilterValue;
+        });
       }
     });
 
@@ -1093,10 +1111,18 @@ const useCatalogFlow = (
                 otherFilterKey.startsWith("DMA_") &&
                 otherFilterKey !== filterField
               ) {
-                filteredForCount = filteredForCount.filter(
-                  (product) =>
-                    product.originalData?.[otherFilterKey] === otherFilterValue
-                );
+                // Normalizar el valor del filtro para comparación
+                const normalizedOtherValue = String(
+                  otherFilterValue || ""
+                ).trim();
+                filteredForCount = filteredForCount.filter((product) => {
+                  const productValue = product.originalData?.[otherFilterKey];
+                  if (productValue === null || productValue === undefined)
+                    return false;
+                  // Normalizar y comparar
+                  const normalizedProductValue = String(productValue).trim();
+                  return normalizedProductValue === normalizedOtherValue;
+                });
               }
             }
           );
@@ -1120,9 +1146,16 @@ const useCatalogFlow = (
           }
 
           // Ahora contar cuántos productos tendrían este valor específico
-          const count = filteredForCount.filter(
-            (product) => product.originalData?.[filterField] === value
-          ).length;
+          // Normalizar el valor para comparación
+          const normalizedValue = String(value || "").trim();
+          const count = filteredForCount.filter((product) => {
+            const productValue = product.originalData?.[filterField];
+            if (productValue === null || productValue === undefined)
+              return false;
+            // Normalizar y comparar
+            const normalizedProductValue = String(productValue).trim();
+            return normalizedProductValue === normalizedValue;
+          }).length;
 
           return {
             value,
@@ -1130,6 +1163,35 @@ const useCatalogFlow = (
             count,
             disabled: count === 0,
           };
+        });
+
+        // Ordenar las opciones: números de menor a mayor, texto alfabéticamente
+        options.sort((a, b) => {
+          const valueA = String(a.value || "").trim();
+          const valueB = String(b.value || "").trim();
+
+          // Intentar convertir a números
+          const numA = parseFloat(valueA);
+          const numB = parseFloat(valueB);
+
+          // Si ambos son números válidos, ordenar numéricamente
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+          }
+
+          // Si solo uno es número, los números van primero
+          if (!isNaN(numA) && isNaN(numB)) {
+            return -1;
+          }
+          if (isNaN(numA) && !isNaN(numB)) {
+            return 1;
+          }
+
+          // Si ambos son texto, ordenar alfabéticamente (case-insensitive)
+          return valueA.localeCompare(valueB, "es", {
+            sensitivity: "base",
+            numeric: true, // Esto ayuda con números dentro de texto (ej: "R13" vs "R14")
+          });
         });
 
         additionalFilterOptions.push({
@@ -1185,9 +1247,59 @@ const useCatalogFlow = (
       const newSelectedValues = { ...selectedValues };
       delete newSelectedValues[filterId];
       setSelectedValues(newSelectedValues);
+
+      // Actualizar URL después de limpiar filtro adicional
+      if (updateURL && isInitialized) {
+        syncURL({
+          selectedLinea,
+          currentStepIndex,
+          selectedValues: newSelectedValues,
+          searchQuery,
+        });
+      }
     },
-    [selectedValues]
+    [
+      selectedValues,
+      selectedLinea,
+      currentStepIndex,
+      searchQuery,
+      updateURL,
+      isInitialized,
+      syncURL,
+    ]
   );
+
+  // Función para limpiar todos los filtros adicionales de una vez
+  const clearAllAdditionalFilters = useCallback(() => {
+    const newSelectedValues = { ...selectedValues };
+
+    // Eliminar todos los filtros que empiezan con DMA_
+    Object.keys(newSelectedValues).forEach((key) => {
+      if (key.startsWith("DMA_")) {
+        delete newSelectedValues[key];
+      }
+    });
+
+    setSelectedValues(newSelectedValues);
+
+    // Actualizar URL después de limpiar todos los filtros adicionales
+    if (updateURL && isInitialized) {
+      syncURL({
+        selectedLinea,
+        currentStepIndex,
+        selectedValues: newSelectedValues,
+        searchQuery,
+      });
+    }
+  }, [
+    selectedValues,
+    selectedLinea,
+    currentStepIndex,
+    searchQuery,
+    updateURL,
+    isInitialized,
+    syncURL,
+  ]);
 
   // Función para navegar a un filtro adicional desde el breadcrumb
   const goToAdditionalFilter = useCallback(
@@ -1307,6 +1419,7 @@ const useCatalogFlow = (
     isAtProductView: isAtProductView(),
     applyAdditionalFilter,
     clearAdditionalFilter,
+    clearAllAdditionalFilters,
     goToAdditionalFilter,
     isInitialized,
     setSelectedValues: setSelectedValuesWrapper,

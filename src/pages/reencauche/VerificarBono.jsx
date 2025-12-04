@@ -1016,10 +1016,7 @@ const VerificarBono = () => {
 
                       {/* Mostrar MASTER e ITEM para bonos ACTIVO y USADO */}
                       {(bono.STATUS === "ACTIVO" || bono.STATUS === "USADO") &&
-                        (bono.MASTER ||
-                          bono.ITEM ||
-                          bono.REJECT_INFORMATION ||
-                          bono.REJECTED_INFORMATION) && (
+                        (bono.MASTER || bono.ITEM) && (
                           <div
                             style={{
                               marginTop: "4px",
@@ -1037,25 +1034,35 @@ const VerificarBono = () => {
                                 <InfoValue>{bono.ITEM || "N/A"}</InfoValue>
                               </InfoItem>
                             </BonoDetails>
-                            {(bono.REJECT_INFORMATION ||
-                              bono.REJECTED_INFORMATION) && (
-                              <BonoDetails style={{ marginTop: "4px" }}>
-                                <InfoItem style={{ gridColumn: "1 / -1" }}>
-                                  <InfoLabel>Información de Rechazo</InfoLabel>
-                                  <InfoValue
-                                    style={{
-                                      color: "#dc3545",
-                                      fontWeight: "500",
-                                    }}
-                                  >
-                                    {bono.REJECT_INFORMATION ||
-                                      bono.REJECTED_INFORMATION}
-                                  </InfoValue>
-                                </InfoItem>
-                              </BonoDetails>
-                            )}
                           </div>
                         )}
+
+                      {/* Mostrar información de rechazo para todos los estados */}
+                      {(bono.REJECT_INFORMATION ||
+                        bono.REJECTED_INFORMATION) && (
+                        <div
+                          style={{
+                            marginTop: "4px",
+                            paddingTop: "4px",
+                            borderTop: `1px solid ${theme.colors.border}`,
+                          }}
+                        >
+                          <BonoDetails style={{ marginTop: "4px" }}>
+                            <InfoItem style={{ gridColumn: "1 / -1" }}>
+                              <InfoLabel>Información de Rechazo</InfoLabel>
+                              <InfoValue
+                                style={{
+                                  color: "#dc3545",
+                                  fontWeight: "500",
+                                }}
+                              >
+                                {bono.REJECT_INFORMATION ||
+                                  bono.REJECTED_INFORMATION}
+                              </InfoValue>
+                            </InfoItem>
+                          </BonoDetails>
+                        </div>
+                      )}
 
                       {/* Campos de entrada solo para bonos PENDIENTE */}
                       {selectedBonos[bono.ID_BONUS] &&

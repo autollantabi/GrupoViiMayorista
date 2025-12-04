@@ -1214,7 +1214,20 @@ const Carrito = () => {
     });
 
     setShowSuccessCard(false);
-    // navigate("/");
+
+    // Recuperar la última URL del catálogo visitada
+    const lastCatalogUrl = localStorage.getItem("lastCatalogUrl");
+    if (lastCatalogUrl) {
+      navigate(lastCatalogUrl);
+    } else {
+      navigate("/");
+    }
+  };
+
+  // Función para obtener la URL del catálogo a la que se debe redirigir
+  const getCatalogUrl = () => {
+    const lastCatalogUrl = localStorage.getItem("lastCatalogUrl");
+    return lastCatalogUrl || "/";
   };
 
   return (
@@ -1542,7 +1555,7 @@ const Carrito = () => {
             text="Seguir comprando"
             variant="outlined"
             style={{ width: "100%", marginTop: "0px", marginBottom: "12px" }}
-            onClick={() => navigate("/")}
+            onClick={() => navigate(getCatalogUrl())}
           />
           <div
             style={{

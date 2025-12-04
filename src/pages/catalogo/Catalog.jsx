@@ -436,6 +436,18 @@ const Catalog = () => {
   const [initialSort, setInitialSort] = useState("default");
   const [restoreApplied, setRestoreApplied] = useState(false);
 
+  // Guardar la URL actual del catálogo en localStorage para "Seguir comprando"
+  useEffect(() => {
+    const currentUrl = location.pathname + location.search;
+    // Solo guardar si es una ruta del catálogo
+    if (
+      currentUrl.startsWith("/catalogo") ||
+      currentUrl.startsWith("/busqueda")
+    ) {
+      localStorage.setItem("lastCatalogUrl", currentUrl);
+    }
+  }, [location.pathname, location.search]);
+
   // Estados para el formulario de solicitud de acceso
   const [accessRequestForm, setAccessRequestForm] = useState({
     telefono: "",
@@ -535,6 +547,7 @@ const Catalog = () => {
     selectFilterValue,
     applyAdditionalFilter,
     clearAdditionalFilter,
+    clearAllAdditionalFilters,
     goToAdditionalFilter,
     handleSearchChange,
     goToFilterStep,
@@ -611,6 +624,10 @@ const Catalog = () => {
 
   const handleAdditionalFilterClear = (filterId) => {
     clearAdditionalFilter(filterId);
+  };
+
+  const handleClearAllAdditionalFilters = () => {
+    clearAllAdditionalFilters();
   };
 
   // Ya no necesitamos el sistema de restore desde location.state
@@ -923,6 +940,7 @@ const Catalog = () => {
               searchQuery={searchQuery}
               onFilterSelect={handleAdditionalFilterSelect}
               onClearFilter={handleAdditionalFilterClear}
+              onClearAllFilters={handleClearAllAdditionalFilters}
               onSearchChange={handleSearchChange}
             />
             <ProductGridView

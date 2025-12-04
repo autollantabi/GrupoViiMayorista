@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Button from "../../components/ui/Button";
 import Select from "../../components/ui/Select";
@@ -588,6 +588,7 @@ const PageButton = styled(Button)`
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const query = searchParams.get("q") || "";
   const initialPriceRange = searchParams.get("priceRange") || "all";
   const initialSortOption = searchParams.get("sortOption") || "relevance";
@@ -595,6 +596,18 @@ const SearchResults = () => {
   const { user, navigateToHomeByRole } = useAuth();
   const { loadProductsBySearchTerm } = useProductCatalog();
   const { isClient } = useAuth(); // Obtener el estado de cliente
+
+  // Guardar la URL actual del catálogo en localStorage para "Seguir comprando"
+  useEffect(() => {
+    const currentUrl = location.pathname + location.search;
+    // Solo guardar si es una ruta del catálogo o búsqueda
+    if (
+      currentUrl.startsWith("/catalogo") ||
+      currentUrl.startsWith("/busqueda")
+    ) {
+      localStorage.setItem("lastCatalogUrl", currentUrl);
+    }
+  }, [location.pathname, location.search]);
 
   // Cambiar el estado inicial a null para diferenciar entre "sin búsqueda" y "búsqueda sin resultados"
   const [results, setResults] = useState(null);
