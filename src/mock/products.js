@@ -39,7 +39,7 @@ export const empresas = [
   {
     id: "IKONIX",
     nombre: "IKONIX",
-    descripcion: "Herramientas profesionales",
+    descripcion: "Herramientas y maquinaria",
     logo: "/enterprises/IkonixLogo.png",
     color: "#6610f2",
     marcas: ["Uyustools", "FSL"],

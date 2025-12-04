@@ -8,10 +8,12 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { ROUTES } from "../../constants/routes";
 import RenderIcon from "../../components/ui/RenderIcon";
+import RenderLoader from "../../components/ui/RenderLoader";
 import { api_order_createOrder } from "../../api/order/apiOrder";
 import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import PageContainer from "../../components/layout/PageContainer";
 import { baseLinkImages } from "../../constants/links";
+import { api_cart_deleteProductsFromCart } from "../../api/cart/apiCart";
 
 const PageTitle = styled.div`
   display: flex;
@@ -466,21 +468,29 @@ const CompanyCheckoutButton = styled(Button)`
 const MemoizedProductImage = memo(({ src, alt }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const loadedSrcRef = useRef(null);
 
   const handleImageLoad = () => {
     setImageLoading(false);
     setImageError(false);
+    loadedSrcRef.current = src;
   };
 
   const handleImageError = () => {
     setImageLoading(false);
     setImageError(true);
+    loadedSrcRef.current = null;
   };
 
-  // Resetear estados solo cuando cambia la src
+  // Resetear estados solo cuando cambia la src realmente
   useEffect(() => {
-    setImageError(false);
-    setImageLoading(!!src);
+    // Solo resetear si la src realmente cambió y no está ya cargada
+    if (src && src !== loadedSrcRef.current) {
+      setImageError(false);
+      setImageLoading(true);
+    } else if (!src) {
+      setImageLoading(false);
+    }
   }, [src]);
 
   const imageSrc = src ? `${baseLinkImages}${src}` : "";
@@ -767,16 +777,13 @@ const Carrito = () => {
     cart,
     removeFromCart,
     updateQuantity,
-    removeItemsByCompany,
-    clearCart,
-    calculateCartTotal,
     isLoading,
     loadCartFromAPI, // Función para cargar el carrito
+    removeFromCartByDetailIds, // Función para eliminar por idShoppingCartDetail
   } = useCart();
   const navigate = useNavigate();
   const { theme } = useAppTheme();
   const { user } = useAuth(); // Obtenemos el usuario actual
-  const cartTotal = calculateCartTotal(cart);
 
   // Estados para manejar direcciones
   const [addresses, setAddresses] = useState([]);
@@ -795,6 +802,7 @@ const Carrito = () => {
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [companyToCheckout, setCompanyToCheckout] = useState(null);
+  const skipCartLoadRef = useRef(false); // Ref para evitar recargar el carrito cuando el modal está visible
 
   // Nueva función para confirmar el pago de una línea
   const handleLineCheckoutClick = (company, line) => {
@@ -802,34 +810,8 @@ const Carrito = () => {
     setShowConfirmModal(true);
   };
 
-  // Cuando el usuario confirma en el modal
-  const handleConfirmCheckout = async () => {
-    setShowConfirmModal(false);
-    if (companyToCheckout) {
-      await handleCheckoutSingleCompany(companyToCheckout);
-      setCompanyToCheckout(null);
-    }
-  };
-
-  // Cuando el usuario cancela el modal
-  const handleCancelCheckout = () => {
-    setShowConfirmModal(false);
-    setCompanyToCheckout(null);
-  };
-
-  // Función para validar que todas las direcciones estén seleccionadas
-  const isAllAddressesSelected = () => {
-    return Object.values(groupedCart).every((companyData) => {
-      return companyData.shippingAddressId && companyData.billingAddressId;
-    });
-  };
-
-  // Cargar el carrito cuando se monte el componente
-  useEffect(() => {
-    if (user?.ACCOUNT_USER && cart.length === 0) {
-      loadCartFromAPI();
-    }
-  }, [user?.ACCOUNT_USER, cart.length, loadCartFromAPI]);
+  // El carrito se carga automáticamente desde CartContext cuando el usuario está disponible
+  // Solo cargar manualmente cuando sea necesario (después de checkout, etc.)
 
   // Cargar direcciones del usuario
   useEffect(() => {
@@ -862,7 +844,13 @@ const Carrito = () => {
   }, [user]);
 
   // Agrupar items del carrito por empresa (y dentro por línea)
+  // No ejecutar si el modal de éxito está visible para evitar interferencias
   useEffect(() => {
+    // No agrupar si el modal está visible o si estamos procesando
+    if (showSuccessCard || isProcessingOrders) {
+      return;
+    }
+
     const groupByCompany = () => {
       const grouped = {};
 
@@ -952,11 +940,11 @@ const Carrito = () => {
     };
 
     groupByCompany();
-  }, [cart, addresses]);
+  }, [cart, addresses, showSuccessCard, isProcessingOrders]);
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer style={{ padding: "16px" }}>
         <PageTitle>Carrito de compras</PageTitle>
         <CartEmptyState>
           <EmptyCartIcon>⏳</EmptyCartIcon>
@@ -966,9 +954,11 @@ const Carrito = () => {
     );
   }
 
-  if (cart.length === 0) {
+  // No mostrar el estado vacío si el modal de éxito está visible
+  // Esto permite que el modal se muestre incluso cuando el carrito está vacío
+  if (cart.length === 0 && !showSuccessCard) {
     return (
-      <PageContainer>
+      <PageContainer style={{ padding: "16px" }}>
         <PageTitle>Carrito de compras</PageTitle>
         <CartEmptyState>
           <EmptyCartIcon>🛒</EmptyCartIcon>
@@ -993,72 +983,6 @@ const Carrito = () => {
 
     // Actualizar la cantidad sin restricciones de stock
     updateQuantity(id, newQuantity);
-  };
-
-  // Eliminamos las validaciones de stock que bloquean el checkout
-  const hasInsufficientStock = false;
-
-  // Función para verificar stock insuficiente por empresa (siempre retorna false)
-  const hasInsufficientStockForCompany = (company) => {
-    return false;
-  };
-  // Función para procesar todos los grupos de una empresa (por línea)
-  const handleCheckoutAllLinesForCompany = async (company) => {
-    const companyData = groupedCart[company];
-    if (!companyData) return;
-
-    // Verificar direcciones
-    if (!companyData.shippingAddressId || !companyData.billingAddressId) {
-      toast.error("Faltan direcciones para esta empresa");
-      return;
-    }
-
-    // Iniciar proceso de pedidos múltiples por línea
-    const linesToProcess = Object.keys(companyData.lines);
-    setTotalOrdersToProcess(linesToProcess.length);
-    setCompletedOrders(0);
-    setIsProcessingOrders(true);
-
-    // Guardar los grupos que se van a procesar
-    const groupsToProcess = linesToProcess.map((line) => `${company}_${line}`);
-    setLastProcessedCompanies(groupsToProcess);
-
-    // Procesar cada línea secuencialmente
-    for (const line of linesToProcess) {
-      const groupKey = `${company}_${line}`;
-      setCurrentProcessingCompany(`${company} - ${line}`);
-
-      try {
-        // Crear un objeto temporal con la estructura esperada
-        const lineData = companyData.lines[line];
-        const tempGroupData = {
-          company,
-          line: line,
-          items: lineData.items,
-          shippingAddressId: companyData.shippingAddressId,
-          billingAddressId: companyData.billingAddressId,
-          discountKey: lineData.discountKey, // Incluir la clave de descuento
-        };
-
-        // Procesar el pedido para esta línea
-        await handleCheckoutSingleLineInternal(tempGroupData, company, line);
-
-        // Incrementar contador de órdenes completadas
-        setCompletedOrders((prev) => prev + 1);
-      } catch (error) {
-        console.error(
-          `Error al procesar pedido para ${company} - ${line}:`,
-          error
-        );
-        toast.error(`Error al procesar pedido para ${company} - ${line}`);
-        setIsProcessingOrders(false);
-        return;
-      }
-    }
-
-    // Mostrar tarjeta de éxito cuando todos los pedidos estén procesados
-    setIsProcessingOrders(false);
-    setShowSuccessCard(true);
   };
 
   // Versión interna para procesar una línea específica
@@ -1163,14 +1087,59 @@ const Carrito = () => {
         discountKey: lineDataObj.discountKey, // Incluir la clave de descuento
       };
 
+      const itemsIdsToDeleteFromCart = lineData.items.map(
+        (item) => item.idShoppingCartDetail
+      );
+
+
       await handleCheckoutSingleLineInternal(lineData, company, line);
 
+      // Esperar 1 segundo antes de eliminar los productos del carrito
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const responseDelete = await api_cart_deleteProductsFromCart(
+        itemsIdsToDeleteFromCart
+      );
+      if (!responseDelete.success) {
+        throw new Error(
+          responseDelete.message ||
+            "Error al eliminar los productos del carrito"
+        );
+      }
+
+      // Deshabilitar la recarga automática del carrito mientras mostramos el modal
+      skipCartLoadRef.current = true;
+
+      // Primero mostrar el modal de éxito ANTES de eliminar items del estado local
+      // Esto evita que el componente se re-renderice con carrito vacío y oculte el modal
       setCompletedOrders(1);
       setIsProcessingOrders(false);
       setShowSuccessCard(true);
 
       // Guardar el grupo que se procesó para limpiarlo cuando se cierre el modal
       setLastProcessedCompanies([`${company}_${line}`]);
+
+      // Esperar un momento para que el modal se muestre completamente
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Ahora eliminar los items del estado local usando idShoppingCartDetail
+      // para evitar que se reintroduzcan al recargar
+      if (removeFromCartByDetailIds) {
+        removeFromCartByDetailIds(itemsIdsToDeleteFromCart);
+      }
+
+      // Esperar un momento para que el backend procese la eliminación
+      await new Promise((resolve) => setTimeout(resolve, 700));
+
+      // Recargar el carrito desde la API reemplazando completamente (forceReplace = true)
+      // Esto evita que se reintroduzcan productos que ya fueron eliminados
+      // Hacerlo después de mostrar el modal para no interferir con el estado del modal
+      await loadCartFromAPI(true);
+
+      // Rehabilitar la recarga automática después de un momento
+      setTimeout(() => {
+        skipCartLoadRef.current = false;
+      }, 2000);
     } catch (error) {
       console.error(
         `Error al procesar pedido para ${company} - ${line}:`,
@@ -1182,38 +1151,16 @@ const Carrito = () => {
   };
 
   // Agregar función para cerrar la tarjeta de éxito e ir a Mis Pedidos
-  const handleGoToOrders = () => {
-    // Limpiar el carrito solo de los grupos procesados
-    lastProcessedCompanies.forEach((groupKey) => {
-      const [company, line] = groupKey.split("_");
-      const companyData = groupedCart[company];
-      if (companyData && companyData.lines[line]) {
-        // Eliminar items de esta línea
-        companyData.lines[line].items.forEach((item) => {
-          removeFromCart(item.id);
-        });
-      }
-    });
-
+  const handleGoToOrders = async () => {
     setShowSuccessCard(false);
+    skipCartLoadRef.current = false; // Rehabilitar recarga automática
     navigate(ROUTES.ECOMMERCE.MIS_PEDIDOS);
   };
 
   // Agregar función para cerrar la tarjeta de éxito y seguir comprando
-  const handleContinueShopping = () => {
-    // Aplicar la misma lógica de limpieza
-    lastProcessedCompanies.forEach((groupKey) => {
-      const [company, line] = groupKey.split("_");
-      const companyData = groupedCart[company];
-      if (companyData && companyData.lines[line]) {
-        // Eliminar items de esta línea
-        companyData.lines[line].items.forEach((item) => {
-          removeFromCart(item.id);
-        });
-      }
-    });
-
+  const handleContinueShopping = async () => {
     setShowSuccessCard(false);
+    skipCartLoadRef.current = false; // Rehabilitar recarga automática
 
     // Recuperar la última URL del catálogo visitada
     const lastCatalogUrl = localStorage.getItem("lastCatalogUrl");
@@ -1731,18 +1678,14 @@ const Carrito = () => {
           <ProcessingCard>
             <ProcessingTitle>Procesando pedido</ProcessingTitle>
             <ProcessingMessage>
-              Generando orden para empresa:{" "}
-              <strong>{currentProcessingCompany}</strong>
+              Generando orden
             </ProcessingMessage>
             <ProgressIndicator>
-              <RenderIcon
-                name="FaSpinner"
-                size={24}
-                style={{ animation: "spin 1s linear infinite" }}
+              <RenderLoader
+                size="32px"
+                showSpinner={true}
+                floatingSpinner={true}
               />
-              <div>
-                {completedOrders} de {totalOrdersToProcess} empresas procesadas
-              </div>
             </ProgressIndicator>
           </ProcessingCard>
         </>
@@ -1765,20 +1708,35 @@ const Carrito = () => {
                 ? `Se han generado ${completedOrders} órdenes correctamente.`
                 : "Tu pedido ha sido generado correctamente."}
             </ProcessingMessage>
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                marginBottom: "12px",
+              }}
+            >
+              <Button
+                text="Pedidos"
+                variant="solid"
+                backgroundColor={theme.colors.primary}
+                style={{ flex: 1 }}
+                onClick={handleGoToOrders}
+                leftIconName="FaListAlt"
+              />
+              <Button
+                text="Catálogo"
+                variant="outlined"
+                style={{ flex: 1 }}
+                onClick={handleContinueShopping}
+                leftIconName="FaShoppingCart"
+              />
+            </div>
             <Button
-              text="Ver mis pedidos"
-              variant="solid"
-              backgroundColor={theme.colors.primary}
-              style={{ width: "100%", marginBottom: "12px" }}
-              onClick={handleGoToOrders}
-              leftIconName="FaListAlt"
-            />
-            <Button
-              text="Seguir comprando"
+              text="Volver al Carrito"
               variant="outlined"
               style={{ width: "100%" }}
-              onClick={handleContinueShopping}
-              leftIconName="FaShoppingCart"
+              onClick={() => setShowSuccessCard(false)}
+              leftIconName="FaArrowLeft"
             />
           </ProcessingCard>
         </>

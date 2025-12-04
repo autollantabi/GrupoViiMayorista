@@ -56,3 +56,36 @@ export const api_cart_updateCarrito = async (id_shopping_cart, carritoData) => {
     };
   }
 };
+
+/**
+ * Eliminar productos del carrito
+ * @param {Array} itemsIdsToDeleteFromCart - IDs de los productos a eliminar
+ * @returns {Promise<Object>} Objeto con información de éxito/error y datos
+ */
+export const api_cart_deleteProductsFromCart = async (
+  itemsIdsToDeleteFromCart
+) => {
+  try {
+    const response = await api.delete(`/carrito/deleteDetail`, {
+      data: {
+        ids: itemsIdsToDeleteFromCart,
+      },
+    });
+    return {
+      success: true,
+      message:
+        response.data.message ||
+        "Productos eliminados del carrito correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al eliminar los productos del carrito";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
