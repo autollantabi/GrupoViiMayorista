@@ -108,9 +108,10 @@ const UserMenuDropdown = styled.div`
 
   @media (max-width: 767px) {
     position: fixed;
-    top: 0;
+    top: 45px;
     right: 0;
     width: 250px;
+    
     height: 100vh;
     border-radius: 0;
     transform: ${({ $isOpen }) =>
@@ -183,34 +184,6 @@ const MobileMenuOverlay = styled.div`
   }
 `;
 
-const MobileMenuHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.background};
-  background-color: ${({ theme }) => theme.colors.primary};
-
-  @media (min-width: 768px) {
-    display: none;
-  }
-`;
-
-const MobileMenuTitle = styled.h3`
-  margin: 0;
-  color: ${({ theme }) => theme.colors.white};
-  font-size: 1.1rem;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.white};
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0;
-`;
-
 const RightSection = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -243,7 +216,7 @@ const MobileOnlySection = styled.div`
 `;
 
 const MobileMenuContent = styled.div`
-  padding: 1rem 0;
+  padding: 0;
 `;
 
 const UserEmail = styled.div`
@@ -425,13 +398,6 @@ export default function Header() {
       <MobileMenuOverlay $isOpen={isMobileMenuOpen} onClick={closeAllMenus} />
 
       <UserMenuDropdown $isOpen={isMobileMenuOpen}>
-        <MobileMenuHeader>
-          <MobileMenuTitle>Menú</MobileMenuTitle>
-          <CloseButton onClick={closeAllMenus}>
-            <RenderIcon name="FaTimes" size={20} />
-          </CloseButton>
-        </MobileMenuHeader>
-
         <UserEmail>{user?.CORREOS?.[0] || user?.EMAIL || "Usuario"}</UserEmail>
 
         <MobileMenuContent>

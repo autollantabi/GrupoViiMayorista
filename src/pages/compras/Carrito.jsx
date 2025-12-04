@@ -744,6 +744,21 @@ const mapLineaToDiscountKey = (lineaNegocio) => {
   return lineaUpper;
 };
 
+// Función para obtener el nombre de visualización de la línea
+const getDisplayLineName = (lineaNegocio) => {
+  if (!lineaNegocio) return "DEFAULT";
+
+  const lineaUpper = lineaNegocio.toUpperCase().trim();
+
+  // LLANTAS MOTO se muestra como MOTO
+  if (lineaUpper === "LLANTAS MOTO") {
+    return "MOTO";
+  }
+
+  // Para otras líneas, usar el nombre tal cual
+  return lineaUpper;
+};
+
 // Añadir esta función para encontrar la mejor dirección disponible
 const findBestAvailableAddress = (addresses, company, type) => {
   // 1. Buscar predeterminada para esta empresa
@@ -857,8 +872,8 @@ const Carrito = () => {
       cart.forEach((item) => {
         const company = item.empresaId || "Sin empresa";
         const lineaNegocio = item.lineaNegocio || "DEFAULT";
-        // Usar la línea original para visualización (separar LLANTAS de LLANTAS MOTO)
-        const displayLine = lineaNegocio.toUpperCase().trim();
+        // Usar el nombre de visualización (LLANTAS MOTO se muestra como MOTO)
+        const displayLine = getDisplayLineName(lineaNegocio);
         // Usar la clave de descuento para cálculos
         const discountKey = mapLineaToDiscountKey(lineaNegocio) || "DEFAULT";
 
@@ -1090,7 +1105,6 @@ const Carrito = () => {
       const itemsIdsToDeleteFromCart = lineData.items.map(
         (item) => item.idShoppingCartDetail
       );
-
 
       await handleCheckoutSingleLineInternal(lineData, company, line);
 
@@ -1677,9 +1691,7 @@ const Carrito = () => {
           <ProcessingOverlay />
           <ProcessingCard>
             <ProcessingTitle>Procesando pedido</ProcessingTitle>
-            <ProcessingMessage>
-              Generando orden
-            </ProcessingMessage>
+            <ProcessingMessage>Generando orden</ProcessingMessage>
             <ProgressIndicator>
               <RenderLoader
                 size="32px"
