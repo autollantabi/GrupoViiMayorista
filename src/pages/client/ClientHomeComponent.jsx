@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../context/AuthContext";
 import { empresas } from "../../mock/products";
@@ -20,8 +20,9 @@ const HeroSection = styled.section`
   padding: 2rem 1rem;
   background: ${({ theme }) =>
     theme.mode === "dark"
-      ? "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
-      : "linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)"};
+      ? `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface} 100%)`};
+  position: relative;
 
   @media (max-width: 768px) {
     min-height: auto;
@@ -119,7 +120,11 @@ const CompanyCard = styled.div`
   border-radius: 12px;
   overflow: hidden;
   background-color: ${({ theme }) => theme.colors.surface};
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 5px 15px rgba(0, 0, 0, 0.3)"
+      : "0 5px 15px rgba(0, 0, 0, 0.08)"};
   transition: all 0.4s ease;
   cursor: pointer;
   position: relative;
@@ -130,7 +135,11 @@ const CompanyCard = styled.div`
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.12);
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 15px 25px rgba(0, 0, 0, 0.5)"
+        : "0 15px 25px rgba(0, 0, 0, 0.12)"};
+    border-color: ${({ theme }) => theme.colors.primary};
   }
 `;
 
@@ -161,7 +170,10 @@ const ProductCount = styled.span`
   color: ${({ theme }) => theme.colors.white};
   font-weight: 600;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.4)"
+      : "0 2px 8px rgba(0, 0, 0, 0.15)"};
   backdrop-filter: blur(10px);
   white-space: nowrap;
   display: flex;
@@ -183,13 +195,16 @@ const AccessRibbon = styled.div`
 const RibbonContent = styled.div`
   background: ${({ $hasAccess, theme }) =>
     $hasAccess ? theme.colors.success : theme.colors.warning};
-  color: white;
+  color: ${({ theme }) => theme.colors.white};
   font-size: 0.65rem;
   font-weight: 700;
   text-align: center;
   padding: 8px 10px;
   transform: rotate(45deg) translateX(30%) translateY(-80%);
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 5px 10px rgba(0, 0, 0, 0.4)"
+      : "0 5px 10px rgba(0, 0, 0, 0.1)"};
   width: 150px;
   z-index: 21;
 `;
@@ -203,8 +218,8 @@ const CompanyLogo = styled.div`
   padding: 1rem;
   background: ${({ theme }) =>
     theme.mode === "dark"
-      ? "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
-      : "linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)"};
+      ? "linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%)"
+      : "linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%)"};
 
   position: relative;
   img {
@@ -224,13 +239,20 @@ const CompanyDescription = styled.p`
 // Estilos para la sección de Reencauche
 const ReencaucheSection = styled.section`
   padding: 4rem 2rem;
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.success}15,
-    ${({ theme }) => theme.colors.success}25
-  );
-  border-top: 1px solid ${({ theme }) => theme.colors.success}30;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.success}30;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.success}20, ${theme.colors.success}30)`
+      : `linear-gradient(135deg, ${theme.colors.success}15, ${theme.colors.success}25)`};
+  border-top: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.success}40`
+        : `${theme.colors.success}30`};
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.success}40`
+        : `${theme.colors.success}30`};
 
   @media (max-width: 768px) {
     padding: 3rem 1rem;
@@ -300,13 +322,20 @@ const ReencaucheButton = styled(Button)`
 // Estilos para la sección de App Shell
 const AppShellSection = styled.section`
   padding: 4rem 2rem;
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.primary}15,
-    ${({ theme }) => theme.colors.primary}25
-  );
-  border-top: 1px solid ${({ theme }) => theme.colors.primary}30;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.primary}30;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.primary}20, ${theme.colors.primary}30)`
+      : `linear-gradient(135deg, ${theme.colors.primary}15, ${theme.colors.primary}25)`};
+  border-top: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}40`
+        : `${theme.colors.primary}30`};
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}40`
+        : `${theme.colors.primary}30`};
 
   @media (max-width: 768px) {
     padding: 3rem 1rem;
@@ -407,11 +436,83 @@ const LoadingText = styled.p`
   }
 `;
 
+const ScrollIndicator = styled.div`
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: ${({ $visible }) => ($visible ? "flex" : "none")};
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  animation: ${({ $visible }) =>
+    $visible ? "bounce 2s ease-in-out infinite" : "none"};
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity 0.3s ease-in-out;
+
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    50% {
+      transform: translateX(-50%) translateY(-10px);
+    }
+  }
+
+  @media (max-width: 768px) {
+    bottom: 1rem;
+  }
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const ScrollText = styled.span`
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+`;
+
 const ClientHomeComponent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [productsInfo, setProductsInfo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  // Función para encontrar el contenedor con scroll (fuera del useEffect para reutilizarla)
+  const findScrollContainer = () => {
+    // Primero buscar el contenedor principal de la app (el div dentro de MainContent)
+    // Este es el contenedor que tiene overflowY: auto en AuthenticatedLayout
+    let scrollContainer = null;
+
+    // Buscar el contenedor principal que tiene overflow-y: auto
+    // Este debería ser el div hijo directo de MainContent
+    const allDivs = document.querySelectorAll("div");
+    for (const div of allDivs) {
+      const style = window.getComputedStyle(div);
+      if (style.overflowY === "auto" || style.overflowY === "scroll") {
+        // Verificar que tenga scroll y que sea un contenedor principal
+        if (div.scrollHeight > div.clientHeight) {
+          // Priorizar contenedores que están más arriba en el DOM (más cercanos al root)
+          if (!scrollContainer || div.contains(scrollContainer)) {
+            scrollContainer = div;
+          }
+        }
+      }
+    }
+
+    return scrollContainer;
+  };
 
   useEffect(() => {
     const fetchProductsInfo = async () => {
@@ -439,6 +540,89 @@ const ClientHomeComponent = () => {
     };
 
     fetchProductsInfo();
+  }, []);
+
+  // Detectar scroll para ocultar el indicador
+  useEffect(() => {
+    let scrollContainer = null;
+    let isScrolling = false;
+
+    const handleScroll = () => {
+      if (isScrolling) return; // Evitar múltiples llamadas
+      isScrolling = true;
+
+      requestAnimationFrame(() => {
+        let scrollY = 0;
+
+        // Obtener el scroll del contenedor (re-buscar por si cambió)
+        const currentContainer = findScrollContainer();
+        if (currentContainer) {
+          scrollY = currentContainer.scrollTop || 0;
+        } else {
+          // Si no hay contenedor con scroll, usar el scroll del window
+          scrollY =
+            window.scrollY ||
+            window.pageYOffset ||
+            document.documentElement.scrollTop ||
+            document.body.scrollTop ||
+            0;
+        }
+
+        // Mostrar el indicador si está cerca del top (<= 100px)
+        // Ocultar el indicador si está más abajo (> 100px)
+        if (scrollY > 100) {
+          setShowScrollIndicator(false);
+        } else {
+          setShowScrollIndicator(true);
+        }
+
+        isScrolling = false;
+      });
+    };
+
+    // Función para configurar los listeners
+    const setupListeners = () => {
+      // Buscar el contenedor con scroll
+      scrollContainer = findScrollContainer();
+
+      // Agregar listener de scroll al contenedor correcto
+      if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", handleScroll, {
+          passive: true,
+        });
+      }
+
+      // También escuchar en window por si acaso
+      window.addEventListener("scroll", handleScroll, { passive: true });
+
+      // Verificar posición inicial
+      let initialScrollY = 0;
+      if (scrollContainer) {
+        initialScrollY = scrollContainer.scrollTop || 0;
+      } else {
+        initialScrollY =
+          window.scrollY ||
+          window.pageYOffset ||
+          document.documentElement.scrollTop ||
+          document.body.scrollTop ||
+          0;
+      }
+
+      if (initialScrollY > 100) {
+        setShowScrollIndicator(false);
+      }
+    };
+
+    // Configurar listeners después de un delay para asegurar que el DOM esté listo
+    const timeoutId = setTimeout(setupListeners, 500);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   // Obtener accesos del usuario y convertir a mayúsculas para comparación
@@ -521,6 +705,51 @@ const ClientHomeComponent = () => {
             );
           })}
         </CompaniesGrid>
+        <ScrollIndicator
+          $visible={showScrollIndicator}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Buscar el contenedor con scroll
+            const scrollContainer = findScrollContainer();
+
+            if (scrollContainer) {
+              // Hacer scroll en el contenedor interno
+              const currentScroll = scrollContainer.scrollTop || 0;
+              const scrollAmount = 600; // Scroll de 600px
+              const targetScroll = currentScroll + scrollAmount;
+
+              // Hacer scroll
+              scrollContainer.scrollTo({
+                top: targetScroll,
+                behavior: "smooth",
+              });
+
+              // Ocultar después de un delay para que se vea el scroll
+              setTimeout(() => {
+                setShowScrollIndicator(false);
+              }, 800);
+            } else {
+              // Si no hay contenedor, hacer scroll en window
+              const currentScroll = window.scrollY || window.pageYOffset || 0;
+              const scrollAmount = 600;
+
+              window.scrollTo({
+                top: currentScroll + scrollAmount,
+                behavior: "smooth",
+              });
+
+              // Ocultar después de un delay
+              setTimeout(() => {
+                setShowScrollIndicator(false);
+              }, 800);
+            }
+          }}
+        >
+          <ScrollText>Ver más</ScrollText>
+          <RenderIcon name="FaChevronDown" size={24} />
+        </ScrollIndicator>
       </HeroSection>
 
       {/* Sección de App Shell (solo si tiene acceso a MAXXIMUNDO) */}
