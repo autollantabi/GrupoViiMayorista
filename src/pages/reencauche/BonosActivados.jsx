@@ -644,7 +644,6 @@ const BonosActivados = () => {
       formData.append("userId", user.ID_USER);
 
       const response = await api_bonos_processBonusExcel(formData);
-      console.log("response", response);
       if (response.success) {
         toast.success(
           response.message || "Archivo procesado correctamente para usar bonos."
@@ -683,7 +682,6 @@ const BonosActivados = () => {
       formData.append("userId", user.ID_USER);
 
       const response = await api_bonos_processRejectBonusExcel(formData);
-      console.log("response", response);
       if (response.success) {
         toast.success(
           response.message ||

@@ -280,7 +280,6 @@ const MisPedidos = () => {
     try {
       setLoading(true);
       const response = await api_order_getOrdersByAccount(user.ACCOUNT_USER);
-      console.log("response", response);
       if (response.success && response.data) {
         // Transformar los datos de la API al formato que espera nuestro componente
         const formattedOrders = response.data.map((order) => {

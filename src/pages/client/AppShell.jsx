@@ -114,7 +114,6 @@ const AppShell = () => {
     telefono: "",
   });
   const { user } = useAuth();
-  console.log(user);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -171,7 +170,6 @@ const AppShell = () => {
         sap_code: user?.ACCOUNT_USER || "",
         direcciones: direccionesMaxximundo,
       };
-      console.log(userData);
 
       const response = await api_shell_createUser(userData);
 

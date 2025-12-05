@@ -433,7 +433,6 @@ const ForgotPassword = () => {
       if (response.success) {
         // Enviar código de verificación
         const codeResponse = await sendVerificationCode(email);
-        console.log(codeResponse);
         if (codeResponse.success) {
           toast.success("Código de verificación enviado a su correo");
           setStep(2);
@@ -474,7 +473,6 @@ const ForgotPassword = () => {
 
     try {
       const response = await verifyCode(codeString);
-      console.log(response);
       if (response.success && response.isValid) {
         toast.success("Código verificado correctamente");
         setStep(3);

@@ -519,13 +519,10 @@ const VerificarBono = () => {
       const uniqueMasters = [
         ...new Set(updates.map((update) => update.MASTER)),
       ];
-      console.log(uniqueMasters);
 
       // Generar QR para cada master único
       const qrPromises = uniqueMasters.map(async (master) => {
         const qrResponse = await api_bonos_generateQRMaster(master);
-        console.log("master", master);
-        console.log(qrResponse);
         if (qrResponse.success) {
           return {
             master: master,
@@ -553,7 +550,6 @@ const VerificarBono = () => {
               result.qrCode
             )}`
         );
-        console.log("Links generados:", links);
 
         setSubmitting(true);
         const response = await api_bonos_updateMasterItem(updates, links);
@@ -1012,7 +1008,6 @@ const VerificarBono = () => {
                           <InfoValue>{formatDate(bono.createdAt)}</InfoValue>
                         </InfoItem>
                       </BonoDetails>
-                      {console.log("bono", bono)}
 
                       {/* Mostrar MASTER e ITEM para bonos ACTIVO y USADO */}
                       {(bono.STATUS === "ACTIVO" || bono.STATUS === "USADO") &&
@@ -1243,7 +1238,6 @@ const VerificarBono = () => {
                 Lista de Bonos ({selectedCount} seleccionados)
               </SectionTitle>
               <BonosList>
-                {console.log("verificationData", verificationData)}
                 {verificationData.bonuses &&
                 verificationData.bonuses.length > 0 ? (
                   verificationData.bonuses

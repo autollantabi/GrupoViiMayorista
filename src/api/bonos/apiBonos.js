@@ -541,15 +541,12 @@ export const api_bonos_rejectBonus = async (
  */
 export const api_bonos_getSalesDataForBonus = async (codigoSocio, empresas) => {
   try {
-    console.log("codigoSocio", codigoSocio);
-    console.log("empresas", empresas);
     const response = await api.get(
       `/bonos/getSalesDataForBonus/${codigoSocio}`,
       {
         empresa: empresas,
       }
     );
-    console.log("response", response);
     return {
       success: true,
       message:
