@@ -430,8 +430,12 @@ const Catalog = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const { loadProductsForEmpresa, catalogByEmpresa, loadingByEmpresa } =
-    useProductCatalog();
+  const {
+    loadProductsForEmpresa,
+    catalogByEmpresa,
+    loadingByEmpresa,
+    reloadProductsForEmpresa,
+  } = useProductCatalog();
   const [pendingRestore, setPendingRestore] = useState(null);
   const [initialSort, setInitialSort] = useState("default");
   const [restoreApplied, setRestoreApplied] = useState(false);
@@ -955,6 +959,8 @@ const Catalog = () => {
               onProductSelect={handleProductSelect}
               initialSort={initialSort}
               loading={loading}
+              empresaName={empresaName}
+              onReloadProducts={reloadProductsForEmpresa}
             />
           </ContentWithFilters>
         </MainContentProducts>

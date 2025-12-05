@@ -411,6 +411,8 @@ const ProductGridView = ({
   onProductSelect,
   initialSort = "default",
   loading = false,
+  empresaName = null,
+  onReloadProducts = null,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -432,6 +434,18 @@ const ProductGridView = ({
   const [currentPage, setCurrentPage] = useState(urlPage);
   const [pageInput, setPageInput] = useState(urlPage.toString());
   const [stockFilter, setStockFilter] = useState(urlStockFilter);
+
+  // Determinar si el ordenamiento es de API o frontend
+  const isApiSort = (sortValue) => {
+    return sortValue === "default" || sortValue === "clasificacion_indice";
+  };
+
+  // Convertir valor de ordenamiento del frontend al formato de API
+  const getApiOrdenamiento = (sortValue) => {
+    if (sortValue === "default") return "DEFAULT";
+    if (sortValue === "clasificacion_indice") return "CLASIFICACION_INDICE";
+    return "DEFAULT";
+  };
 
   // Ref para rastrear si estamos actualizando desde la URL
   const isUpdatingFromURL = React.useRef(false);
@@ -628,6 +642,32 @@ const ProductGridView = ({
     }
   }, [searchParams.toString()]); // Solo cuando cambie la URL como string
 
+  // Recargar productos cuando cambia el ordenamiento de API desde la URL
+  // Usar un ref para evitar recargas duplicadas
+  const lastApiSortRef = React.useRef(sortBy);
+
+  useEffect(() => {
+    // Solo recargar si:
+    // 1. Es un ordenamiento de API
+    // 2. Tenemos los datos necesarios
+    // 3. El ordenamiento realmente cambió (no es el mismo que antes)
+    // 4. No estamos actualizando desde la URL (para evitar loops)
+    if (
+      isApiSort(sortBy) &&
+      empresaName &&
+      onReloadProducts &&
+      lastApiSortRef.current !== sortBy &&
+      !isUpdatingFromURL.current
+    ) {
+      const apiOrdenamiento = getApiOrdenamiento(sortBy);
+      lastApiSortRef.current = sortBy;
+      onReloadProducts(empresaName, apiOrdenamiento);
+    } else if (!isApiSort(sortBy)) {
+      // Si cambió a un ordenamiento de frontend, actualizar el ref
+      lastApiSortRef.current = sortBy;
+    }
+  }, [sortBy, empresaName, onReloadProducts]);
+
   // Sincronizar URL con estado local - SIEMPRE asegurar que los parámetros estén presentes
   useEffect(() => {
     // En el primer render, asegurar que los parámetros estén presentes
@@ -741,48 +781,29 @@ const ProductGridView = ({
     }
     // Si stockFilter === "all", no filtrar
 
-    // Aplicar ordenamiento
-    switch (sortBy) {
-      case "price_asc":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price_desc":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "name_asc":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "rating":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "default":
-      default:
-        // Ordenar por DMA_INDICE_CLASIFICACION (A, B, C)
-        filtered.sort((a, b) => {
-          const getClassificationOrder = (classification) => {
-            switch (classification) {
-              case "A":
-                return 1;
-              case "B":
-                return 2;
-              case "C":
-                return 3;
-              default:
-                return 4; // Para valores no definidos, van al final
-            }
-          };
-
-          const orderA = getClassificationOrder(
-            a.originalData.DMA_INDICE_CLASIFICACION
-          );
-          const orderB = getClassificationOrder(
-            b.originalData.DMA_INDICE_CLASIFICACION
-          );
-
-          return orderA - orderB;
-        });
-        break;
+    // Aplicar ordenamiento solo si es de frontend
+    // Los ordenamientos de API (default, clasificacion_indice) ya vienen ordenados desde el backend
+    if (!isApiSort(sortBy)) {
+      switch (sortBy) {
+        case "price_asc":
+          filtered.sort((a, b) => a.price - b.price);
+          break;
+        case "price_desc":
+          filtered.sort((a, b) => b.price - a.price);
+          break;
+        case "name_asc":
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case "rating":
+          filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+          break;
+        default:
+          // No hacer nada, mantener el orden que viene de la API
+          break;
+      }
     }
+    // Si es ordenamiento de API (default o clasificacion_indice),
+    // los productos ya vienen ordenados desde el backend, no los reordenamos
 
     // Calcular paginación
     const totalItems = filtered.length;
@@ -950,9 +971,31 @@ const ProductGridView = ({
     }
   }, [currentPage]);
 
-  const handleSortChange = (e) => {
+  const handleSortChange = async (e) => {
     const value = e.target.value;
+
+    // Actualizar el estado local
     setSortBy(value);
+
+    // Actualizar el ref para evitar recarga duplicada en el useEffect
+    lastApiSortRef.current = value;
+
+    // Actualizar el estado sincronizado para que el useEffect actualice la URL
+    lastSyncedState.current = {
+      ...lastSyncedState.current,
+      sortBy: value,
+    };
+
+    // Actualizar la URL inmediatamente
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", value);
+    setSearchParams(params, { replace: true });
+
+    // Si el ordenamiento es de API, recargar productos con ese ordenamiento
+    if (isApiSort(value) && empresaName && onReloadProducts) {
+      const apiOrdenamiento = getApiOrdenamiento(value);
+      await onReloadProducts(empresaName, apiOrdenamiento);
+    }
   };
 
   const handleItemsPerPageChange = (e) => {
@@ -1054,6 +1097,7 @@ const ProductGridView = ({
               <Select
                 options={[
                   { value: "default", label: "Destacados" },
+                  { value: "clasificacion_indice", label: "Popularidad" },
                   { value: "price_asc", label: "Menor precio" },
                   { value: "price_desc", label: "Mayor precio" },
                   { value: "name_asc", label: "Alfabético (A-Z)" },

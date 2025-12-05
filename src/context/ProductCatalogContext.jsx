@@ -93,7 +93,7 @@ export const ProductCatalogProvider = ({ children }) => {
   };
 
   // Cargar productos solo si no están en el contexto
-  const loadProductsForEmpresa = async (empresaName) => {
+  const loadProductsForEmpresa = async (empresaName, ordenamiento) => {
     if (catalogByEmpresa[empresaName]) {
       return catalogByEmpresa[empresaName];
     }
@@ -103,9 +103,8 @@ export const ProductCatalogProvider = ({ children }) => {
       const resp = await api_products_getProductByField({
         field: "empresa",
         value: empresaName,
+        ordenamiento: ordenamiento || "DEFAULT",
       });
-
-      
 
       if (resp.success) {
         const productos = (resp.data || [])
@@ -131,7 +130,7 @@ export const ProductCatalogProvider = ({ children }) => {
   const loadProductByCodigo = async (codigo, empresaId) => {
     try {
       const resp = await api_products_getProductByCodigo(codigo, empresaId);
-      
+
       if (resp.success && resp.data) {
         return mapApiProductToAppFormat(resp.data);
       }
@@ -142,19 +141,25 @@ export const ProductCatalogProvider = ({ children }) => {
   };
 
   // Forzar recarga desde la API
-  const reloadProductsForEmpresa = async (empresaName) => {
+  const reloadProductsForEmpresa = async (empresaName, ordenamiento) => {
     setLoadingByEmpresa((prev) => ({ ...prev, [empresaName]: true }));
     setErrorByEmpresa((prev) => ({ ...prev, [empresaName]: null }));
     try {
       const resp = await api_products_getProductByField({
         field: "empresa",
         value: empresaName,
+        ordenamiento: ordenamiento || "DEFAULT",
       });
       if (resp.success) {
         const productos = (resp.data || [])
           .map(mapApiProductToAppFormat)
           .filter(Boolean);
-        setCatalogByEmpresa((prev) => ({ ...prev, [empresaName]: productos }));
+        // Limpiar el cache anterior y actualizar con los nuevos productos ordenados
+        setCatalogByEmpresa((prev) => {
+          const updated = { ...prev };
+          updated[empresaName] = productos;
+          return updated;
+        });
         return productos;
       } else {
         setErrorByEmpresa((prev) => ({

@@ -4,11 +4,21 @@ import api from "../../constants/api";
  * Obtiene un producto por su campo personalizado
  * @param {string} field - campo personalizado del producto
  * @param {string} value - valor del campo personalizado
+ * @param {string} ordenamiento - ordenamiento opcional (DEFAULT, CLASIFICACION_INDICE). Si no se proporciona, se usa DEFAULT
  * @returns {Promise<Object>} - Respuesta de la API
  */
-export const api_products_getProductByField = async ({ field, value }) => {
+export const api_products_getProductByField = async ({
+  field,
+  value,
+  ordenamiento,
+}) => {
   try {
-    const response = await api.get(`/productos/getProductos/${field}/${value}`);
+    // Construir la URL con ordenamiento si se proporciona
+    let url = `/productos/getProductos/${field}/${value}`;
+    if (ordenamiento) {
+      url += `/${ordenamiento}`;
+    }
+    const response = await api.get(url);
     return {
       success: true,
       message: response.data.message || "Producto obtenido correctamente",
@@ -53,16 +63,17 @@ export const api_products_searchProducts = async (search) => {
   }
 };
 
-
 /**
  * Obtiene producto por Código
  * @param {string} value - Código del producto
- * @param {string} empresaId - ID de la empresa 
+ * @param {string} empresaId - ID de la empresa
  * @return {Promise<Object>} - Respuesta de la API
  */
 export const api_products_getProductByCodigo = async (value, empresaId) => {
   try {
-    const response = await api.get(`/productos/getProductoByCodigo/${value}/${empresaId}`);    
+    const response = await api.get(
+      `/productos/getProductoByCodigo/${value}/${empresaId}`
+    );
     return {
       success: true,
       message: response.data.message || "Producto obtenido correctamente",
@@ -79,7 +90,7 @@ export const api_products_getProductByCodigo = async (value, empresaId) => {
       error: error.response?.data || null,
     };
   }
-}
+};
 
 /**
  * Obtiene información de productos (incluyendo cantidad)
@@ -90,7 +101,9 @@ export const api_products_getInfoProductos = async () => {
     const response = await api.get(`/productos/getInfoProductos`);
     return {
       success: true,
-      message: response.data.message || "Información de productos obtenida correctamente",
+      message:
+        response.data.message ||
+        "Información de productos obtenida correctamente",
       data: response.data.data || {},
     };
   } catch (error) {
@@ -104,4 +117,4 @@ export const api_products_getInfoProductos = async () => {
       error: error.response?.data || null,
     };
   }
-}
+};
