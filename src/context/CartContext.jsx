@@ -449,12 +449,9 @@ export function CartProvider({ children }) {
           newCart = [...prevCart, dataToSave];
         }
 
-        // Sincronizar inmediatamente con la API solo si hay cartIds disponibles
-        setTimeout(() => {
-          if (Object.keys(cartIds).length > 0) {
-            syncCartWithAPI(newCart);
-          }
-        }, 100); // Pequeño delay para asegurar que el estado se actualice
+        // NO sincronizar aquí - dejar que el useEffect de sincronización automática lo haga
+        // Esto evita dobles sincronizaciones que pueden causar duplicados
+        // El useEffect ya maneja la sincronización automática con debounce
 
         return newCart;
       });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { format } from "date-fns";
@@ -13,9 +13,7 @@ import { copyToClipboard } from "../../utils/utils";
 import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import { useAuth } from "../../context/AuthContext";
 import { api_optionsCatalog_getStates } from "../../api/optionsCatalog/apiOptionsCatalog";
-import { useCart } from "../../context/CartContext";
 import { ROUTES } from "../../constants/routes";
-import { useProductCatalog } from "../../context/ProductCatalogContext";
 import PageContainer from "../../components/layout/PageContainer";
 import RenderLoader from "../../components/ui/RenderLoader";
 
@@ -523,26 +521,12 @@ const DetallePedido = () => {
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { loadProductByCodigo } = useProductCatalog();
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showContactModal, setShowContactModal] = useState(false);
   const [statusOptionsApi, setStatusOptionsApi] = useState([]);
-  const { addToCart } = useCart();
   const [showCancelModal, setShowCancelModal] = useState(false);
-
-  const handleRepeatOrder = async () => {
-    // Agrega cada producto del pedido anterior
-    const empresaId = orderDetails.empresaInfo.id;
-    for (const item of orderDetails.items) {
-      // Puedes ajustar aquí si necesitas pasar más props
-      const itemToAdd = await loadProductByCodigo(item.id, empresaId);
-      addToCart(itemToAdd, item.quantity);
-    }
-    // Redirige al carrito
-    navigate(ROUTES.ECOMMERCE.CARRITO);
-  };
 
   const handleProductClick = (productId) => {
     // Buscar el producto en los detalles del pedido
@@ -895,16 +879,6 @@ const DetallePedido = () => {
             onClick={handleContactSupport}
             disabled={orderDetails.status === "CANCELADO"}
           />
-          {(orderDetails.status === "CANCELADO" ||
-            orderDetails.status === "ENTREGADO") && (
-            <Button
-              text="Pedir Nuevamente"
-              variant="solid"
-              backgroundColor={theme.colors.success}
-              leftIconName="FaRedo"
-              onClick={handleRepeatOrder}
-            />
-          )}
         </OrderActions>
       </PageHeader>
 

@@ -536,6 +536,7 @@ const CartItem = ({
   const maxStock = item?.stock || 0;
   const quantityIntervalRef = useRef(null);
   const currentQuantityRef = useRef(item.quantity);
+  const mouseDownExecutedRef = useRef(false);
 
   // Actualizar el ref cuando cambia la cantidad del item
   useEffect(() => {
@@ -571,6 +572,21 @@ const CartItem = ({
   // Funciones para manejar el mantenimiento presionado del botón
   const handleDecreaseMouseDown = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    // Marcar que mouseDown ya ejecutó la acción
+    mouseDownExecutedRef.current = true;
+
+    // Limpiar cualquier timeout de clic
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
+    }
+
     if (item.quantity > 1) {
       handleQuantityChange(item.id, item.quantity - 1);
     }
@@ -585,15 +601,31 @@ const CartItem = ({
           handleQuantityChange(item.id, newQuantity);
         } else {
           clearInterval(interval);
+          quantityIntervalRef.current = null;
         }
-      }, 100); // Repetir cada 100ms
+      }, 150); // Repetir cada 150ms
 
       quantityIntervalRef.current = interval;
-    }, 300); // Delay inicial de 300ms
+    }, 500); // Delay inicial de 500ms
   };
 
   const handleIncreaseMouseDown = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    // Marcar que mouseDown ya ejecutó la acción
+    mouseDownExecutedRef.current = true;
+
+    // Limpiar cualquier timeout de clic
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
+    }
+
     if (item.quantity < maxQuantity) {
       handleQuantityChange(item.id, item.quantity + 1);
     }
@@ -608,11 +640,12 @@ const CartItem = ({
           handleQuantityChange(item.id, newQuantity);
         } else {
           clearInterval(interval);
+          quantityIntervalRef.current = null;
         }
-      }, 100); // Repetir cada 100ms
+      }, 150); // Repetir cada 150ms
 
       quantityIntervalRef.current = interval;
-    }, 300); // Delay inicial de 300ms
+    }, 500); // Delay inicial de 500ms
   };
 
   const handleQuantityButtonMouseUp = () => {
@@ -625,6 +658,12 @@ const CartItem = ({
       }
       quantityIntervalRef.current = null;
     }
+
+    // Resetear el flag después de un delay para que onClick no se ejecute
+    // si mouseDown ya ejecutó la acción
+    setTimeout(() => {
+      mouseDownExecutedRef.current = false;
+    }, 200);
   };
 
   const handleQuantityButtonMouseLeave = () => {
@@ -658,7 +697,14 @@ const CartItem = ({
 
         <ItemQuantityControl>
           <QuantityButton
-            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // Solo ejecutar si mouseDown no ejecutó la acción ya
+              if (!mouseDownExecutedRef.current) {
+                handleQuantityChange(item.id, item.quantity - 1);
+              }
+            }}
             onMouseDown={handleDecreaseMouseDown}
             onMouseUp={handleQuantityButtonMouseUp}
             onMouseLeave={handleQuantityButtonMouseLeave}
@@ -671,6 +717,8 @@ const CartItem = ({
 
           <QuantityInput
             type="number"
+            id={`quantity-cart-${item.id}`}
+            name={`quantity-cart-${item.id}`}
             min="1"
             max={maxQuantity}
             value={item.quantity}
@@ -680,9 +728,17 @@ const CartItem = ({
               const limitedQuantity = Math.min(newQuantity, maxQuantity);
               handleQuantityChange(item.id, limitedQuantity);
             }}
+            autoComplete="off"
           />
           <QuantityButton
-            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // Solo ejecutar si mouseDown no ejecutó la acción ya
+              if (!mouseDownExecutedRef.current) {
+                handleQuantityChange(item.id, item.quantity + 1);
+              }
+            }}
             onMouseDown={handleIncreaseMouseDown}
             onMouseUp={handleQuantityButtonMouseUp}
             onMouseLeave={handleQuantityButtonMouseLeave}

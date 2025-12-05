@@ -689,6 +689,7 @@ const DetalleProducto = () => {
   const hoverTimeoutRef = useRef(null);
   const hasFetchedProductRef = useRef(false);
   const quantityIntervalRef = useRef(null);
+  const mouseDownExecutedRef = useRef(false);
 
   // Función para renderizar los breadcrumbs dinámicos según el origen
   const renderBreadcrumbs = () => {
@@ -1101,7 +1102,23 @@ const DetalleProducto = () => {
   // Funciones para manejar el mantenimiento presionado del botón
   const handleDecreaseMouseDown = (e) => {
     e.preventDefault();
-    decreaseQuantity(); // Primera acción inmediata
+    e.stopPropagation();
+
+    // Marcar que mouseDown ya ejecutó la acción
+    mouseDownExecutedRef.current = true;
+
+    // Limpiar cualquier intervalo existente
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
+    }
+
+    // Primera acción inmediata
+    decreaseQuantity();
 
     // Iniciar intervalo después de un pequeño delay
     quantityIntervalRef.current = setTimeout(() => {
@@ -1111,17 +1128,34 @@ const DetalleProducto = () => {
             return prev - 1;
           }
           clearInterval(interval);
+          quantityIntervalRef.current = null;
           return prev;
         });
-      }, 100); // Repetir cada 100ms
+      }, 150); // Repetir cada 150ms
 
       quantityIntervalRef.current = interval;
-    }, 300); // Delay inicial de 300ms
+    }, 500); // Delay inicial de 500ms
   };
 
   const handleIncreaseMouseDown = (e) => {
     e.preventDefault();
-    increaseQuantity(); // Primera acción inmediata
+    e.stopPropagation();
+
+    // Marcar que mouseDown ya ejecutó la acción
+    mouseDownExecutedRef.current = true;
+
+    // Limpiar cualquier intervalo existente
+    if (quantityIntervalRef.current) {
+      if (typeof quantityIntervalRef.current === "number") {
+        clearTimeout(quantityIntervalRef.current);
+      } else {
+        clearInterval(quantityIntervalRef.current);
+      }
+      quantityIntervalRef.current = null;
+    }
+
+    // Primera acción inmediata
+    increaseQuantity();
 
     // Iniciar intervalo después de un pequeño delay
     quantityIntervalRef.current = setTimeout(() => {
@@ -1131,12 +1165,13 @@ const DetalleProducto = () => {
             return prev + 1;
           }
           clearInterval(interval);
+          quantityIntervalRef.current = null;
           return prev;
         });
-      }, 100); // Repetir cada 100ms
+      }, 150); // Repetir cada 150ms
 
       quantityIntervalRef.current = interval;
-    }, 300); // Delay inicial de 300ms
+    }, 500); // Delay inicial de 500ms
   };
 
   const handleQuantityButtonMouseUp = () => {
@@ -1149,6 +1184,12 @@ const DetalleProducto = () => {
       }
       quantityIntervalRef.current = null;
     }
+
+    // Resetear el flag después de un delay para que onClick no se ejecute
+    // si mouseDown ya ejecutó la acción
+    setTimeout(() => {
+      mouseDownExecutedRef.current = false;
+    }, 200);
   };
 
   const handleQuantityButtonMouseLeave = () => {
@@ -1328,7 +1369,14 @@ const DetalleProducto = () => {
                   <QuantityLabel>Cantidad:</QuantityLabel>
                   <QuantitySelector>
                     <QuantityButton
-                      onClick={decreaseQuantity}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Solo ejecutar si mouseDown no ejecutó la acción ya
+                        if (!mouseDownExecutedRef.current) {
+                          decreaseQuantity();
+                        }
+                      }}
                       onMouseDown={handleDecreaseMouseDown}
                       onMouseUp={handleQuantityButtonMouseUp}
                       onMouseLeave={handleQuantityButtonMouseLeave}
@@ -1339,13 +1387,23 @@ const DetalleProducto = () => {
                     />
                     <QuantityInput
                       type="number"
+                      id={`quantity-${product.id}`}
+                      name={`quantity-${product.id}`}
                       min="1"
                       max={maxQuantity}
                       value={quantity}
                       onChange={handleQuantityChange}
+                      autoComplete="off"
                     />
                     <QuantityButton
-                      onClick={increaseQuantity}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Solo ejecutar si mouseDown no ejecutó la acción ya
+                        if (!mouseDownExecutedRef.current) {
+                          increaseQuantity();
+                        }
+                      }}
                       onMouseDown={handleIncreaseMouseDown}
                       onMouseUp={handleQuantityButtonMouseUp}
                       onMouseLeave={handleQuantityButtonMouseLeave}
