@@ -750,9 +750,6 @@ const CartItem = ({
           />
         </ItemQuantityControl>
 
-        <StockInfo>
-          {maxStock > 0 ? `${maxStock} disponibles` : "Stock a consultar"}
-        </StockInfo>
       </ItemDetails>
 
       <ItemPricing>

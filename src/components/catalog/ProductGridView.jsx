@@ -437,13 +437,14 @@ const ProductGridView = ({
 
   // Determinar si el ordenamiento es de API o frontend
   const isApiSort = (sortValue) => {
-    return sortValue === "default" || sortValue === "clasificacion_indice";
+    return sortValue === "default" || sortValue === "clasificacion_indice" || sortValue === "recurrencia";
   };
 
   // Convertir valor de ordenamiento del frontend al formato de API
   const getApiOrdenamiento = (sortValue) => {
     if (sortValue === "default") return "DEFAULT";
     if (sortValue === "clasificacion_indice") return "CLASIFICACION_INDICE";
+    if (sortValue === "recurrencia") return "RECURRENCIA";
     return "DEFAULT";
   };
 
@@ -782,7 +783,7 @@ const ProductGridView = ({
     // Si stockFilter === "all", no filtrar
 
     // Aplicar ordenamiento solo si es de frontend
-    // Los ordenamientos de API (default, clasificacion_indice) ya vienen ordenados desde el backend
+    // Los ordenamientos de API (default, clasificacion_indice, recurrencia) ya vienen ordenados desde el backend
     if (!isApiSort(sortBy)) {
       switch (sortBy) {
         case "price_asc":
@@ -802,7 +803,7 @@ const ProductGridView = ({
           break;
       }
     }
-    // Si es ordenamiento de API (default o clasificacion_indice),
+    // Si es ordenamiento de API (default o clasificacion_indice o recurrencia),
     // los productos ya vienen ordenados desde el backend, no los reordenamos
 
     // Calcular paginación
@@ -1098,6 +1099,7 @@ const ProductGridView = ({
                 options={[
                   { value: "default", label: "Destacados" },
                   { value: "clasificacion_indice", label: "Popularidad" },
+                  { value: "recurrencia", label: "Recurrencia" },
                   { value: "price_asc", label: "Menor precio" },
                   { value: "price_desc", label: "Mayor precio" },
                   { value: "name_asc", label: "Alfabético (A-Z)" },
@@ -1147,6 +1149,7 @@ const ProductGridView = ({
               key={`${product.empresaId}-${product.id}-${index}`}
               data-product-id={product.id}
             >
+              {console.log(product)}
               <ProductCard
                 product={product}
                 lineConfig={

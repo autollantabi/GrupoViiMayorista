@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import RenderIcon from "./RenderIcon";
 import ContactModal from "./ContactModal";
+import { getRGBA } from "../../utils/utils";
 
 const StyledCard = styled.div`
   background-color: ${({ theme, $restricted }) =>
@@ -24,9 +25,25 @@ const StyledCard = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
+  border: 1px solid
+    ${({ theme, $indicadorRecurrencia }) =>
+      $indicadorRecurrencia === 1
+        ? theme.colors.primary
+        : $indicadorRecurrencia === 2
+        ? getRGBA(theme.colors.primary, 1)
+        : $indicadorRecurrencia === 3
+        ? getRGBA(theme.colors.primary, 1)
+        : "transparent"};
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: ${({ theme, $restricted }) =>
+    $restricted
+      ? `0 2px 8px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
+      : `0 2px 12px ${theme.colors.shadow}`};
 
   &:hover {
-    cursor: ${({ $restricted }) => ($restricted ? "default" : "pointer")};
+    cursor: default;
     box-shadow: ${({ theme, $restricted }) =>
       $restricted
         ? `0 4px 12px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}30`
@@ -260,12 +277,16 @@ const RestrictedContent = styled.div`
 `;
 
 const ProductName = styled.h3`
+  cursor: pointer;
   margin: 0 0 ${({ $restricted }) => ($restricted ? "8px" : "12px")} 0;
   font-size: ${({ $restricted }) => ($restricted ? "1rem" : "1.1rem")};
   color: ${({ theme }) => theme.colors.text};
   font-weight: ${({ $restricted }) => ($restricted ? "normal" : "600")};
   line-height: 1.3;
   word-break: break-word;
+  &:hover {
+    text-decoration: underline;
+  }
 
   @media (max-width: 1024px) {
     font-size: ${({ $restricted }) => ($restricted ? "0.85rem" : "0.95rem")};
@@ -1092,7 +1113,10 @@ const ProductCard = ({
 
   return (
     <>
-      <StyledCard onClick={handleViewDetails} $restricted={restricted}>
+      <StyledCard
+        $restricted={restricted}
+        $indicadorRecurrencia={product.originalData.DMA_INDICADOR_VENTAS}
+      >
         <ImageContainer $restricted={restricted}>
           <MemoizedProductImage
             src={product.image}
@@ -1170,7 +1194,9 @@ const ProductCard = ({
               </StockIndicator>
             </TopRow>
 
-            <ProductName $restricted={restricted}>{product.name}</ProductName>
+            <ProductName onClick={handleViewDetails} $restricted={restricted}>
+              {product.name}
+            </ProductName>
             {renderSpecs(config)}
             <Price>
               <PriceLeft>
