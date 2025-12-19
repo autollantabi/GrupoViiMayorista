@@ -1,22 +1,22 @@
 {
   "LLANTAS": {
     "name": "Llantas",
-    "displayName": "Neumáticos",
+    "displayName": "Línea Vehículos",
     "steps": []
   },
   "LLANTAS MOTO": {
-    "name": "Llantas Moto",
-    "displayName": "Neumáticos Moto",
+    "name": "Moto",
+    "displayName": "Línea Moto",
     "steps": []
   },
   "LUBRICANTES": {
     "name": "Lubricantes",
-    "displayName": "Lubricantes",
+    "displayName": "Línea Lubricantes",
     "steps": []
   },
   "HERRAMIENTAS": {
     "name": "Herramientas",
-    "displayName": "Herramientas",
+    "displayName": "Línea Herramientas",
     "steps": []
   }
 }

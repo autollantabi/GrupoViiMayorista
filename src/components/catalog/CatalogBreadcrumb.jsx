@@ -213,7 +213,7 @@ const CatalogBreadcrumb = ({
   // Función para obtener el nombre corto de la línea (sin "Neumáticos")
   const getShortLineName = (lineName) => {
     // Si el nombre contiene "Neumáticos Moto", mostrar solo "Moto"
-    if (lineName && lineName.includes("Neumáticos Moto")) {
+    if (lineName && lineName.includes("Moto")) {
       return "Moto";
     }
     // Si el nombre contiene "Neumáticos ", mostrar solo la parte después

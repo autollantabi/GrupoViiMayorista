@@ -66,10 +66,10 @@ const useCatalogFlow = (
   // Función auxiliar para obtener descripción de línea
   const getLineDescription = (linea) => {
     const descriptions = {
-      LLANTAS: "Para vehículos",
-      "LLANTAS MOTO": "Para motocicletas",
-      LUBRICANTES: "Aceites y fluidos",
-      HERRAMIENTAS: "Equipos profesionales",
+      LLANTAS: "Liviano y Pesado",
+      "LLANTAS MOTO": "Moto | UTV/ATV",
+      LUBRICANTES: "Aceites y refrigerantes",
+      HERRAMIENTAS: "Herramientas profesionales",
     };
     return descriptions[linea] || "Productos disponibles";
   };
