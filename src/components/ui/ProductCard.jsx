@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect, useMemo, useRef } from "react";
+import React, { useState, memo, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../../context/CartContext";
@@ -9,6 +9,7 @@ import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import RenderIcon from "./RenderIcon";
 import ContactModal from "./ContactModal";
 import { getRGBA } from "../../utils/utils";
+import { baseLinkImages } from "../../constants/links";
 
 const StyledCard = styled.div`
   background-color: ${({ theme, $restricted }) =>
@@ -730,7 +731,6 @@ const StockText = styled.span`
   }};
   font-size: 0.7rem;
   font-weight: 500;
-  text-transform: uppercase;
   letter-spacing: 0.3px;
   display: flex;
   align-items: center;
@@ -867,32 +867,99 @@ const SupportButton = styled.button`
 const MemoizedProductImage = memo(({ src, alt, restricted }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const loadedSrcRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const imgRef = useRef(null);
+  const currentSrcRef = useRef(null);
 
-  const handleImageLoad = () => {
-    setImageLoading(false);
-    setImageError(false);
-    loadedSrcRef.current = src;
-  };
-
-  const handleImageError = () => {
-    setImageLoading(false);
-    setImageError(true);
-    loadedSrcRef.current = null;
-  };
-
-  // Resetear estados solo cuando cambia la src realmente
-  useEffect(() => {
-    // Solo resetear si la src realmente cambió y no está ya cargada
-    if (src && src !== loadedSrcRef.current) {
-      setImageError(false);
-      setImageLoading(true);
-    } else if (!src) {
-      setImageLoading(false);
+  // Construir la URL completa de la imagen - usar tal cual si ya es URL completa
+  const resolvedSrc = useMemo(() => {
+    if (!src) return "";
+    const trimmed = src.trim();
+    if (!trimmed) return "";
+    // Si ya es una URL completa, usarla tal cual sin modificar
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
     }
+    // Si no, construir la URL con baseLinkImages
+    return `${baseLinkImages}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
   }, [src]);
 
-  if (imageError || !src) {
+  const handleImageLoad = useCallback(() => {
+    // Solo procesar si es la misma imagen que estamos esperando
+    if (currentSrcRef.current === resolvedSrc) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setImageLoading(false);
+      setImageError(false);
+    }
+  }, [resolvedSrc]);
+
+  const handleImageError = useCallback(() => {
+    // Solo procesar si es la misma imagen que estamos esperando
+    if (currentSrcRef.current === resolvedSrc) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setImageLoading(false);
+      setImageError(true);
+    }
+  }, [resolvedSrc]);
+
+  // Resetear estados cuando cambia la src
+  useEffect(() => {
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (resolvedSrc) {
+      currentSrcRef.current = resolvedSrc;
+      setImageError(false);
+      setImageLoading(true);
+
+      // Establecer timeout de 10 segundos como respaldo
+      const currentSrc = resolvedSrc;
+      timeoutRef.current = setTimeout(() => {
+        // Solo marcar como error si todavía estamos esperando esta misma src
+        setImageLoading((prevLoading) => {
+          if (prevLoading && currentSrcRef.current === currentSrc) {
+            setImageError(true);
+            return false;
+          }
+          return prevLoading;
+        });
+      }, 10000);
+    } else {
+      currentSrcRef.current = null;
+      setImageLoading(false);
+      setImageError(true);
+    }
+
+    // Cleanup
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [resolvedSrc]);
+
+  // Verificar si la imagen ya está cargada después de renderizar (para imágenes en caché)
+  useEffect(() => {
+    if (imgRef.current && resolvedSrc && imageLoading) {
+      const img = imgRef.current;
+      // Si la imagen ya está completa, disparar onLoad
+      if (img.complete && img.naturalWidth > 0 && currentSrcRef.current === resolvedSrc) {
+        handleImageLoad();
+      }
+    }
+  }, [resolvedSrc, imageLoading, handleImageLoad]);
+
+  if (imageError || !resolvedSrc) {
     return (
       <ImagePlaceholder $restricted={restricted}>
         <div>
@@ -910,7 +977,8 @@ const MemoizedProductImage = memo(({ src, alt, restricted }) => {
         </ImagePlaceholder>
       )}
       <ProductImage
-        src={src}
+        ref={imgRef}
+        src={resolvedSrc}
         alt={alt}
         $restricted={restricted}
         onLoad={handleImageLoad}
@@ -945,6 +1013,16 @@ const ProductCard = ({
   // Buscar el producto en el carrito
   const cartItem = cart.find((item) => item?.id === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+  // Asegurar que la cantidad no exceda el stock disponible
+  useEffect(() => {
+    const maxStock = product.stock || 0;
+    if (quantity > maxStock && maxStock > 0) {
+      setQuantity(maxStock);
+    } else if (maxStock === 0 && quantity > 0) {
+      setQuantity(0);
+    }
+  }, [product.stock, quantity]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -1033,7 +1111,7 @@ const ProductCard = ({
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    const max = 5000;
+    const max = product.stock || 0;
     if (!isNaN(value) && value > 0 && value <= max) {
       setQuantity(value);
     }
@@ -1048,7 +1126,8 @@ const ProductCard = ({
 
   const increaseQuantity = (e) => {
     e.stopPropagation();
-    if (quantity < 5000) {
+    const maxStock = product.stock || 0;
+    if (quantity < maxStock) {
       setQuantity(quantity + 1);
     }
   };
@@ -1095,14 +1174,25 @@ const ProductCard = ({
 
   // Función para renderizar el contenido del stock
   const renderStockContent = () => {
-    if (product.stock > 1) {
-      // Si hay más de 1, mostrar "DISPONIBLE" (verde)
-      return <StockIcon $inStock={true}>DISPONIBLE</StockIcon>;
-    } else {
-      // Si hay 0 o 1, mostrar "POCO STOCK" (amarillo)
+    if (product.stock === 0) {
+      // Si hay 0, mostrar "Sin Stock" (rojo)
       return (
-        <StockIcon $inStock={false} $lowStock={true}>
-          POCO STOCK
+        <StockIcon $inStock={false} $lowStock={false}>
+          Sin Stock
+        </StockIcon>
+      );
+    } else if (product.stock > 100) {
+      // Si hay más de 100, mostrar "+100 un." (verde)
+      return (
+        <StockIcon $inStock={true} $lowStock={false}>
+          +100 un.
+        </StockIcon>
+      );
+    } else {
+      // Si hay entre 1 y 100, mostrar la cantidad exacta (verde)
+      return (
+        <StockIcon $inStock={true} $lowStock={false}>
+          {product.stock} un.
         </StockIcon>
       );
     }
@@ -1178,17 +1268,11 @@ const ProductCard = ({
                   {product.empresa || product.empresaId}
                 </Enterprise>
               </BrandEnterpriseContainer>
-              <StockIndicator
-                $inStock={product.stock > 1}
-                $lowStock={product.stock <= 1 && product.stock >= 0}
-              >
+              <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
                 {/* {product.stock > 0 && product.stock < 100 && (
                   <StockDot $inStock={product.stock > 0} />
                 )} */}
-                <StockText
-                  $inStock={product.stock > 1}
-                  $lowStock={product.stock <= 1 && product.stock >= 0}
-                >
+                <StockText $inStock={product.stock > 0} $lowStock={false}>
                   {renderStockContent()}
                 </StockText>
               </StockIndicator>
@@ -1214,7 +1298,7 @@ const ProductCard = ({
                 </div>
                 <IVAIndicator>IVA incluido</IVAIndicator>
               </PriceLeft>
-              {isClient && !isVisualizacion && (
+              {isClient && !isVisualizacion && product.stock > 0 && (
                 <PriceRight>
                   <QuantitySelector onClick={(e) => e.stopPropagation()}>
                     <QuantityButton
@@ -1228,7 +1312,7 @@ const ProductCard = ({
                       id={`quantity-${product.id}`}
                       name={`quantity-${product.id}`}
                       min="1"
-                      max="5000"
+                      max={product.stock || 0}
                       value={quantity}
                       onChange={handleQuantityChange}
                       onClick={(e) => e.stopPropagation()}
@@ -1236,7 +1320,7 @@ const ProductCard = ({
                     />
                     <QuantityButton
                       onClick={increaseQuantity}
-                      disabled={quantity >= 5000}
+                      disabled={quantity >= (product.stock || 0)}
                     >
                       +
                     </QuantityButton>
@@ -1253,7 +1337,9 @@ const ProductCard = ({
                       : "FaShoppingCart"
                   }
                   text={
-                    isAddingToCart
+                    product.stock === 0
+                      ? "Sin Stock"
+                      : isAddingToCart
                       ? "Agregando..."
                       : quantityInCart > 0 && !isButtonHovered
                       ? `${quantityInCart} en carrito`
@@ -1262,12 +1348,14 @@ const ProductCard = ({
                   variant="solid"
                   size="small"
                   backgroundColor={({ theme }) =>
-                    quantityInCart > 0 && !isButtonHovered
+                    product.stock === 0
+                      ? theme.colors.textLight
+                      : quantityInCart > 0 && !isButtonHovered
                       ? theme.colors.success
                       : theme.colors.primary
                   }
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart}
+                  disabled={isAddingToCart || product.stock === 0}
                   onMouseEnter={() => setIsButtonHovered(true)}
                   onMouseLeave={() => setIsButtonHovered(false)}
                   style={{ width: "100%" }}

@@ -954,6 +954,7 @@ const DetallePedidoCoordinador = () => {
                       <img
                         src={item.image}
                         alt={item.name}
+                        loading="lazy"
                         style={{
                           width: 60,
                           height: 60,
@@ -1329,6 +1330,7 @@ const DetallePedidoCoordinador = () => {
                 <img
                   src={item.image}
                   alt={item.name}
+                  loading="lazy"
                   style={{
                     width: 60,
                     height: 60,

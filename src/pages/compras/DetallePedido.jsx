@@ -1066,7 +1066,11 @@ const DetallePedido = () => {
 
             return (
               <ProductCard key={item.id}>
-                <ProductCardImage src={item.image} alt={item.name} />
+                <ProductCardImage
+                  src={item.image}
+                  alt={item.name}
+                  loading="lazy"
+                />
                 <div
                   style={{
                     flex: 1,

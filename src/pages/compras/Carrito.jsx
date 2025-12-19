@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../../context/CartContext";
@@ -235,6 +235,13 @@ const StockInfo = styled.div`
   margin-top: 6px;
 `;
 
+const CartStockText = styled.span`
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 0.85rem;
+  margin: 6px 0;
+  display: block;
+`;
+
 const StockAlertBanner = styled.div`
   background-color: ${({ theme }) => theme.colors.errorLight || "#FFEBEE"};
   color: ${({ theme }) => theme.colors.error};
@@ -468,34 +475,99 @@ const CompanyCheckoutButton = styled(Button)`
 const MemoizedProductImage = memo(({ src, alt }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const loadedSrcRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const imgRef = useRef(null);
+  const currentSrcRef = useRef(null);
 
-  const handleImageLoad = () => {
-    setImageLoading(false);
-    setImageError(false);
-    loadedSrcRef.current = src;
-  };
-
-  const handleImageError = () => {
-    setImageLoading(false);
-    setImageError(true);
-    loadedSrcRef.current = null;
-  };
-
-  // Resetear estados solo cuando cambia la src realmente
-  useEffect(() => {
-    // Solo resetear si la src realmente cambió y no está ya cargada
-    if (src && src !== loadedSrcRef.current) {
-      setImageError(false);
-      setImageLoading(true);
-    } else if (!src) {
-      setImageLoading(false);
+  // Construir la URL completa de la imagen - usar tal cual si ya es URL completa
+  const imageSrc = useMemo(() => {
+    if (!src) return "";
+    const trimmed = src.trim();
+    if (!trimmed) return "";
+    // Si ya es una URL completa, usarla tal cual sin modificar
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
     }
+    // Si no, construir la URL con baseLinkImages
+    return `${baseLinkImages}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
   }, [src]);
 
-  const imageSrc = src ? `${baseLinkImages}${src}` : "";
+  const handleImageLoad = useCallback(() => {
+    // Solo procesar si es la misma imagen que estamos esperando
+    if (currentSrcRef.current === imageSrc) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setImageLoading(false);
+      setImageError(false);
+    }
+  }, [imageSrc]);
 
-  if (imageError || !src) {
+  const handleImageError = useCallback(() => {
+    // Solo procesar si es la misma imagen que estamos esperando
+    if (currentSrcRef.current === imageSrc) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setImageLoading(false);
+      setImageError(true);
+    }
+  }, [imageSrc]);
+
+  // Resetear estados cuando cambia la src
+  useEffect(() => {
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (imageSrc) {
+      currentSrcRef.current = imageSrc;
+      setImageError(false);
+      setImageLoading(true);
+
+      // Establecer timeout de 10 segundos como respaldo
+      const currentSrc = imageSrc;
+      timeoutRef.current = setTimeout(() => {
+        // Solo marcar como error si todavía estamos esperando esta misma src
+        setImageLoading((prevLoading) => {
+          if (prevLoading && currentSrcRef.current === currentSrc) {
+            setImageError(true);
+            return false;
+          }
+          return prevLoading;
+        });
+      }, 10000);
+    } else {
+      currentSrcRef.current = null;
+      setImageLoading(false);
+      setImageError(true);
+    }
+
+    // Cleanup
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [imageSrc]);
+
+  // Verificar si la imagen ya está cargada después de renderizar (para imágenes en caché)
+  useEffect(() => {
+    if (imgRef.current && imageSrc && imageLoading) {
+      const img = imgRef.current;
+      // Si la imagen ya está completa, disparar onLoad
+      if (img.complete && img.naturalWidth > 0 && currentSrcRef.current === imageSrc) {
+        handleImageLoad();
+      }
+    }
+  }, [imageSrc, imageLoading, handleImageLoad]);
+
+  if (imageError || !imageSrc) {
     return (
       <ImagePlaceholder>
         <div>
@@ -513,6 +585,7 @@ const MemoizedProductImage = memo(({ src, alt }) => {
         </ImagePlaceholder>
       )}
       <ItemImage
+        ref={imgRef}
         src={imageSrc}
         alt={alt}
         onLoad={handleImageLoad}
@@ -567,7 +640,7 @@ const CartItem = ({
   };
 
   // Calcular el máximo de cantidad basado en el stock disponible
-  const maxQuantity = maxStock > 0 ? maxStock : 5000;
+  const maxQuantity = maxStock || 0;
 
   // Funciones para manejar el mantenimiento presionado del botón
   const handleDecreaseMouseDown = (e) => {
@@ -695,61 +768,73 @@ const CartItem = ({
         <ItemName onClick={handleItemClick}>{item?.name}</ItemName>
         <ItemBrand>{item?.brand}</ItemBrand>
 
-        <ItemQuantityControl>
-          <QuantityButton
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Solo ejecutar si mouseDown no ejecutó la acción ya
-              if (!mouseDownExecutedRef.current) {
-                handleQuantityChange(item.id, item.quantity - 1);
-              }
-            }}
-            onMouseDown={handleDecreaseMouseDown}
-            onMouseUp={handleQuantityButtonMouseUp}
-            onMouseLeave={handleQuantityButtonMouseLeave}
-            onTouchStart={handleDecreaseMouseDown}
-            onTouchEnd={handleQuantityButtonMouseUp}
-            disabled={item.quantity <= 1}
-            text={"-"}
-            size="small"
-          />
+        {/* Indicador de stock disponible */}
+        <CartStockText>
+          {maxStock === 0
+            ? "Sin Stock"
+            : maxStock > 100
+            ? "+100 Unidades Disponibles"
+            : `${maxStock} Unidad${maxStock !== 1 ? "es" : ""} Disponible${
+                maxStock !== 1 ? "s" : ""
+              }`}
+        </CartStockText>
 
-          <QuantityInput
-            type="number"
-            id={`quantity-cart-${item.id}`}
-            name={`quantity-cart-${item.id}`}
-            min="1"
-            max={maxQuantity}
-            value={item.quantity}
-            onChange={(e) => {
-              const newQuantity = parseInt(e.target.value) || 1;
-              // Limitar al máximo disponible
-              const limitedQuantity = Math.min(newQuantity, maxQuantity);
-              handleQuantityChange(item.id, limitedQuantity);
-            }}
-            autoComplete="off"
-          />
-          <QuantityButton
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Solo ejecutar si mouseDown no ejecutó la acción ya
-              if (!mouseDownExecutedRef.current) {
-                handleQuantityChange(item.id, item.quantity + 1);
-              }
-            }}
-            onMouseDown={handleIncreaseMouseDown}
-            onMouseUp={handleQuantityButtonMouseUp}
-            onMouseLeave={handleQuantityButtonMouseLeave}
-            onTouchStart={handleIncreaseMouseDown}
-            onTouchEnd={handleQuantityButtonMouseUp}
-            disabled={item.quantity >= maxQuantity}
-            text={"+"}
-            size="small"
-          />
-        </ItemQuantityControl>
+        {maxStock > 0 && (
+          <ItemQuantityControl>
+            <QuantityButton
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Solo ejecutar si mouseDown no ejecutó la acción ya
+                if (!mouseDownExecutedRef.current) {
+                  handleQuantityChange(item.id, item.quantity - 1);
+                }
+              }}
+              onMouseDown={handleDecreaseMouseDown}
+              onMouseUp={handleQuantityButtonMouseUp}
+              onMouseLeave={handleQuantityButtonMouseLeave}
+              onTouchStart={handleDecreaseMouseDown}
+              onTouchEnd={handleQuantityButtonMouseUp}
+              disabled={item.quantity <= 1}
+              text={"-"}
+              size="small"
+            />
 
+            <QuantityInput
+              type="number"
+              id={`quantity-cart-${item.id}`}
+              name={`quantity-cart-${item.id}`}
+              min="1"
+              max={maxQuantity}
+              value={item.quantity}
+              onChange={(e) => {
+                const newQuantity = parseInt(e.target.value) || 1;
+                // Limitar al máximo disponible
+                const limitedQuantity = Math.min(newQuantity, maxQuantity);
+                handleQuantityChange(item.id, limitedQuantity);
+              }}
+              autoComplete="off"
+            />
+            <QuantityButton
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Solo ejecutar si mouseDown no ejecutó la acción ya
+                if (!mouseDownExecutedRef.current) {
+                  handleQuantityChange(item.id, item.quantity + 1);
+                }
+              }}
+              onMouseDown={handleIncreaseMouseDown}
+              onMouseUp={handleQuantityButtonMouseUp}
+              onMouseLeave={handleQuantityButtonMouseLeave}
+              onTouchStart={handleIncreaseMouseDown}
+              onTouchEnd={handleQuantityButtonMouseUp}
+              disabled={item.quantity >= maxQuantity}
+              text={"+"}
+              size="small"
+            />
+          </ItemQuantityControl>
+        )}
       </ItemDetails>
 
       <ItemPricing>

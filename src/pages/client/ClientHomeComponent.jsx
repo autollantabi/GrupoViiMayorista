@@ -785,7 +785,7 @@ const ClientHomeComponent = () => {
         <ReencaucheHeader>
           <ReencaucheTitle>
             <RenderIcon name="FaTicketAlt" size={32} />
-            Sistema de Bonos
+            Bonos de Reencauche Haohua
           </ReencaucheTitle>
           <ReencaucheDescription>
             Gestiona los bonos de neumáticos de tus clientes de manera fácil y

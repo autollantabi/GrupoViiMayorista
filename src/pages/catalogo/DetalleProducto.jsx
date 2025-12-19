@@ -943,6 +943,7 @@ const DetalleProducto = () => {
           onLoad={handleImageLoad}
           onError={handleImageError}
           style={{ display: imageLoading ? "none" : "block" }}
+          loading="lazy"
         />
       </>
     );
@@ -1069,10 +1070,22 @@ const DetalleProducto = () => {
 
   // Calcular el máximo de cantidad basado en el stock disponible
   const maxQuantity = useMemo(() => {
-    if (!product) return 5000;
-    // Si hay stock, usar el stock como máximo, sino permitir hasta 5000
-    return product.stock > 0 ? product.stock : 5000;
+    if (!product) return 0;
+    // Usar el stock como máximo, si no hay stock retornar 0
+    return product.stock || 0;
   }, [product]);
+
+  // Asegurar que la cantidad no exceda el stock disponible
+  useEffect(() => {
+    const maxStock = product?.stock || 0;
+    if (maxStock === 0) {
+      setQuantity(0);
+    } else if (quantity > maxStock) {
+      setQuantity(maxStock);
+    } else if (quantity === 0 && maxStock > 0) {
+      setQuantity(1);
+    }
+  }, [product?.stock]);
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
@@ -1211,7 +1224,7 @@ const DetalleProducto = () => {
   }, []);
 
   const handleAddToCart = () => {
-    if (!isAddingToCart) {
+    if (!isAddingToCart && product.stock > 0 && quantity > 0) {
       setIsAddingToCart(true);
       addToCart(product, quantity);
       // Mostrar confirmación
@@ -1350,81 +1363,87 @@ const DetalleProducto = () => {
             </PriceContainer>
 
             {/* Nuevo indicador de stock posicionado debajo del precio */}
-            <StockIndicator
-              $inStock={product.stock > 1}
-              $lowStock={product.stock <= 1 && product.stock >= 0}
-            >
-              <StockBadge
-                $inStock={product.stock > 1}
-                $lowStock={product.stock <= 1 && product.stock >= 0}
-              >
-                {product.stock > 1 ? "DISPONIBLE" : "POCO STOCK"}
+            <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
+              <StockBadge $inStock={product.stock > 0} $lowStock={false}>
+                {product.stock === 0
+                  ? "Sin Stock"
+                  : product.stock > 100
+                  ? "+100 Unidades Disponibles"
+                  : `${product.stock} Unidad${
+                      product.stock !== 1 ? "es" : ""
+                    } Disponible${product.stock !== 1 ? "s" : ""}`}
               </StockBadge>
             </StockIndicator>
             {/* Sección de cantidad y botón en la misma línea */}
             {isClient && !isVisualizacion && (
               <QuantityControlsContainer>
-                {/* Controles de cantidad */}
-                <QuantityWrapper>
-                  <QuantityLabel>Cantidad:</QuantityLabel>
-                  <QuantitySelector>
-                    <QuantityButton
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Solo ejecutar si mouseDown no ejecutó la acción ya
-                        if (!mouseDownExecutedRef.current) {
-                          decreaseQuantity();
-                        }
-                      }}
-                      onMouseDown={handleDecreaseMouseDown}
-                      onMouseUp={handleQuantityButtonMouseUp}
-                      onMouseLeave={handleQuantityButtonMouseLeave}
-                      onTouchStart={handleDecreaseMouseDown}
-                      onTouchEnd={handleQuantityButtonMouseUp}
-                      disabled={quantity <= 1}
-                      text={"-"}
-                    />
-                    <QuantityInput
-                      type="number"
-                      id={`quantity-${product.id}`}
-                      name={`quantity-${product.id}`}
-                      min="1"
-                      max={maxQuantity}
-                      value={quantity}
-                      onChange={handleQuantityChange}
-                      autoComplete="off"
-                    />
-                    <QuantityButton
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Solo ejecutar si mouseDown no ejecutó la acción ya
-                        if (!mouseDownExecutedRef.current) {
-                          increaseQuantity();
-                        }
-                      }}
-                      onMouseDown={handleIncreaseMouseDown}
-                      onMouseUp={handleQuantityButtonMouseUp}
-                      onMouseLeave={handleQuantityButtonMouseLeave}
-                      onTouchStart={handleIncreaseMouseDown}
-                      onTouchEnd={handleQuantityButtonMouseUp}
-                      disabled={quantity >= maxQuantity}
-                      text={"+"}
-                    />
-                  </QuantitySelector>
-                </QuantityWrapper>
+                {/* Controles de cantidad - solo mostrar si hay stock */}
+                {product.stock > 0 && (
+                  <QuantityWrapper>
+                    <QuantityLabel>Cantidad:</QuantityLabel>
+                    <QuantitySelector>
+                      <QuantityButton
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Solo ejecutar si mouseDown no ejecutó la acción ya
+                          if (!mouseDownExecutedRef.current) {
+                            decreaseQuantity();
+                          }
+                        }}
+                        onMouseDown={handleDecreaseMouseDown}
+                        onMouseUp={handleQuantityButtonMouseUp}
+                        onMouseLeave={handleQuantityButtonMouseLeave}
+                        onTouchStart={handleDecreaseMouseDown}
+                        onTouchEnd={handleQuantityButtonMouseUp}
+                        disabled={quantity <= 1}
+                        text={"-"}
+                      />
+                      <QuantityInput
+                        type="number"
+                        id={`quantity-${product.id}`}
+                        name={`quantity-${product.id}`}
+                        min="1"
+                        max={maxQuantity}
+                        value={quantity}
+                        onChange={handleQuantityChange}
+                        autoComplete="off"
+                      />
+                      <QuantityButton
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Solo ejecutar si mouseDown no ejecutó la acción ya
+                          if (!mouseDownExecutedRef.current) {
+                            increaseQuantity();
+                          }
+                        }}
+                        onMouseDown={handleIncreaseMouseDown}
+                        onMouseUp={handleQuantityButtonMouseUp}
+                        onMouseLeave={handleQuantityButtonMouseLeave}
+                        onTouchStart={handleIncreaseMouseDown}
+                        onTouchEnd={handleQuantityButtonMouseUp}
+                        disabled={quantity >= maxQuantity}
+                        text={"+"}
+                      />
+                    </QuantitySelector>
+                  </QuantityWrapper>
+                )}
 
                 {/* Botón de agregar al carrito */}
                 <AddToCartButtonWrapper>
                   <Button
                     leftIconName={
-                      currentInCart > 0 && !isButtonHovered
+                      product.stock === 0
+                        ? "FaShoppingCart"
+                        : currentInCart > 0 && !isButtonHovered
                         ? "FaCheck"
                         : "FaShoppingCart"
                     }
                     text={
-                      isAddingToCart
+                      product.stock === 0
+                        ? "Sin Stock"
+                        : isAddingToCart
                         ? "Agregando..."
                         : currentInCart > 0 && !isButtonHovered
                         ? `${currentInCart} en carrito`
@@ -1432,11 +1451,13 @@ const DetalleProducto = () => {
                     }
                     variant="solid"
                     onClick={handleAddToCart}
-                    disabled={isAddingToCart}
+                    disabled={isAddingToCart || product.stock === 0}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                     backgroundColor={({ theme }) =>
-                      currentInCart > 0 && !isButtonHovered
+                      product.stock === 0
+                        ? theme.colors.textLight
+                        : currentInCart > 0 && !isButtonHovered
                         ? theme.colors.success
                         : theme.colors.primary
                     }

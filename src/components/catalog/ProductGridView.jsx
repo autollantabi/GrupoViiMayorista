@@ -437,7 +437,11 @@ const ProductGridView = ({
 
   // Determinar si el ordenamiento es de API o frontend
   const isApiSort = (sortValue) => {
-    return sortValue === "default" || sortValue === "clasificacion_indice" || sortValue === "recurrencia";
+    return (
+      sortValue === "default" ||
+      sortValue === "clasificacion_indice" ||
+      sortValue === "recurrencia"
+    );
   };
 
   // Convertir valor de ordenamiento del frontend al formato de API
@@ -786,17 +790,8 @@ const ProductGridView = ({
     // Los ordenamientos de API (default, clasificacion_indice, recurrencia) ya vienen ordenados desde el backend
     if (!isApiSort(sortBy)) {
       switch (sortBy) {
-        case "price_asc":
-          filtered.sort((a, b) => a.price - b.price);
-          break;
-        case "price_desc":
-          filtered.sort((a, b) => b.price - a.price);
-          break;
         case "name_asc":
           filtered.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        case "rating":
-          filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
           break;
         default:
           // No hacer nada, mantener el orden que viene de la API
@@ -1098,12 +1093,9 @@ const ProductGridView = ({
               <Select
                 options={[
                   { value: "default", label: "Destacados" },
-                  { value: "clasificacion_indice", label: "Popularidad" },
-                  { value: "recurrencia", label: "Recurrencia" },
-                  { value: "price_asc", label: "Menor precio" },
-                  { value: "price_desc", label: "Mayor precio" },
+                  { value: "clasificacion_indice", label: "Más Vendidos" },
+                  { value: "recurrencia", label: "Mis favoritos" },
                   { value: "name_asc", label: "Alfabético (A-Z)" },
-                  { value: "rating", label: "Mejor valorados" },
                 ]}
                 value={sortBy}
                 onChange={handleSortChange}
@@ -1131,7 +1123,7 @@ const ProductGridView = ({
                 options={[
                   { value: "all", label: "Todos" },
                   { value: "available", label: "Disponibles" },
-                  { value: "low_stock", label: "Poco stock" },
+                  { value: "low_stock", label: "Sin Stock" },
                 ]}
                 value={stockFilter}
                 onChange={handleStockFilterChange}
