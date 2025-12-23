@@ -12,7 +12,7 @@ import api from "../../constants/api";
  */
 export const api_email_solicitudEmpresa = async (solicitudData) => {
   try {
-    const response = await api.post("/api/email/solicitudEmpresa", {
+    const response = await api.post("email/solicitudEmpresa", {
       cuenta: solicitudData.cuenta,
       nombre: solicitudData.nombre,
       correo: solicitudData.correo,

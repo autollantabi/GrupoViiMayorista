@@ -11,7 +11,7 @@ import api from "../../constants/api";
  */
 export const api_access_requestAccess = async (requestData) => {
   try {
-    const response = await api.post("/api/access/request", requestData);
+    const response = await api.post("access/request", requestData);
     return {
       success: true,
       message: "Solicitud de acceso enviada exitosamente",

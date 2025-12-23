@@ -10,6 +10,11 @@ import RenderLoader from "../../components/ui/RenderLoader";
 import RenderIcon from "../../components/ui/RenderIcon";
 import SEO from "../../components/seo/SEO";
 import { ROUTES } from "../../constants/routes";
+import {
+  api_access_sections_create,
+  api_access_sections_get_all,
+  api_access_sections_get_permission_by_email_and_section,
+} from "../../api/accessSections/apiAccessSections";
 
 const HeroSection = styled.section`
   min-height: calc(100vh - 45px);
@@ -489,6 +494,8 @@ const ClientHomeComponent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
+  const [accessSections, setAccessSections] = useState([]);
+
   // Función para encontrar el contenedor con scroll (fuera del useEffect para reutilizarla)
   const findScrollContainer = () => {
     // Primero buscar el contenedor principal de la app (el div dentro de MainContent)
@@ -540,6 +547,54 @@ const ClientHomeComponent = () => {
     };
 
     fetchProductsInfo();
+
+    const fetchAccessSections = async () => {
+      try {
+        // Hacer ambas peticiones en paralelo
+        const [response1, response2] = await Promise.all([
+          api_access_sections_get_permission_by_email_and_section(user.EMAIL, "APPSHELL"),
+          api_access_sections_get_permission_by_email_and_section(user.EMAIL, "REENCAUCHE")
+        ]);
+
+        console.log("Access sections APPSHELL:", response1);
+        console.log("Access sections REENCAUCHE:", response2);
+
+        // Acumular las secciones que tienen acceso
+        // Cuando tiene acceso: success: true, data: { objeto }
+        // Cuando no tiene acceso: success: false, error: { message }
+        const sections = [];
+        
+        if (response1.success && response1.data) {
+          sections.push(response1.data);
+          console.log("Usuario tiene acceso a APPSHELL");
+        } else {
+          console.log("Usuario NO tiene acceso a APPSHELL:", response1.message);
+        }
+        
+        if (response2.success && response2.data) {
+          sections.push(response2.data);
+          console.log("Usuario tiene acceso a REENCAUCHE");
+        } else {
+          console.log("Usuario NO tiene acceso a REENCAUCHE:", response2.message);
+        }
+
+        // Actualizar el estado con todas las secciones encontradas
+        setAccessSections(sections);
+        console.log("Secciones de acceso finales:", sections);
+      } catch (error) {
+        console.error("Error fetching access sections:", error);
+        setAccessSections([]);
+      }
+      // const sio = 1;
+      // if (sio === 1) {
+      //   const response = await api_access_sections_create(
+      //     user.EMAIL,
+      //     "REENCAUCHE"
+      //   );
+      //   console.log("Access sections:", response);
+      // }
+    };
+    fetchAccessSections();
   }, []);
 
   // Detectar scroll para ocultar el indicador
@@ -630,6 +685,15 @@ const ClientHomeComponent = () => {
 
   // Verificar si el usuario tiene acceso a MAXXIMUNDO
   const hasMaxximundoAccess = userAccess.includes("MAXXIMUNDO");
+
+  // Verificar acceso a secciones específicas basándose en accessSections
+  const hasAppShellAccess = accessSections.some(
+    (section) => section.SECTION_PERMITTED_USER === "APPSHELL"
+  );
+  
+  const hasReencaucheAccess = accessSections.some(
+    (section) => section.SECTION_PERMITTED_USER === "REENCAUCHE"
+  );
 
   const handleCardClick = (empresa) => {
     navigate(`/catalogo/${empresa.nombre}`);
@@ -752,8 +816,8 @@ const ClientHomeComponent = () => {
         </ScrollIndicator>
       </HeroSection>
 
-      {/* Sección de App Shell (solo si tiene acceso a MAXXIMUNDO) */}
-      {hasMaxximundoAccess && (
+      {/* Sección de App Shell (solo si tiene acceso a APPSHELL) */}
+      {hasAppShellAccess && (
         <AppShellSection>
           <AppShellHeader>
             <AppShellTitle>
@@ -780,7 +844,8 @@ const ClientHomeComponent = () => {
         </AppShellSection>
       )}
 
-      {/* Sección de Sistema de Bonos */}
+      {/* Sección de Sistema de Bonos (solo si tiene acceso a REENCAUCHE) */}
+      {hasReencaucheAccess && (
       <ReencaucheSection>
         <ReencaucheHeader>
           <ReencaucheTitle>
@@ -802,6 +867,7 @@ const ClientHomeComponent = () => {
           />
         </ReencaucheActions>
       </ReencaucheSection>
+      )}
     </>
   );
 };
