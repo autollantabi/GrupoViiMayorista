@@ -642,7 +642,7 @@ const AdditionalFilters = ({
                   Filtros y Búsqueda
                 </ModalTitle>
                 <CloseButton onClick={closeModal}>
-                  <RenderIcon name="FaTimes" size={18} />
+                  <RenderIcon name="FaXmark" size={18} />
                 </CloseButton>
               </ModalHeader>
 
@@ -654,7 +654,7 @@ const AdditionalFilters = ({
                   placeholder="Buscar productos..."
                   value={localSearchQuery}
                   onChange={handleSearchChange}
-                  leftIconName="FaSearch"
+                  leftIconName="FaMagnifyingGlass"
                   autoComplete="off"
                 />
               </SearchContainer>
@@ -683,7 +683,7 @@ const AdditionalFilters = ({
               placeholder="Buscar productos..."
               value={localSearchQuery}
               onChange={handleSearchChange}
-              leftIconName="FaSearch"
+              leftIconName="FaMagnifyingGlass"
               autoComplete="off"
             />
           </SearchContainer>
@@ -720,7 +720,7 @@ const AdditionalFilters = ({
                 Filtros y Búsqueda
               </ModalTitle>
               <CloseButton onClick={closeModal}>
-                <RenderIcon name="FaTimes" size={18} />
+                <RenderIcon name="FaXmark" size={18} />
               </CloseButton>
             </ModalHeader>
 
@@ -732,7 +732,7 @@ const AdditionalFilters = ({
                 placeholder="Buscar productos..."
                 value={localSearchQuery}
                 onChange={handleSearchChange}
-                leftIconName="FaSearch"
+                leftIconName="FaMagnifyingGlass"
                 autoComplete="off"
               />
             </SearchContainer>
@@ -790,7 +790,7 @@ const AdditionalFilters = ({
                             <FilterClearButton
                               onClick={() => onClearFilter(filter.id)}
                             >
-                              <RenderIcon name="FaTimes" size={12} />
+                              <RenderIcon name="FaXmark" size={12} />
                               Limpiar
                             </FilterClearButton>
                           )}
@@ -856,7 +856,7 @@ const AdditionalFilters = ({
             placeholder="Buscar productos..."
             value={localSearchQuery}
             onChange={handleSearchChange}
-            leftIconName="FaSearch"
+            leftIconName="FaMagnifyingGlass"
             autoComplete="off"
           />
         </SearchContainer>
@@ -907,7 +907,7 @@ const AdditionalFilters = ({
                       <FilterClearButton
                         onClick={() => onClearFilter(filter.id)}
                       >
-                        <RenderIcon name="FaTimes" size={12} />
+                        <RenderIcon name="FaXmark" size={12} />
                         Limpiar
                       </FilterClearButton>
                     )}

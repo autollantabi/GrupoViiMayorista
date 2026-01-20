@@ -1,20 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { FaSearch, FaChevronDown } from "react-icons/fa";
 import Button from "./Button";
+import RenderIcon from "./RenderIcon";
 
 const SelectContainer = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 0.375rem;
   width: ${({ width }) => width || "250px"};
 `;
 
 const Label = styled.label`
   text-align: left;
-  font-size: 14px;
+  font-size: clamp(0.875rem, 2vw, 0.95rem);
+  font-weight: 600;
   color: ${({ $color, theme }) => $color || theme.colors.text};
+  margin-bottom: 0;
 `;
 
 const SelectButton = styled(Button)`
@@ -22,36 +24,79 @@ const SelectButton = styled(Button)`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  background-color: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 0.9rem;
-  cursor: pointer;
+  padding: 0.625rem 0.875rem;
+  border-radius: 12px;
+  border: 1px solid
+    ${({ theme, disabled }) =>
+      disabled
+        ? theme.mode === "dark"
+          ? `${theme.colors.border}40`
+          : `${theme.colors.border}30`
+        : theme.mode === "dark"
+        ? `${theme.colors.border}40`
+        : `${theme.colors.border}30`};
+  background-color: ${({ theme, disabled }) =>
+    disabled
+      ? theme.mode === "dark"
+        ? `${theme.colors.background}80`
+        : theme.colors.background
+      : theme.colors.surface};
+  color: ${({ theme, disabled }) =>
+    disabled ? theme.colors.textSecondary : theme.colors.text};
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   text-align: left;
   appearance: none;
   outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: ${({ theme, disabled }) =>
+    disabled
+      ? "none"
+      : theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
 
-  &:hover {
-    border-color: ${({ theme }) => theme.colors.primary};
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}60` : `${theme.colors.border}50`};
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 4px 12px rgba(0, 0, 0, 0.15)"
+        : "0 4px 12px rgba(0, 0, 0, 0.06)"};
   }
 
-  &:focus {
+  &:focus:not(:disabled) {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: none;
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `0 0 0 3px ${theme.colors.primary}25`
+        : `0 0 0 3px ${theme.colors.primary}20`};
   }
 
-  &:focus-visible {
+  &:focus-visible:not(:disabled) {
     outline: none;
-    box-shadow: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `0 0 0 3px ${theme.colors.primary}25`
+        : `0 0 0 3px ${theme.colors.primary}20`};
+  }
+
+  &:disabled {
+    opacity: 0.7;
   }
 
   svg {
-    transition: transform 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform: ${({ $isOpen }) => ($isOpen ? "rotate(180deg)" : "rotate(0)")};
-    color: ${({ theme }) => theme.colors.textLight};
+    color: ${({ theme, disabled }) =>
+      disabled ? theme.colors.textSecondary : theme.colors.textSecondary};
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 16px; /* Evitar zoom en iOS */
   }
 `;
 
@@ -61,107 +106,167 @@ const DropdownMenu = styled.div`
   bottom: ${({ $dropUp }) => ($dropUp ? "100%" : "auto")};
   left: 0;
   right: 0;
-  margin-top: ${({ $dropUp }) => ($dropUp ? "0" : "4px")};
-  margin-bottom: ${({ $dropUp }) => ($dropUp ? "4px" : "0")};
+  margin-top: ${({ $dropUp }) => ($dropUp ? "0" : "0.5rem")};
+  margin-bottom: ${({ $dropUp }) => ($dropUp ? "0.5rem" : "0")};
   max-height: ${({ $maxHeight }) => $maxHeight}px;
   background-color: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 12px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)"
+      : "0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
   z-index: 100;
   display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
+  overflow: hidden;
+  animation: ${({ $isOpen }) =>
+    $isOpen ? "fadeInDown 0.2s ease-out" : "none"};
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 const SearchInputWrapper = styled.div`
   position: relative;
-  padding: 8px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   svg {
     position: absolute;
-    left: 16px;
+    left: 1.5rem;
     top: 50%;
     transform: translateY(-50%);
-    color: ${({ theme }) => theme.colors.textLight};
+    color: ${({ theme }) => theme.colors.textSecondary};
+    z-index: 1;
+    pointer-events: none;
   }
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  padding: 8px;
-  padding-left: 32px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 0.5rem 0.75rem;
+  padding-left: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   outline: none;
+  transition: all 0.2s ease;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: none;
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `0 0 0 2px ${theme.colors.primary}20`
+        : `0 0 0 2px ${theme.colors.primary}15`};
   }
 
   &:focus-visible {
     outline: none;
-    box-shadow: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `0 0 0 2px ${theme.colors.primary}20`
+        : `0 0 0 2px ${theme.colors.primary}15`};
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.placeholder || theme.colors.textSecondary};
+    opacity: 0.6;
   }
 `;
 
 const OptionsList = styled.ul`
   list-style: none;
-  padding: 0;
+  padding: 0.25rem;
   margin: 0;
   max-height: ${({ $hasSearch, $maxHeight }) =>
-    $hasSearch ? `${$maxHeight - 58}px` : `${$maxHeight}px`};
+    $hasSearch ? `${$maxHeight - 60}px` : `${$maxHeight}px`};
   overflow-y: auto;
 
   /* Estilos personalizados para el scrollbar */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
-    border-radius: 4px;
-    border: 1px solid ${({ theme }) => theme.colors.background};
+    background: ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}60` : `${theme.colors.border}50`};
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.textLight};
+    background: ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}80` : `${theme.colors.border}70`};
   }
 
   /* Para Firefox */
   scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border}
-    ${({ theme }) => theme.colors.background};
+  scrollbar-color: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}60` : `${theme.colors.border}50`}
+    transparent;
 `;
 
 const OptionItem = styled.li`
-  padding: 8px 12px;
+  padding: 0.625rem 0.875rem;
   cursor: pointer;
   color: ${({ theme, $isSelected }) =>
     $isSelected ? theme.colors.primary : theme.colors.text};
   background-color: ${({ theme, $isSelected }) =>
-    $isSelected ? theme.colors.primaryLight + "33" : theme.colors.surface};
-  font-weight: ${({ $isSelected }) => ($isSelected ? "500" : "normal")};
+    $isSelected
+      ? theme.mode === "dark"
+        ? `${theme.colors.primary}20`
+        : `${theme.colors.primary}10`
+      : "transparent"};
+  font-weight: ${({ $isSelected }) => ($isSelected ? "600" : "400")};
+  font-size: 0.95rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: 0.125rem;
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.background};
+    background-color: ${({ theme, $isSelected }) =>
+      $isSelected
+        ? theme.mode === "dark"
+          ? `${theme.colors.primary}25`
+          : `${theme.colors.primary}15`
+        : theme.mode === "dark"
+        ? `${theme.colors.background}80`
+        : `${theme.colors.background}`};
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 `;
 
 const NoResults = styled.div`
-  padding: 12px;
+  padding: 1rem;
   text-align: center;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-style: italic;
+  font-size: 0.9rem;
 `;
 
 const Select = ({
@@ -315,7 +420,7 @@ const Select = ({
       <DropdownMenu $isOpen={isOpen} $dropUp={dropUp} $maxHeight={maxHeight}>
         {withSearch && (
           <SearchInputWrapper>
-            <FaSearch size={14} />
+            <RenderIcon name="FaMagnifyingGlass" size={16} />
             <SearchInput
               ref={searchInputRef}
               type="text"

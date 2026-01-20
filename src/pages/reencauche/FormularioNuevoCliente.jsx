@@ -260,7 +260,7 @@ const FormularioNuevoCliente = ({ onClose, onClientCreated }) => {
             Nuevo Cliente
           </ModalTitle>
           <CloseButton onClick={onClose}>
-            <RenderIcon name="FaTimes" size={16} />
+            <RenderIcon name="FaXmark" size={16} />
           </CloseButton>
         </ModalHeader>
         <ModalBody>
@@ -334,7 +334,7 @@ const FormularioNuevoCliente = ({ onClose, onClientCreated }) => {
                   text="Cancelar"
                   variant="outlined"
                   onClick={onClose}
-                  leftIconName="FaTimes"
+                  leftIconName="FaXmark"
                 />
               )}
               <Button

@@ -11,21 +11,34 @@ import { useAuth } from "../../context/AuthContext";
 import Select from "../../components/ui/Select";
 import SearchBar from "../../components/ui/SearchBar";
 import PageContainer from "../../components/layout/PageContainer";
+import RenderIcon from "../../components/ui/RenderIcon";
+import RenderLoader from "../../components/ui/RenderLoader";
 
-const PageTitle = styled.h1`
-  margin: 0 0 24px 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 1.8rem;
+const PageTitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 2rem 0;
 
   @media (max-width: 768px) {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
+    gap: 0.75rem;
   }
+`;
 
-  @media (max-width: 480px) {
-    font-size: 1.3rem;
-    margin-bottom: 16px;
-  }
+const PageTitle = styled.h1`
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: ${({ theme }) => theme.colors.text};
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
 `;
 
 const FiltersContainer = styled.div`
@@ -33,20 +46,32 @@ const FiltersContainer = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 16px;
   }
 
   @media (max-width: 480px) {
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 0.875rem;
+    margin-bottom: 1.25rem;
+    padding: 1rem;
   }
 `;
 
@@ -89,24 +114,40 @@ const SearchInput = styled.input`
 `;
 
 const StatusBadge = styled.span`
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
   background-color: ${({ theme, status }) => {
     switch (status) {
       case "PENDIENTE":
-        return theme.colors.warning + "33";
+        return theme.mode === "dark"
+          ? theme.colors.warning + "25"
+          : theme.colors.warning + "15";
       case "PENDIENTE CARTERA":
-        return theme.colors.info + "33";
+        return theme.mode === "dark"
+          ? theme.colors.info + "25"
+          : theme.colors.info + "15";
       case "CONFIRMADO":
-        return theme.colors.info + "33";
+        return theme.mode === "dark"
+          ? theme.colors.info + "25"
+          : theme.colors.info + "15";
       case "ENTREGADO":
-        return theme.colors.success + "33";
+        return theme.mode === "dark"
+          ? theme.colors.success + "25"
+          : theme.colors.success + "15";
       case "CANCELADO":
-        return theme.colors.error + "33";
+        return theme.mode === "dark"
+          ? theme.colors.error + "25"
+          : theme.colors.error + "15";
       default:
-        return theme.colors.border;
+        return theme.mode === "dark"
+          ? `${theme.colors.border}40`
+          : `${theme.colors.border}30`;
     }
   }};
   color: ${({ theme, status }) => {
@@ -125,6 +166,25 @@ const StatusBadge = styled.span`
         return theme.colors.textLight;
     }
   }};
+  border: 1px solid
+    ${({ theme, status }) => {
+      switch (status) {
+        case "PENDIENTE":
+          return theme.colors.warning + "40";
+        case "PENDIENTE CARTERA":
+          return theme.colors.info + "40";
+        case "CONFIRMADO":
+          return theme.colors.info + "40";
+        case "ENTREGADO":
+          return theme.colors.success + "40";
+        case "CANCELADO":
+          return theme.colors.error + "40";
+        default:
+          return theme.mode === "dark"
+            ? `${theme.colors.border}40`
+            : `${theme.colors.border}30`;
+      }
+    }};
 `;
 
 const NoOrdersContainer = styled.div`
@@ -132,41 +192,59 @@ const NoOrdersContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 4rem 2rem;
   text-align: center;
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  gap: 1.5rem;
 
   @media (max-width: 768px) {
-    padding: 30px 20px;
+    padding: 3rem 1.5rem;
+    border-radius: 16px;
+    gap: 1.25rem;
   }
 
   @media (max-width: 480px) {
-    padding: 24px 16px;
+    padding: 2.5rem 1.25rem;
+    border-radius: 12px;
+    gap: 1rem;
   }
 `;
 
 // Componente para modo lista móvil
 const MobileOrderCard = styled.div`
   background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
-  transition: all 0.2s ease;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  transition: all 0.3s ease;
   cursor: pointer;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px ${({ theme }) => theme.colors.shadow};
+    transform: translateY(-3px);
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
+        : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
     border-color: ${({ theme }) => theme.colors.primary};
   }
 
   @media (max-width: 480px) {
-    padding: 14px;
-    margin-bottom: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.875rem;
+    border-radius: 12px;
   }
 `;
 
@@ -179,9 +257,12 @@ const MobileOrderHeader = styled.div`
 `;
 
 const MobileOrderId = styled.div`
-  font-weight: 600;
+  font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 0.9rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 const MobileOrderStatus = styled.div`
@@ -191,44 +272,51 @@ const MobileOrderStatus = styled.div`
 const MobileOrderInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 `;
 
 const MobileOrderRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
 `;
 
 const MobileOrderLabel = styled.span`
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-weight: 500;
+  font-size: 0.9rem;
 `;
 
 const MobileOrderValue = styled.span`
   color: ${({ theme }) => theme.colors.text};
   font-weight: 600;
+  font-size: 0.95rem;
 `;
 
 const MobileOrderActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  padding-top: 1rem;
+  border-top: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 `;
 
 const NoOrdersIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
 `;
 
 const NoOrdersText = styled.p`
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  margin: 0;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-weight: 500;
+  line-height: 1.6;
 `;
 
 const MisPedidos = () => {
@@ -543,7 +631,7 @@ const MisPedidos = () => {
   // Función para renderizar acciones por fila
   const rowActions = (row) => (
     <Button
-      text="Ver detalle"
+      text="Detalles"
       variant="outlined"
       size="small"
       onClick={() => navigate(`/mis-pedidos/${row.id}`)}
@@ -587,7 +675,7 @@ const MisPedidos = () => {
           >
             <MobileOrderHeader>
               <MobileOrderId>
-                #
+                <RenderIcon name="FaHashtag" size={16} />
                 {(() => {
                   const idString = String(order.id || "");
                   return idString.length > 8
@@ -669,7 +757,10 @@ const MisPedidos = () => {
             : "24px",
       }}
     >
-      <PageTitle>Mis Pedidos</PageTitle>
+      <PageTitleContainer>
+        <RenderIcon name="FaBagShopping" size={32} />
+        <PageTitle>Mis Pedidos</PageTitle>
+      </PageTitleContainer>
 
       <FiltersContainer>
         <FilterGroup>
@@ -705,17 +796,22 @@ const MisPedidos = () => {
 
       {loading ? (
         <NoOrdersContainer>
-          <NoOrdersIcon>⏳</NoOrdersIcon>
+          <NoOrdersIcon>
+            <RenderLoader size="64px" showSpinner={true} floatingSpinner={true} />
+          </NoOrdersIcon>
           <NoOrdersText>Cargando pedidos...</NoOrdersText>
         </NoOrdersContainer>
       ) : error ? (
         <NoOrdersContainer>
-          <NoOrdersIcon>⚠️</NoOrdersIcon>
+          <NoOrdersIcon>
+            <RenderIcon name="FaTriangleExclamation" size={64} color={theme.colors.error} />
+          </NoOrdersIcon>
           <NoOrdersText>{error}</NoOrdersText>
           <Button
             text="Intentar nuevamente"
             variant="outlined"
             onClick={handleObtainOrders}
+            leftIconName="FaRotateRight"
           />
         </NoOrdersContainer>
       ) : filteredOrders.length > 0 ? (
@@ -740,7 +836,9 @@ const MisPedidos = () => {
         </>
       ) : (
         <NoOrdersContainer>
-          <NoOrdersIcon>📦</NoOrdersIcon>
+          <NoOrdersIcon>
+            <RenderIcon name="FaBoxOpen" size={64} color={theme.colors.textSecondary} />
+          </NoOrdersIcon>
           <NoOrdersText>
             {searchTerm || statusFilter !== "todos" || dateFilter !== "todos"
               ? "No se encontraron pedidos con los filtros seleccionados"
@@ -755,6 +853,7 @@ const MisPedidos = () => {
                 setDateFilter("todos");
                 setSearchTerm("");
               }}
+              leftIconName="FaFilterCircleXmark"
             />
           ) : (
             <Button
@@ -762,6 +861,7 @@ const MisPedidos = () => {
               variant="solid"
               backgroundColor={theme.colors.primary}
               onClick={() => navigate("/")}
+              leftIconName="FaStore"
             />
           )}
         </NoOrdersContainer>

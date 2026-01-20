@@ -11,38 +11,86 @@ import { ROUTES } from "../../constants/routes";
 import { api_shell_createUser } from "../../api/shell/apiShell";
 import { useAuth } from "../../context/AuthContext";
 
+const Container = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+`;
+
 const WelcomeSection = styled.div`
   text-align: center;
-  margin-bottom: 3rem;
-  padding: 2rem 1rem;
-  background: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+  margin-bottom: 4rem;
+  padding: 3rem 2rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? theme.colors.surface : "#ffffff"};
+  border-radius: 20px;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2)"
+      : "0 4px 20px rgba(0, 0, 0, 0.06)"};
+  animation: fadeInUp 0.6s ease-out;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+    margin-bottom: 3rem;
+  }
+`;
+
+const LogoContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+`;
+
+const LogoImage = styled.img`
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 16px;
+  padding: 0.5rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? theme.colors.background : "#f8fafc"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 `;
 
 const WelcomeTitle = styled.h1`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
   margin: 0 0 1rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
 
   @media (max-width: 768px) {
     font-size: 2rem;
-    flex-direction: column;
   }
 `;
 
 const WelcomeSubtitle = styled.p`
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 1.2rem;
-  margin: 0 0 0.5rem 0;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  margin: 0 0 1rem 0;
   line-height: 1.6;
-  font-weight: 500;
+  font-weight: 600;
 
   @media (max-width: 768px) {
     font-size: 1.1rem;
@@ -51,9 +99,12 @@ const WelcomeSubtitle = styled.p`
 
 const WelcomeDescription = styled.p`
   color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 1rem;
-  margin: 1rem 0 0 0;
-  line-height: 1.6;
+  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+  margin: 0;
+  line-height: 1.7;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 
   @media (max-width: 768px) {
     font-size: 0.95rem;
@@ -61,36 +112,48 @@ const WelcomeDescription = styled.p`
 `;
 
 const FormSection = styled.div`
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 2rem;
-  background: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
+  padding: 3rem 2.5rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? theme.colors.surface : "#ffffff"};
+  border-radius: 20px;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2)"
+      : "0 4px 20px rgba(0, 0, 0, 0.06)"};
+  animation: fadeInUp 0.6s ease-out 0.2s backwards;
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
 `;
 
 const FormTitle = styled.h2`
   color: ${({ theme }) => theme.colors.text};
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 1.5rem 0;
+  font-size: clamp(1.5rem, 3vw, 1.8rem);
+  font-weight: 700;
+  margin: 0 0 2rem 0;
   text-align: center;
+  letter-spacing: -0.01em;
 `;
 
 const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1.75rem;
   }
 `;
 
@@ -98,8 +161,16 @@ const SubmitButtonContainer = styled.div`
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
 `;
 
 const AppShell = () => {
@@ -208,26 +279,27 @@ const AppShell = () => {
         keywords="lider shell, maxximundo, recompensas, ventas, aplicación móvil"
       />
       <PageContainer>
-        <WelcomeSection>
-          <WelcomeTitle>
-            <img
-              src={"/shell/ShellLogo.png"}
-              style={{ objectFit: "cover", width: "50px" }}
-              alt="Logo de Shell"
-            />
-            ¡Bienvenido!
-          </WelcomeTitle>
-          <WelcomeSubtitle>
-            Únete a Lider Shell para recompensarte por tus ventas
-          </WelcomeSubtitle>
-          <WelcomeDescription>
-            Llena el siguiente formulario para poder acceder a Lider Shell y
-            comenzar a recibir recompensas por tus ventas.
-          </WelcomeDescription>
-        </WelcomeSection>
+        <Container>
+          <WelcomeSection>
+            <LogoContainer>
+              <LogoImage
+                src={"/shell/ShellLogo.png"}
+                alt="Logo de Shell"
+              />
+            </LogoContainer>
+            <WelcomeTitle>¡Bienvenido a Club Shell Maxx!</WelcomeTitle>
+            <WelcomeSubtitle>
+              Únete para recompensarte por tus compras
+            </WelcomeSubtitle>
+            <WelcomeDescription>
+              Completa el siguiente formulario para acceder a Club Shell Maxx y
+              comenzar a ganar recompensas, descuentos exclusivos y premios increíbles
+              por cada compra que realices.
+            </WelcomeDescription>
+          </WelcomeSection>
 
-        <FormSection>
-          <FormTitle>Formulario de Registro</FormTitle>
+          <FormSection>
+            <FormTitle>Formulario de Registro</FormTitle>
           <FormContainer onSubmit={handleSubmit}>
             <FormRow>
               <Input
@@ -305,7 +377,7 @@ const AppShell = () => {
             <SubmitButtonContainer>
               <Button
                 type="submit"
-                text={isSubmitting ? "Accediendo..." : "Acceder Lider Shell"}
+                text={isSubmitting ? "Procesando..." : "Registrarse"}
                 leftIconName="FaPaperPlane"
                 disabled={isSubmitting}
                 style={{ minWidth: "200px" }}
@@ -320,6 +392,7 @@ const AppShell = () => {
             </SubmitButtonContainer>
           </FormContainer>
         </FormSection>
+        </Container>
       </PageContainer>
     </>
   );

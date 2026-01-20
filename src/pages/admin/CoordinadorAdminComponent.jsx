@@ -717,7 +717,7 @@ const CoordinadorAdminComponent = () => {
           }}
         >
           <RenderIcon
-            name={row.STATUS_USER ? "FaCheckCircle" : "FaMinusCircle"}
+            name={row.STATUS_USER ? "FaCircleCheck" : "FaMinusCircle"}
             size={18}
           />
         </div>
@@ -755,8 +755,6 @@ const CoordinadorAdminComponent = () => {
 
   return (
     <PageContainer
-      backButtonText="Regresar"
-      backButtonOnClick={() => navigate("/admin/dashboard")}
     >
       <PageTitle>Administración de Coordinadores</PageTitle>
 
@@ -764,7 +762,7 @@ const CoordinadorAdminComponent = () => {
         <div style={{ display: "flex", gap: "16px" }}>
           <SearchContainer>
             <SearchIcon>
-              <RenderIcon name={"FaSearch"} library={4} size={14} />
+              <RenderIcon name={"FaMagnifyingGlass"} library={4} size={14} />
             </SearchIcon>
             <SearchInput
               type="text"
@@ -811,7 +809,7 @@ const CoordinadorAdminComponent = () => {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Crear Nuevo Coordinador</ModalTitle>
-              <RenderIcon name="FaTimes" size={20} onClick={handleCloseModals}/>
+              <RenderIcon name="FaXmark" size={20} onClick={handleCloseModals}/>
             </ModalHeader>
 
             <form onSubmit={handleCreateCoordinador}>
@@ -895,7 +893,7 @@ const CoordinadorAdminComponent = () => {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Editar Coordinador</ModalTitle>
-              <RenderIcon name="FaTimes" size={20} onClick={handleCloseModals}/>
+              <RenderIcon name="FaXmark" size={20} onClick={handleCloseModals}/>
             </ModalHeader>
 
             <form onSubmit={handleUpdateCoordinador}>
@@ -977,7 +975,7 @@ const CoordinadorAdminComponent = () => {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Eliminar Coordinador</ModalTitle>
-              <RenderIcon name="FaTimes" size={20} onClick={handleCloseModals}  />
+              <RenderIcon name="FaXmark" size={20} onClick={handleCloseModals}  />
             </ModalHeader>
 
             <p>

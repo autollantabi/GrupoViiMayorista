@@ -1,7 +1,7 @@
 import * as FiIcons from "react-icons/fi";
 import * as AiIcons from "react-icons/ai";
 import * as MdIcons from "react-icons/md";
-import * as FaIcons from "react-icons/fa";
+import * as FaIcons from "react-icons/fa6";
 import * as RiIcons from "react-icons/ri";
 import * as BsIcons from "react-icons/bs";
 import * as LuIcons from "react-icons/lu";

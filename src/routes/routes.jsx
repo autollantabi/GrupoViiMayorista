@@ -10,6 +10,7 @@ import MisPedidos from "../pages/compras/MisPedidos";
 import DetallePedido from "../pages/compras/DetallePedido";
 import Perfil from "../pages/usuario/Perfil";
 import SearchResults from "../pages/busqueda/SearchResults";
+import Contacto from "../pages/contacto/Contacto";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import DetallePedidoCoordinador from "../pages/coordinadora/DetallePedidoCoordinador";
@@ -27,6 +28,8 @@ import ClientesReencauche from "../pages/reencauche/ClientesReencauche";
 import BonosActivados from "../pages/reencauche/BonosActivados";
 import ActivacionBonos from "../pages/reencauche/ActivacionBonos";
 import VerificarBono from "../pages/reencauche/VerificarBono";
+// Importaciones de páginas de XCoin
+import XCoinHome from "../pages/xcoin/XCoinHome";
 
 // Rutas de E-commerce (accesibles para todos los usuarios autenticados)
 export const ecommerceRoutes = [
@@ -109,6 +112,26 @@ export const ecommerceRoutes = [
   {
     path: ROUTES.ECOMMERCE.APP_SHELL,
     element: <AppShell />,
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.XCOIN,
+    element: <XCoinHome />,
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+    ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.CONTACTO,
+    element: <Contacto />,
     allowedRoles: [
       ROLES.CLIENTE,
       ROLES.ADMIN,

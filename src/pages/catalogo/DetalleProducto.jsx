@@ -21,22 +21,24 @@ import { baseLinkImages } from "../../constants/links";
 
 const ProductLayout = styled.div`
   display: grid;
-  grid-template-columns: 35% 1fr;
-  gap: 40px;
+  grid-template-columns: minmax(0, 65%) minmax(0, 35%);
+  gap: 2rem;
   background-color: ${({ theme }) => theme.colors.background};
   align-items: start;
+  width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 992px) {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 1.5rem;
   }
 
   @media (max-width: 768px) {
-    gap: 24px;
+    gap: 1.25rem;
   }
 
   @media (max-width: 576px) {
-    gap: 20px;
+    gap: 1rem;
   }
 `;
 
@@ -46,60 +48,72 @@ const InfoSection = styled.div`
   width: 100%;
   position: relative;
   min-width: 0;
+  box-sizing: border-box;
 `;
 
 const Category = styled.div`
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 0.9rem;
-  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 
   @media (max-width: 768px) {
-    font-size: 0.85rem;
-    margin-bottom: 6px;
+    margin-bottom: 0.375rem;
   }
 `;
 
 const ProductTitle = styled.h1`
-  margin: 0 0 5px 0;
   color: ${({ theme }) => theme.colors.text};
-  font-size: 1.8rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
   word-break: break-word;
-  line-height: 1.3;
 
   @media (max-width: 768px) {
-    font-size: 1.4rem;
-    margin-bottom: 8px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.25rem;
+    margin-bottom: 0.625rem;
   }
 `;
 
 const PriceContainer = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background-color: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.surface}80`
+      : `${theme.colors.surface}F5`};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
 
   @media (max-width: 768px) {
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 0.875rem;
+    margin-bottom: 0.875rem;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.875rem 1rem;
   }
 
   @media (max-width: 480px) {
-    gap: 6px;
+    gap: 0.75rem;
+    padding: 0.75rem 0.875rem;
   }
 `;
 
 const CurrentPrice = styled.span`
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 500;
   color: ${({ theme }) => theme.colors.primary};
 
   @media (max-width: 768px) {
-    font-size: 1.75rem;
+    font-size: 1.625rem;
   }
 
   @media (max-width: 480px) {
@@ -109,10 +123,10 @@ const CurrentPrice = styled.span`
 
 const IVAIndicator = styled.span`
   font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-style: italic;
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 0.25rem;
 
   @media (max-width: 480px) {
     margin-bottom: 0;
@@ -120,9 +134,9 @@ const IVAIndicator = styled.span`
 `;
 
 const OriginalPrice = styled.span`
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   text-decoration: line-through;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -134,16 +148,23 @@ const OriginalPrice = styled.span`
 `;
 
 const Discount = styled.span`
-  background-color: ${({ theme }) => theme.colors.tertiary};
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.error} 0%, ${theme.colors.warning} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.error} 0%, ${theme.colors.warning} 100%)`};
   color: ${({ theme }) => theme.colors.white};
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.9rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.2)"
+      : "0 2px 8px rgba(0, 0, 0, 0.1)"};
 
   @media (max-width: 768px) {
-    font-size: 0.85rem;
-    padding: 3px 6px;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.625rem;
   }
 `;
 
@@ -161,47 +182,184 @@ const Description = styled.div`
     font-size: 0.9rem;
   }
 `;
+
+const DescriptionSection = styled.div`
+  padding-top: 1.25rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+
+  @media (max-width: 768px) {
+    margin-top: 1.25rem;
+  }
+`;
+
+const DescriptionTitle = styled.span`
+  margin-bottom: 0.875rem;
+  font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  display: block;
+`;
+
+const DescriptionMeta = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.9rem;
+  margin-bottom: 0.875rem;
+  word-break: break-word;
+  opacity: 0.8;
+`;
+
+const DescriptionText = styled.span`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  display: block;
+  padding: 0.65rem;
+  border-radius: 12px;
+  background-color: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.surface}80`
+      : `${theme.colors.surface}F5`};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-top: 0.75rem;
+  }
+`;
 const StockIndicator = styled.div`
-  margin: 10px 0;
-  padding: 12px 16px;
-  border-radius: 6px;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  border-radius: 12px;
   background-color: ${({ theme, $inStock, $lowStock }) => {
-    if ($inStock) return `${theme.colors.success}10`;
-    if ($lowStock) return `${theme.colors.warning || "#fbbf24"}10`;
-    return `${theme.colors.error}10`;
+    if ($inStock)
+      return theme.mode === "dark"
+        ? `${theme.colors.success}15`
+        : `${theme.colors.success}10`;
+    if ($lowStock)
+      return theme.mode === "dark"
+        ? `${theme.colors.warning || "#fbbf24"}15`
+        : `${theme.colors.warning || "#fbbf24"}10`;
+    return theme.mode === "dark"
+      ? `${theme.colors.error}15`
+      : `${theme.colors.error}10`;
   }};
+  border: 1px solid
+    ${({ theme, $inStock, $lowStock }) => {
+      if ($inStock)
+        return theme.mode === "dark"
+          ? `${theme.colors.success}30`
+          : `${theme.colors.success}20`;
+      if ($lowStock)
+        return theme.mode === "dark"
+          ? `${theme.colors.warning || "#fbbf24"}30`
+          : `${theme.colors.warning || "#fbbf24"}20`;
+      return theme.mode === "dark"
+        ? `${theme.colors.error}30`
+        : `${theme.colors.error}20`;
+    }};
   display: flex;
   align-items: center;
   width: max-content;
-  gap: 10px;
+  gap: 0.5rem;
   max-width: 100%;
   flex-wrap: wrap;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 100%;
-    padding: 10px 14px;
-    gap: 8px;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
   }
 
   @media (max-width: 480px) {
-    padding: 8px 12px;
-    gap: 6px;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    gap: 0.375rem;
+  }
+`;
+
+const BrandCompanyBadge = styled.div`
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background-color: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.surface}80`
+      : `${theme.colors.surface}99`};
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.75rem;
   }
 `;
 
 const StockBadge = styled.span`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 0.5rem 0.875rem;
+  border-radius: 12px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   background-color: ${({ theme, $inStock, $lowStock }) => {
-    if ($inStock) return theme.colors.success;
-    if ($lowStock) return theme.colors.warning || "#fbbf24";
-    return theme.colors.error;
+    const color = $inStock 
+      ? theme.colors.success 
+      : $lowStock 
+      ? theme.colors.warning || "#fbbf24"
+      : theme.colors.error;
+    // Agregar 85% de opacidad (D9 en hexadecimal)
+    return `${color}D9`;
   }};
   color: ${({ theme }) => theme.colors.white};
   white-space: nowrap;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.2)"
+      : "0 2px 8px rgba(0, 0, 0, 0.1)"};
+
+  @media (max-width: 768px) {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.7rem;
+  }
 `;
 
 const StockMessage = styled.span`
@@ -225,6 +383,9 @@ const StockMessage = styled.span`
 const QuantitySelector = styled.div`
   display: flex;
   align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -233,19 +394,15 @@ const QuantitySelector = styled.div`
 `;
 
 const QuantityControlsContainer = styled.div`
-  margin-top: 10px;
-  margin-bottom: 20px;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 1rem;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
   }
 `;
 
@@ -253,11 +410,12 @@ const QuantityWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 0.875rem;
+  width: 100%;
+  justify-content: flex-start;
 
   @media (max-width: 768px) {
-    width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 `;
 
@@ -281,103 +439,150 @@ const CartCount = styled.span`
 `;
 
 const AddToCartButtonWrapper = styled.div`
-  min-width: 180px;
-  max-width: 250px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
-  }
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const QuantityButton = styled(Button)`
-  width: 36px;
-  height: 36px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  width: 38px;
+  height: 38px;
+  border: 1px solid
+    ${({ theme, disabled }) =>
+      disabled
+        ? theme.mode === "dark"
+          ? `${theme.colors.border}40`
+          : `${theme.colors.border}30`
+        : theme.mode === "dark"
+        ? `${theme.colors.border}40`
+        : `${theme.colors.border}30`};
   background-color: ${({ theme, disabled }) =>
-    disabled ? `${theme.colors.border}` : theme.colors.surface};
+    disabled
+      ? theme.mode === "dark"
+        ? `${theme.colors.background}80`
+        : theme.colors.background
+      : theme.colors.surface};
   color: ${({ theme, disabled }) =>
-    disabled ? theme.colors.textLight : theme.colors.text};
+    disabled ? theme.colors.textSecondary : theme.colors.text};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
+  font-weight: 600;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
-  opacity: ${({ disabled }) => (disabled ? 0.7 : 1)};
-  min-width: 36px;
+  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
+  min-width: 38px;
   padding: 0;
+  transition: all 0.2s ease;
+  box-shadow: ${({ theme, disabled }) =>
+    disabled
+      ? "none"
+      : theme.mode === "dark"
+      ? "0 2px 4px rgba(0, 0, 0, 0.1)"
+      : "0 2px 4px rgba(0, 0, 0, 0.04)"};
 
   &:first-child {
-    border-radius: 4px 0 0 4px;
+    border-radius: 10px 0 0 10px;
   }
 
   &:last-child {
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 10px 10px 0;
   }
 
   &:hover:not(:disabled) {
-    background-color: ${({ theme }) => theme.colors.background};
+    background-color: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}15`
+        : `${theme.colors.primary}08`};
+    border-color: ${({ theme }) => theme.colors.primary};
+    transform: scale(1.05);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
   @media (max-width: 480px) {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
   }
 `;
 
 const QuantityInput = styled.input`
-  width: 60px;
-  height: 36px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  width: 65px;
+  height: 38px;
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   border-left: none;
   border-right: none;
   text-align: center;
   font-size: 1rem;
+  font-weight: 600;
   background-color: ${({ theme, disabled }) =>
-    disabled ? `${theme.colors.border}30` : theme.colors.surface};
+    disabled
+      ? theme.mode === "dark"
+        ? `${theme.colors.background}80`
+        : theme.colors.background
+      : theme.colors.surface};
   color: ${({ theme, disabled }) =>
-    disabled ? theme.colors.textLight : theme.colors.text};
+    disabled ? theme.colors.textSecondary : theme.colors.text};
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "text")};
+  outline: none;
+  transition: all 0.2s ease;
+
+  &:focus {
+    background-color: ${({ theme }) => theme.colors.surface};
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
 
   @media (max-width: 480px) {
-    width: 70px;
-    height: 40px;
+    width: 75px;
+    height: 42px;
     font-size: 1.1rem;
   }
 `;
 
 // Agregar este nuevo componente para las especificaciones
 const SpecificationsSection = styled.div`
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   @media (max-width: 768px) {
-    margin-top: 20px;
-    padding-top: 12px;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
   }
 `;
 
 const SpecificationsTitle = styled.h3`
-  margin: 0 0 16px 0;
-  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+  font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
 
   @media (max-width: 768px) {
-    font-size: 1rem;
-    margin-bottom: 12px;
+    margin-bottom: 0.875rem;
   }
 `;
 
 const SpecificationsTable = styled.table`
   width: 100%;
   border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
 `;
 
 const SpecRow = styled.tr`
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
 
   &:last-child {
     border-bottom: none;
@@ -385,48 +590,121 @@ const SpecRow = styled.tr`
 `;
 
 const SpecLabel = styled.td`
-  padding: 8px 0;
-  font-weight: 500;
+  padding: 0.625rem 0.75rem;
+  font-weight: 600;
   width: 40%;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.95rem;
+  border-right: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
 
   @media (max-width: 768px) {
-    padding: 6px 0;
+    padding: 0.5rem 0.625rem;
     font-size: 0.9rem;
     width: 45%;
   }
 
   @media (max-width: 480px) {
     font-size: 0.85rem;
-    padding: 5px 0;
+    padding: 0.375rem 0.5rem;
   }
 `;
 
 const SpecValue = styled.td`
-  padding: 8px 0;
+  padding: 0.625rem 0.75rem;
   color: ${({ theme }) => theme.colors.text};
   word-break: break-word;
+  font-size: 0.95rem;
 
   @media (max-width: 768px) {
-    padding: 6px 0;
+    padding: 0.5rem 0.625rem;
     font-size: 0.9rem;
   }
 
   @media (max-width: 480px) {
     font-size: 0.85rem;
-    padding: 5px 0;
+    padding: 0.375rem 0.5rem;
+  }
+`;
+
+const SpecCell = styled.td`
+  padding: 0.625rem 0.75rem;
+  vertical-align: top;
+  width: 50%;
+  background-color: ${({ theme, $isEven }) =>
+    $isEven
+      ? theme.mode === "dark"
+        ? `${theme.colors.surface}E6`
+        : "#ffffff"
+      : theme.mode === "dark"
+      ? `${theme.colors.surface}CC`
+      : "#f8f9fa"};
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}30`
+        : `${theme.colors.primary}15`};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.625rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.375rem 0.5rem;
+  }
+`;
+
+const SpecItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const SpecItemValue = styled.span`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 0.95rem;
+  word-break: break-word;
+  font-weight: 500;
+  opacity: 0.9;
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
+`;
+
+const SpecItemLabel = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
   }
 `;
 
 // Componentes para los breadcrumbs
 const BreadcrumbsContainer = styled.nav`
-  margin-bottom: 24px;
-  padding: 16px 0;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   @media (max-width: 768px) {
-    margin-bottom: 16px;
-    padding: 12px 0;
+    margin-bottom: 1.25rem;
+    padding: 0.875rem 0;
   }
 `;
 
@@ -453,12 +731,13 @@ const BreadcrumbLink = styled.button`
   background: none;
   border: none;
   color: ${({ theme, $active }) =>
-    $active ? theme.colors.text : theme.colors.textLight};
-  text-decoration: ${({ $active }) => ($active ? "none" : "underline")};
+    $active ? theme.colors.text : theme.colors.textSecondary};
+  text-decoration: ${({ $active }) => ($active ? "none" : "none")};
   cursor: ${({ $active }) => ($active ? "default" : "pointer")};
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  border-radius: 4px;
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-weight: ${({ $active }) => ($active ? "600" : "500")};
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
   transition: all 0.2s ease;
   white-space: nowrap;
   max-width: 100%;
@@ -467,12 +746,14 @@ const BreadcrumbLink = styled.button`
   pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
 
   @media (max-width: 768px) {
-    font-size: 0.8rem;
-    padding: 3px 6px;
+    padding: 0.25rem 0.625rem;
   }
 
   &:hover:not([disabled]) {
-    background-color: ${({ theme }) => theme.colors.background};
+    background-color: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}15`
+        : `${theme.colors.primary}08`};
     color: ${({ theme }) => theme.colors.primary};
   }
 
@@ -500,8 +781,44 @@ const ImageSection = styled.div`
   position: relative;
   width: 100%;
   min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
+  box-sizing: border-box;
+  gap: 0.2rem;
+`;
+
+const CodeText = styled.span`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
+const ImageCaption = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
+
+  @media (max-width: 768px) {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+`;
+
+const ImageCaptionLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    gap: 0.2rem;
+  }
 `;
 
 const MainImageContainer = styled.div`
@@ -510,17 +827,30 @@ const MainImageContainer = styled.div`
   max-width: 100%;
   cursor: crosshair;
   overflow: hidden;
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.white};
-  box-shadow: 0 4px 10px ${({ theme }) => theme.colors.shadow};
+  border-radius: 16px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
+        : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
+  }
 
   @media (max-width: 768px) {
     cursor: default;
-    border-radius: 6px;
-    box-shadow: 0 2px 6px ${({ theme }) => theme.colors.shadow};
+    border-radius: 12px;
     overflow: hidden;
   }
 `;
@@ -554,50 +884,59 @@ const ImagePlaceholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.background}80`
+      : theme.colors.background};
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 1rem;
   text-align: center;
-  padding: 40px;
-  border-radius: 8px;
-  border: 2px dashed ${({ theme }) => theme.colors.border};
+  padding: 2.5rem;
+  border-radius: 16px;
+  border: 2px dashed
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
 
   @media (max-width: 992px) {
     height: 350px;
   }
 
   @media (max-width: 768px) {
-    padding: 24px;
+    padding: 1.5rem;
     height: 300px;
     font-size: 0.9rem;
-    border-radius: 6px;
+    border-radius: 12px;
   }
 
   @media (max-width: 480px) {
     height: 250px;
-    padding: 20px;
+    padding: 1.25rem;
     font-size: 0.85rem;
   }
 `;
 
 const ZoomWindow = styled.div`
   position: fixed;
-  /* Eliminar right: -100% para que no esté fijo */
   width: 300px;
   height: 300px;
-  background-color: ${({ theme }) => theme.colors.white};
-  border-radius: 8px;
-  box-shadow: 0 4px 10px ${({ theme }) => theme.colors.shadow};
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 16px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 8px 30px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3)"
+      : "0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)"};
   overflow: hidden;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
   transition: opacity 0.2s ease-in-out;
   pointer-events: none;
   z-index: 5000;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   visibility: ${({ $visible }) => ($visible ? "visible" : "hidden")};
 
   @media (max-width: 992px) {
-    display: none; // Ocultar en dispositivos móviles/tablets
+    display: none;
   }
 `;
 
@@ -621,25 +960,52 @@ const renderSpecifications = (product) => {
   const lineConfig =
     PRODUCT_LINE_CONFIG[product.lineaNegocio] || PRODUCT_LINE_CONFIG.DEFAULT;
 
+  // Filtrar y mapear las especificaciones con sus valores
+  const specsWithValues = lineConfig.specs
+    .map((specConfig) => {
+      const value = product.specs[specConfig.field];
+      if (value === null || value === undefined || value === "") return null;
+      
+      return {
+        field: specConfig.field,
+        label: specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label,
+        value: value,
+      };
+    })
+    .filter((spec) => spec !== null);
+
+  // Agrupar en pares para mostrar dos especificaciones por fila
+  const groupedSpecs = [];
+  for (let i = 0; i < specsWithValues.length; i += 2) {
+    groupedSpecs.push(specsWithValues.slice(i, i + 2));
+  }
+
   return (
     <SpecificationsSection>
       <SpecificationsTitle>Especificaciones técnicas</SpecificationsTitle>
       <SpecificationsTable>
         <tbody>
-          {lineConfig.specs.map((specConfig) => {
-            const value = product.specs[specConfig.field];
-
-            // Solo mostrar si hay un valor
-            if (value === null) return null;
-
+          {groupedSpecs.map((pair, rowIndex) => {
+            const getCellColor = (cellIndex) => {
+              const totalCellIndex = rowIndex * 2 + cellIndex;
+              // Patrón: blanca (0,3), gris (1,2) - se repite cada 4 celdas
+              return totalCellIndex % 4 === 0 || totalCellIndex % 4 === 3;
+            };
+            
             return (
-              <SpecRow key={specConfig.field}>
-                <SpecLabel>
-                  {specConfig.label === "Serie"
-                    ? "Alto/Serie"
-                    : specConfig.label}
-                </SpecLabel>
-                <SpecValue>{value}</SpecValue>
+              <SpecRow key={`row-${rowIndex}`}>
+                {pair.map((spec, cellIndex) => (
+                  <SpecCell key={spec.field} $isEven={getCellColor(cellIndex)}>
+                    <SpecItem>
+                      <SpecItemLabel>{spec.label}</SpecItemLabel>
+                      <SpecItemValue>{spec.value}</SpecItemValue>
+                    </SpecItem>
+                  </SpecCell>
+                ))}
+                {/* Si hay un número impar de especificaciones, agregar celda vacía */}
+                {pair.length === 1 && (
+                  <SpecCell key="empty" $isEven={getCellColor(1)}></SpecCell>
+                )}
               </SpecRow>
             );
           })}
@@ -1283,6 +1649,19 @@ const DetalleProducto = () => {
         {renderBreadcrumbs()}
         <ProductLayout>
           <ImageSection>
+            {/* Nombre del producto */}
+            <ProductTitle>{product.name}</ProductTitle>
+            
+            {/* Categoría */}
+            <Category>
+              {product.filtersByType &&
+              Object.keys(product.filtersByType).length > 0
+                ? Object.values(product.filtersByType)
+                    .flat() // Aplanar el array de arrays
+                    .join(", ")
+                : "Producto sin categoría"}
+            </Category>
+
             {/* Contenedor principal de la imagen con eventos de mouse */}
             <MainImageContainer
               ref={imageContainerRef}
@@ -1290,6 +1669,17 @@ const DetalleProducto = () => {
               onMouseLeave={handleMouseLeave}
               onMouseMove={handleMouseMove}
             >
+              {/* Badge de unidades disponibles en la esquina superior derecha */}
+              <StockBadge $inStock={product.stock > 0} $lowStock={false}>
+                {product.stock === 0
+                  ? "Sin Stock"
+                  : product.stock > 100
+                  ? "+100 Unidades"
+                  : `${product.stock} Unidad${
+                      product.stock !== 1 ? "es" : ""
+                    }`}
+              </StockBadge>
+
               <ProductImageWithFallback
                 src={resolvedImageSrc}
                 alt={product.name}
@@ -1314,201 +1704,152 @@ const DetalleProducto = () => {
                 />
               </ZoomWindow>
             </MainImageContainer>
+
+            {/* Pie de imagen con código y badge de empresa/marca */}
+            <ImageCaption>
+              <ImageCaptionLeft>
+                {product.originalData?.DMA_MATERIAL && (
+                  <CodeText>
+                    Cod: {product.originalData.DMA_MATERIAL}
+                  </CodeText>
+                )}
+                {product.originalData?.DMA_CODIGOPROVEEDOR && (
+                  <CodeText>
+                    Cod: {product.originalData.DMA_CODIGOPROVEEDOR}
+                  </CodeText>
+                )}
+              </ImageCaptionLeft>
+              <BrandCompanyBadge>
+                {product.empresa || product.empresaId} / {product.brand}
+              </BrandCompanyBadge>
+            </ImageCaption>
           </ImageSection>
 
           <InfoSection>
-            {/* Mostrar categorías desde filtersByType de forma amigable */}
-            <Category>
-              {product.filtersByType &&
-              Object.keys(product.filtersByType).length > 0
-                ? Object.values(product.filtersByType)
-                    .flat() // Aplanar el array de arrays
-                    .join(", ")
-                : "Producto sin categoría"}
-            </Category>
-            <ProductTitle>{product.name}</ProductTitle>
-            {product.originalData?.DMA_MATERIAL && (
-              <span style={{ fontSize: "0.9rem", color: "#666" }}>
-                Cod: {product.originalData.DMA_MATERIAL}
-              </span>
-            )}
-            {product.originalData?.DMA_CODIGOPROVEEDOR && (
-              <span style={{ fontSize: "0.9rem", color: "#666" }}>
-                Cod: {product.originalData.DMA_CODIGOPROVEEDOR}
-              </span>
-            )}
-
             {/* Precio en la parte superior */}
             <PriceContainer>
               <div
                 style={{
                   display: "flex",
-                  marginTop: "10px",
                   flexDirection: "row",
-                  gap: "5px",
+                  gap: "0.5rem",
                   alignItems: "flex-end",
+                  flexWrap: "wrap",
+                  flex: "1 1 0",
+                  minWidth: 0,
                 }}
               >
                 <CurrentPrice>${(priceWithIVA || 0).toFixed(2)}</CurrentPrice>
                 <IVAIndicator>IVA incluido</IVAIndicator>
+                {product.discount > 0 && (
+                  <>
+                    {product.discount > 0 && product.price != null && (
+                      <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
+                    )}
+                    <Discount>-{product.discount}%</Discount>
+                  </>
+                )}
               </div>
-              {product.discount > 0 && (
-                <>
-                  {product.discount > 0 && product.price != null && (
-                    <OriginalPrice>${product.price.toFixed(2)}</OriginalPrice>
-                  )}
-                  <Discount>-{product.discount}%</Discount>
-                </>
+              
+              {/* Controles de cantidad a la derecha del precio */}
+              {isClient && !isVisualizacion && product.stock > 0 && (
+                <QuantitySelector>
+                  <QuantityButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Solo ejecutar si mouseDown no ejecutó la acción ya
+                      if (!mouseDownExecutedRef.current) {
+                        decreaseQuantity();
+                      }
+                    }}
+                    onMouseDown={handleDecreaseMouseDown}
+                    onMouseUp={handleQuantityButtonMouseUp}
+                    onMouseLeave={handleQuantityButtonMouseLeave}
+                    onTouchStart={handleDecreaseMouseDown}
+                    onTouchEnd={handleQuantityButtonMouseUp}
+                    disabled={quantity <= 1}
+                    text={"-"}
+                  />
+                  <QuantityInput
+                    type="number"
+                    id={`quantity-${product.id}`}
+                    name={`quantity-${product.id}`}
+                    min="1"
+                    max={maxQuantity}
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    autoComplete="off"
+                  />
+                  <QuantityButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Solo ejecutar si mouseDown no ejecutó la acción ya
+                      if (!mouseDownExecutedRef.current) {
+                        increaseQuantity();
+                      }
+                    }}
+                    onMouseDown={handleIncreaseMouseDown}
+                    onMouseUp={handleQuantityButtonMouseUp}
+                    onMouseLeave={handleQuantityButtonMouseLeave}
+                    onTouchStart={handleIncreaseMouseDown}
+                    onTouchEnd={handleQuantityButtonMouseUp}
+                    disabled={quantity >= maxQuantity}
+                    text={"+"}
+                  />
+                </QuantitySelector>
               )}
             </PriceContainer>
-
-            {/* Nuevo indicador de stock posicionado debajo del precio */}
-            <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
-              <StockBadge $inStock={product.stock > 0} $lowStock={false}>
-                {product.stock === 0
-                  ? "Sin Stock"
-                  : product.stock > 100
-                  ? "+100 Unidades Disponibles"
-                  : `${product.stock} Unidad${
-                      product.stock !== 1 ? "es" : ""
-                    } Disponible${product.stock !== 1 ? "s" : ""}`}
-              </StockBadge>
-            </StockIndicator>
-            {/* Sección de cantidad y botón en la misma línea */}
+            
+            {/* Botón de agregar al carrito */}
             {isClient && !isVisualizacion && (
-              <QuantityControlsContainer>
-                {/* Controles de cantidad - solo mostrar si hay stock */}
-                {product.stock > 0 && (
-                  <QuantityWrapper>
-                    <QuantityLabel>Cantidad:</QuantityLabel>
-                    <QuantitySelector>
-                      <QuantityButton
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // Solo ejecutar si mouseDown no ejecutó la acción ya
-                          if (!mouseDownExecutedRef.current) {
-                            decreaseQuantity();
-                          }
-                        }}
-                        onMouseDown={handleDecreaseMouseDown}
-                        onMouseUp={handleQuantityButtonMouseUp}
-                        onMouseLeave={handleQuantityButtonMouseLeave}
-                        onTouchStart={handleDecreaseMouseDown}
-                        onTouchEnd={handleQuantityButtonMouseUp}
-                        disabled={quantity <= 1}
-                        text={"-"}
-                      />
-                      <QuantityInput
-                        type="number"
-                        id={`quantity-${product.id}`}
-                        name={`quantity-${product.id}`}
-                        min="1"
-                        max={maxQuantity}
-                        value={quantity}
-                        onChange={handleQuantityChange}
-                        autoComplete="off"
-                      />
-                      <QuantityButton
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // Solo ejecutar si mouseDown no ejecutó la acción ya
-                          if (!mouseDownExecutedRef.current) {
-                            increaseQuantity();
-                          }
-                        }}
-                        onMouseDown={handleIncreaseMouseDown}
-                        onMouseUp={handleQuantityButtonMouseUp}
-                        onMouseLeave={handleQuantityButtonMouseLeave}
-                        onTouchStart={handleIncreaseMouseDown}
-                        onTouchEnd={handleQuantityButtonMouseUp}
-                        disabled={quantity >= maxQuantity}
-                        text={"+"}
-                      />
-                    </QuantitySelector>
-                  </QuantityWrapper>
-                )}
-
-                {/* Botón de agregar al carrito */}
-                <AddToCartButtonWrapper>
-                  <Button
-                    leftIconName={
-                      product.stock === 0
-                        ? "FaShoppingCart"
-                        : currentInCart > 0 && !isButtonHovered
-                        ? "FaCheck"
-                        : "FaShoppingCart"
-                    }
-                    text={
-                      product.stock === 0
-                        ? "Sin Stock"
-                        : isAddingToCart
-                        ? "Agregando..."
-                        : currentInCart > 0 && !isButtonHovered
-                        ? `${currentInCart} en carrito`
-                        : "Agregar"
-                    }
-                    variant="solid"
-                    onClick={handleAddToCart}
-                    disabled={isAddingToCart || product.stock === 0}
-                    onMouseEnter={() => setIsButtonHovered(true)}
-                    onMouseLeave={() => setIsButtonHovered(false)}
-                    backgroundColor={({ theme }) =>
-                      product.stock === 0
-                        ? theme.colors.textLight
-                        : currentInCart > 0 && !isButtonHovered
-                        ? theme.colors.success
-                        : theme.colors.primary
-                    }
-                    size="medium"
-                    style={{ width: "100%" }}
-                  />
-                </AddToCartButtonWrapper>
-              </QuantityControlsContainer>
+              <AddToCartButtonWrapper>
+                <Button
+                  leftIconName={
+                    product.stock === 0
+                      ? "FaCartShopping"
+                      : currentInCart > 0 && !isButtonHovered
+                      ? "FaCheck"
+                      : "FaCartShopping"
+                  }
+                  text={
+                    product.stock === 0
+                      ? "Sin Stock"
+                      : isAddingToCart
+                      ? "Agregando..."
+                      : currentInCart > 0 && !isButtonHovered
+                      ? `${currentInCart} en carrito`
+                      : isButtonHovered && quantity > 0
+                      ? `Agregar ${quantity}`
+                      : "Agregar"
+                  }
+                  variant="solid"
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart || product.stock === 0}
+                  onMouseEnter={() => setIsButtonHovered(true)}
+                  onMouseLeave={() => setIsButtonHovered(false)}
+                  backgroundColor={({ theme }) =>
+                    product.stock === 0
+                      ? theme.colors.textLight
+                      : currentInCart > 0 && !isButtonHovered
+                      ? theme.colors.success
+                      : theme.colors.primary
+                  }
+                  size="medium"
+                  style={{ width: "100%" }}
+                />
+              </AddToCartButtonWrapper>
             )}
 
             <Description>
               {/* Información de marca y empresa */}
-              <div
-                style={{
-                  marginTop: "16px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #e0e0e0",
-                }}
-              >
+              <DescriptionSection>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span
-                    style={{
-                      marginBottom: "10px",
-                      fontSize: "1.1em",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Descripción
-                  </span>
-                  <div
-                    style={{
-                      color: "#666",
-                      fontSize: "0.85em",
-                      marginBottom: "10px",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    Marca: {product.brand} · Empresa:{" "}
-                    {product.empresa || product.empresaId}
-                  </div>
-                  <span
-                    style={{
-                      color: "#666",
-                      fontSize: "1rem",
-                      lineHeight: "1.6",
-                    }}
-                  >
-                    {product.description}
-                  </span>
+                  <DescriptionTitle>Descripción</DescriptionTitle>
+                  <DescriptionText>{product.description}</DescriptionText>
                 </div>
-              </div>
+              </DescriptionSection>
             </Description>
             {renderSpecifications(product)}
           </InfoSection>

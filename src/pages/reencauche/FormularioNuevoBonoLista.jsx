@@ -850,13 +850,13 @@ const FormularioNuevoBonoLista = ({
       >
         <ModalHeader>
           <ModalTitle>
-            <RenderIcon name="FaTicketAlt" size={18} />
+            <RenderIcon name="FaTicket" size={18} />
             Nuevo Bono
             {selectedClient &&
               ` - ${selectedClient.CUSTOMER_NAME} ${selectedClient.CUSTOMER_LASTNAME}`}
           </ModalTitle>
           <CloseButton onClick={onClose}>
-            <RenderIcon name="FaTimes" size={14} />
+            <RenderIcon name="FaXmark" size={14} />
           </CloseButton>
         </ModalHeader>
 
@@ -1176,7 +1176,7 @@ const FormularioNuevoBonoLista = ({
               text="Cancelar"
               variant="outlined"
               onClick={onClose}
-              leftIconName="FaTimes"
+              leftIconName="FaXmark"
               disabled={isSubmitting}
             />
           )}

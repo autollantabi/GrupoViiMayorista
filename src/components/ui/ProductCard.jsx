@@ -1334,7 +1334,7 @@ const ProductCard = ({
                   leftIconName={
                     quantityInCart > 0 && !isButtonHovered
                       ? "FaCheck"
-                      : "FaShoppingCart"
+                      : "FaCartShopping"
                   }
                   text={
                     product.stock === 0

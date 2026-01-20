@@ -378,7 +378,7 @@ const ExportToExcel = ({
                 Seleccionar Rango de Fecha
               </ModalTitle>
               <CloseButton onClick={() => setShowModal(false)}>
-                <RenderIcon name="FaTimes" size={16} />
+                <RenderIcon name="FaXmark" size={16} />
               </CloseButton>
             </ModalHeader>
 

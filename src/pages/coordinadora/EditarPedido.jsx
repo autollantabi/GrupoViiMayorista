@@ -2,15 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { pedidosMock } from "../../mock/coordinadora/pedidosMock";
-import {
-  FaArrowLeft,
-  FaSave,
-  FaTimes,
-  FaPlus,
-  FaTrash,
-  FaExclamationTriangle,
-} from "react-icons/fa";
 import { ROUTES } from "../../constants/routes";
+import RenderIcon from "../../components/ui/RenderIcon";
 
 // Estilos
 const PageContainer = styled.div`
@@ -452,7 +445,7 @@ const EditarPedidoCoordinador = () => {
     return (
       <PageContainer>
         <BackButton onClick={() => navigate(ROUTES.COORDINADOR.PEDIDOS)}>
-          <FaArrowLeft /> Volver a pedidos
+          <RenderIcon name="FaArrowLeft" size={14} /> Volver a pedidos
         </BackButton>
         <div>Pedido no encontrado</div>
       </PageContainer>
@@ -462,7 +455,7 @@ const EditarPedidoCoordinador = () => {
   return (
     <PageContainer>
       <BackButton onClick={() => navigate(`/coordinador/pedidos/${orderId}`)}>
-        <FaArrowLeft /> Volver al detalle del pedido
+        <RenderIcon name="FaArrowLeft" size={14} /> Volver al detalle del pedido
       </BackButton>
 
       <PageHeader>
@@ -472,17 +465,17 @@ const EditarPedidoCoordinador = () => {
           <DangerButton
             onClick={() => navigate(`/coordinador/pedidos/${orderId}`)}
           >
-            <FaTimes /> Cancelar
+            <RenderIcon name="FaCircleXmark" size={14} /> Cancelar
           </DangerButton>
           <PrimaryButton onClick={handleSubmit}>
-            <FaSave /> Guardar cambios
+            <RenderIcon name="FaSave" size={14} /> Guardar cambios
           </PrimaryButton>
         </ButtonContainer>
       </PageHeader>
 
       <AlertBox>
         <AlertIcon>
-          <FaExclamationTriangle />
+          <RenderIcon name="FaExclamationTriangle" size={14} />
         </AlertIcon>
         <AlertContent>
           <AlertTitle>Atención</AlertTitle>
@@ -649,7 +642,7 @@ const EditarPedidoCoordinador = () => {
                 <TableCell>${item.subtotal.toFixed(2)}</TableCell>
                 <TableCell>
                   <DangerButton onClick={() => removeItem(index)}>
-                    <FaTrash /> Eliminar
+                    <RenderIcon name="FaTrash" size={14} /> Eliminar
                   </DangerButton>
                 </TableCell>
               </TableRow>

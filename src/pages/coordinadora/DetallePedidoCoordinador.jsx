@@ -791,7 +791,7 @@ const DetallePedidoCoordinador = () => {
                 text="Cancelar"
                 variant="outlined"
                 size="small"
-                leftIconName="FaTimes"
+                leftIconName="FaXmark"
                 onClick={handleCancelEdit}
               />
               <Button
@@ -1127,7 +1127,7 @@ const DetallePedidoCoordinador = () => {
       <TwoColumns>
         <Section>
           <SectionTitle>
-            <RenderIcon name="FaInfoCircle" size={18} /> Información del pedido
+            <RenderIcon name="FaCircleInfo" size={18} /> Información del pedido
           </SectionTitle>
 
           <InfoItem>
@@ -1290,7 +1290,7 @@ const DetallePedidoCoordinador = () => {
             color: theme.colors.primary,
           }}
         >
-          <RenderIcon name="FaInfoCircle" size={14} />
+          <RenderIcon name="FaCircleInfo" size={14} />
           <span>
             IVA incluido. Todos los precios mostrados incluyen impuestos.
           </span>

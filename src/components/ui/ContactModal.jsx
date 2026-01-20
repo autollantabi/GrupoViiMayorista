@@ -203,7 +203,7 @@ const ContactModal = ({
           <Button
             variant="text"
             onClick={onClose}
-            leftIconName="FaTimes"
+            leftIconName="FaXmark"
             size="small"
           />
         </ModalHeader>

@@ -862,7 +862,7 @@ const DetallePedido = () => {
             <Button
               text="No se puede cancelar"
               variant="outlined"
-              leftIconName="FaTimesCircle"
+              leftIconName="FaCircleXmark"
               onClick={() =>
                 alert(
                   "Lo sentimos, no es posible cancelar este pedido ya que ha sido confirmado para su procesamiento."
@@ -897,7 +897,7 @@ const DetallePedido = () => {
       <TwoColumns>
         <Section>
           <SectionTitle>
-            <RenderIcon name="FaInfoCircle" size={18} /> Información Adicional
+            <RenderIcon name="FaCircleInfo" size={18} /> Información Adicional
           </SectionTitle>
 
           <InfoItem>
@@ -942,7 +942,7 @@ const DetallePedido = () => {
       <TwoColumns>
         <Section>
           <SectionTitle>
-            <RenderIcon name="FaShippingFast" size={18} /> Información de envío
+            <RenderIcon name="FaMapPin" size={18} /> Información de envío
           </SectionTitle>
 
           <InfoItem>
@@ -1049,7 +1049,7 @@ const DetallePedido = () => {
             color: theme.colors.primary,
           }}
         >
-          <RenderIcon name="FaInfoCircle" size={14} />
+          <RenderIcon name="FaCircleInfo" size={14} />
           <span>
             IVA incluido. Todos los precios mostrados incluyen impuestos.
           </span>

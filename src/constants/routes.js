@@ -28,6 +28,8 @@ export const ROUTES = {
     SEARCH: "/busqueda",
     REENCAUCHE: "/reencauche",
     APP_SHELL: "/app-shell",
+    XCOIN: "/xcoin",
+    CONTACTO: "/contacto",
   },
   REENCAUCHE: {
     HOME: "/reencauche/home",

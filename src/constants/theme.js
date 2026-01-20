@@ -122,6 +122,7 @@ const baseTheme = {
 export const lightTheme = {
   ...baseTheme,
   name: "light",
+  mode: "light",
   colors: {
     // Colores principales
     primary: "#fd4703",
@@ -177,6 +178,7 @@ export const lightTheme = {
 export const darkTheme = {
   ...baseTheme,
   name: "dark",
+  mode: "dark",
   colors: {
     // Colores principales
     primary: "#ff5722", // Naranja más brillante para mejor contraste en modo oscuro

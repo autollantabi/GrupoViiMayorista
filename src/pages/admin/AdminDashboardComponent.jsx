@@ -298,7 +298,7 @@ const AdminDashboardComponent = () => {
             description: "Pedido #ORD-2025-1010",
             user: "María García",
             time: "35 min",
-            icon: <RenderIcon name="FaShoppingCart" size={16} />,
+            icon: <RenderIcon name="FaCartShopping" size={16} />,
             color: theme.colors.success,
           },
           {
@@ -402,7 +402,7 @@ const AdminDashboardComponent = () => {
           <StatHeader>
             <StatTitle>Pedidos totales</StatTitle>
             <StatIcon color={theme.colors.warning}>
-              <RenderIcon name="FaShoppingCart" size={16} />
+              <RenderIcon name="FaCartShopping" size={16} />
             </StatIcon>
           </StatHeader>
           <StatValue>{stats.totalPedidos}</StatValue>
@@ -468,7 +468,7 @@ const AdminDashboardComponent = () => {
 
             <ActionCard>
               <ActionIcon color={theme.colors.success}>
-                <RenderIcon name="FaShoppingCart" size={16} />
+                <RenderIcon name="FaCartShopping" size={16} />
               </ActionIcon>
               <ActionContent>
                 <ActionTitle>Pedidos</ActionTitle>

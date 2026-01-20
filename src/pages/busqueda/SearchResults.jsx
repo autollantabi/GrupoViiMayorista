@@ -1060,8 +1060,6 @@ const SearchResults = () => {
 
   return (
     <PageContainer
-      backButtonText="Inicio"
-      backButtonOnClick={handleNavigate}
       style={{ padding: "16px" }}
     >
       <PageHeader>
@@ -1108,7 +1106,7 @@ const SearchResults = () => {
               placeholder="Buscar productos en todas las empresas..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              leftIconName="FaSearch"
+              leftIconName="FaMagnifyingGlass"
               fullWidth={true}
             />
           </SearchInputContainer>
@@ -1117,7 +1115,7 @@ const SearchResults = () => {
               text="Buscar"
               variant="solid"
               type="submit"
-              leftIconName="FaSearch"
+              leftIconName="FaMagnifyingGlass"
               disabled={!searchInput.trim()}
             />
             {query && (
@@ -1125,7 +1123,7 @@ const SearchResults = () => {
                 text="Limpiar"
                 variant="outlined"
                 onClick={handleClearSearch}
-                leftIconName="FaTimes"
+                leftIconName="FaXmark"
               />
             )}
           </SearchButtonContainer>
@@ -1135,7 +1133,7 @@ const SearchResults = () => {
       {/* Estado: No hay consulta de búsqueda */}
       {!loading && results === null && (
         <NoResultsContainer>
-          <RenderIcon name="FaSearch" size={30} />
+          <RenderIcon name="FaMagnifyingGlass" size={30} />
           <NoResultsTitle>Busca en todas las empresas</NoResultsTitle>
           <NoResultsText>
             Escribe el nombre del producto, marca o características que buscas
@@ -1173,7 +1171,7 @@ const SearchResults = () => {
                 {/* Mostrar aviso si hay productos restringidos */}
                 {results && results.some((product) => !product.hasAccess) && (
                   <RestrictedProductsNotice>
-                    <RenderIcon name="FaInfoCircle" size={16} />
+                    <RenderIcon name="FaCircleInfo" size={16} />
                     <span>
                       Algunos productos requieren autorización especial. Los
                       filtros se aplican solo a productos accesibles, mientras
@@ -1385,7 +1383,7 @@ const SearchResults = () => {
           <FiltersModalHeader>
             <FiltersModalTitle>Filtros y Ordenamiento</FiltersModalTitle>
             <CloseFiltersButton onClick={closeFiltersModal}>
-              <RenderIcon name="FaTimes" size={20} />
+              <RenderIcon name="FaXmark" size={20} />
             </CloseFiltersButton>
           </FiltersModalHeader>
 
@@ -1394,7 +1392,7 @@ const SearchResults = () => {
             {/* Mostrar aviso si hay productos restringidos */}
             {results && results.some((product) => !product.hasAccess) && (
               <RestrictedProductsNotice>
-                <RenderIcon name="FaInfoCircle" size={16} />
+                <RenderIcon name="FaCircleInfo" size={16} />
                 <span>
                   Algunos productos requieren autorización especial. Los filtros
                   se aplican solo a productos accesibles, mientras que los
@@ -1464,7 +1462,7 @@ const SearchResults = () => {
       {/* Estado: No hay resultados para la búsqueda */}
       {!loading && results && results.length === 0 && (
         <NoResultsContainer>
-          <RenderIcon name="FaSearch" size={30} />
+          <RenderIcon name="FaMagnifyingGlass" size={30} />
           <NoResultsTitle>No se encontraron resultados</NoResultsTitle>
           <NoResultsText>
             No pudimos encontrar productos que coincidan con "{query}". Intenta

@@ -62,45 +62,69 @@ const ContentWithFilters = styled.div`
 `;
 
 const WelcomeScreen = styled.div`
-  padding: 20px;
+  padding: 4rem 2rem;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  position: relative;
 
   @media (min-width: 768px) {
-    padding: 40px;
+    padding: 5rem 3rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 6rem 4rem;
   }
 `;
 
 const WelcomeHeader = styled.div`
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 4rem;
+  position: relative;
+  animation: fadeInUp 0.8s ease-out;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 3rem;
+  }
 `;
 
 const WelcomeTitle = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
-  margin: 0 0 16px 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  margin: 0 0 1.5rem 0;
   line-height: 1.2;
+  letter-spacing: -0.02em;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 50%, ${theme.colors.secondary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 50%, ${theme.colors.secondary} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 
   @media (max-width: 768px) {
-    font-size: 2rem;
-    margin-bottom: 12px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.75rem;
+    margin-bottom: 1rem;
   }
 `;
 
 const WelcomeDescription = styled.p`
-  font-size: 1.1rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin: 0;
-  line-height: 1.6;
-  max-width: 600px;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: ${({ theme }) => theme.colors.textSecondary};
   margin: 0 auto;
+  line-height: 1.7;
+  max-width: 700px;
+  font-weight: 400;
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -110,100 +134,134 @@ const WelcomeDescription = styled.p`
 const LinesGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-  margin-top: 40px;
+  gap: 2rem;
+  margin-top: 3rem;
   justify-items: center;
+  animation: fadeInUp 0.8s ease-out 0.2s backwards;
 
   @media (min-width: 640px) {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    margin-top: 60px;
+    gap: 2rem;
+    margin-top: 4rem;
     justify-content: center;
   }
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2.5rem;
     justify-content: center;
   }
 `;
 
 const LineCard = styled.div`
   background: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  padding: 32px 24px;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
   cursor: pointer;
   min-width: 350px;
-  max-width: 360px;
+  max-width: 380px;
   width: 100%;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 2px 8px rgba(0, 0, 0, 0.06)"};
+
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px);
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 12px 32px rgba(0, 0, 0, 0.25)"
+        : "0 12px 32px rgba(0, 0, 0, 0.12)"};
     border-color: ${({ theme }) => theme.colors.primary};
+
+    &::before {
+      transform: scaleX(1);
+    }
+  }
+
+  &:active {
+    transform: translateY(-3px);
   }
 
   @media (max-width: 768px) {
-    padding: 24px 20px;
+    padding: 2rem 1.5rem;
     min-width: 100%;
     max-width: 100%;
+    border-radius: 16px;
   }
 `;
 
 const LineIcon = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
   color: ${({ theme }) => theme.colors.primary};
   display: flex;
   justify-content: center;
+  transition: transform 0.3s ease;
+
+  ${LineCard}:hover & {
+    transform: scale(1.1);
+  }
 
   @media (max-width: 768px) {
-    margin-bottom: 16px;
+    margin-bottom: 1.25rem;
   }
 `;
 
 const LineTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
-  margin: 0 0 12px 0;
+  margin: 0 0 0.75rem 0;
   text-align: center;
+  line-height: 1.3;
 
   @media (max-width: 768px) {
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
   }
 `;
 
 const LineDescription = styled.p`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin: 0 0 16px 0;
-  line-height: 1.5;
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin: 0 0 1.25rem 0;
+  line-height: 1.6;
   text-align: center;
 
   @media (max-width: 768px) {
-    font-size: 0.85rem;
-    margin-bottom: 12px;
+    margin-bottom: 1rem;
   }
 `;
 
 const LineCount = styled.span`
   display: inline-block;
-  background: ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primary}dd)`
+      : theme.colors.primary};
   color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
   text-align: center;
   width: 100%;
+  box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}30`};
+  transition: all 0.3s ease;
+
+  ${LineCard}:hover & {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px ${({ theme }) => `${theme.colors.primary}40`};
+  }
 
   @media (max-width: 768px) {
-    font-size: 0.75rem;
-    padding: 5px 10px;
+    font-size: 0.8rem;
+    padding: 0.45rem 1rem;
   }
 `;
 
@@ -244,38 +302,182 @@ const LoadingText = styled.p`
 const UnauthorizedContainer = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  gap: 20px;
-  min-height: 60vh;
+  padding: 4rem 2rem;
+  gap: 2rem;
+  min-height: calc(100dvh - 45px);
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface} 100%)`
+      : `linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)`};
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `radial-gradient(ellipse at top center, ${theme.colors.primary}15 0%, transparent 50%),
+           radial-gradient(ellipse at bottom center, ${theme.colors.warning}10 0%, transparent 50%)`
+        : `radial-gradient(ellipse at top center, ${theme.colors.primary}10 0%, transparent 50%),
+           radial-gradient(ellipse at bottom center, ${theme.colors.warning}08 0%, transparent 50%)`};
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 
   @media (max-width: 768px) {
-    padding: 40px 15px;
-    gap: 16px;
+    padding: 3rem 1.5rem;
+    gap: 1.5rem;
+  }
+`;
+
+const UnauthorizedContent = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: center;
+
+  @media (max-width: 968px) {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+`;
+
+const UnauthorizedLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const UnauthorizedRight = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const UnauthorizedIconWrapper = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.warning}30, ${theme.colors.warning}20)`
+      : `linear-gradient(135deg, ${theme.colors.warning}20, ${theme.colors.warning}15)`};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px ${({ theme }) => `${theme.colors.warning}30`};
+  border: 2px solid ${({ theme }) => `${theme.colors.warning}40`};
+  animation: fadeInUp 0.6s ease-out;
+  flex-shrink: 0;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 50px;
+    height: 50px;
+  }
+`;
+
+const TitleWithIcon = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeInUp 0.6s ease-out 0.1s backwards;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
   }
 `;
 
 const UnauthorizedTitle = styled.h2`
   color: ${({ theme }) => theme.colors.text};
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
   margin: 0;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.warning} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.warning} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.6s ease-out 0.1s backwards;
+  line-height: 1.2;
 
   @media (max-width: 768px) {
-    font-size: 1.5rem;
+    text-align: center;
   }
 `;
 
 const UnauthorizedMessage = styled.p`
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 1.1rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: clamp(1rem, 2vw, 1.15rem);
   margin: 0;
-  max-width: 500px;
+  line-height: 1.7;
+  animation: fadeInUp 0.6s ease-out 0.2s backwards;
+
+  strong {
+    color: ${({ theme }) => theme.colors.text};
+    font-weight: 600;
+  }
 
   @media (max-width: 768px) {
+    text-align: center;
     font-size: 1rem;
+  }
+`;
+
+const UnauthorizedFeatures = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeInUp 0.6s ease-out 0.3s backwards;
+
+  @media (max-width: 768px) {
+    align-items: center;
+  }
+`;
+
+const UnauthorizedFeature = styled.li`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1rem;
+
+  svg {
+    color: ${({ theme }) => theme.colors.warning};
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    justify-content: center;
   }
 `;
 
@@ -307,42 +509,65 @@ const UnauthorizedButton = styled.button`
 
 const AccessRequestForm = styled.form`
   width: 100%;
-  max-width: 500px;
-  margin-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
+  background: ${({ theme }) => theme.colors.surface};
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 10px 40px rgba(0, 0, 0, 0.2)"
+      : "0 10px 40px rgba(0, 0, 0, 0.08)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  animation: fadeInUp 0.6s ease-out 0.3s backwards;
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+    gap: 1.25rem;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 `;
 
 const FormLabel = styled.label`
   color: ${({ theme }) => theme.colors.text};
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 `;
 
 const FormInput = styled.input`
-  padding: 12px 16px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 12px;
   font-size: 1rem;
-  background: ${({ theme }) => theme.colors.surface};
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? theme.colors.background : "#ffffff"};
   color: ${({ theme }) => theme.colors.text};
   transition: all 0.2s ease;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.colors.primary}20`};
   }
 
   &::placeholder {
     color: ${({ theme }) => theme.colors.textLight};
+  }
+
+  &:disabled {
+    background: ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.background}80` : "#f3f4f6"};
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 `;
 
@@ -373,19 +598,28 @@ const SubmitButton = styled.button`
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px ${({ theme }) => `${theme.colors.primary}30`};
 
   &:hover:not(:disabled) {
     background: ${({ theme }) =>
       theme.colors.primaryDark || theme.colors.primary};
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 25px ${({ theme }) => `${theme.colors.primary}40`};
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
@@ -396,31 +630,51 @@ const SubmitButton = styled.button`
 `;
 
 const SuccessMessage = styled.div`
-  background: ${({ theme }) => theme.colors.success}15;
-  border: 1px solid ${({ theme }) => theme.colors.success};
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.success}20`
+      : `${theme.colors.success}15`};
+  border: 2px solid ${({ theme }) => theme.colors.success};
   color: ${({ theme }) => theme.colors.success};
-  padding: 16px 20px;
-  border-radius: 8px;
+  padding: 2rem;
+  border-radius: 16px;
   text-align: center;
-  margin-top: 24px;
-  max-width: 500px;
+  margin-top: 1rem;
+  max-width: 550px;
+  box-shadow: 0 4px 20px ${({ theme }) => `${theme.colors.success}20`};
+  animation: fadeInUp 0.6s ease-out;
+
+  p {
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  strong {
+    font-weight: 700;
+  }
 `;
 
-const BackButton = styled.button`
-  background: transparent;
-  color: ${({ theme }) => theme.colors.textLight};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
+const BackLink = styled.a`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  margin-bottom: 1rem;
+  text-decoration: none;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.surface};
-    border-color: ${({ theme }) => theme.colors.textLight};
+    color: ${({ theme }) => theme.colors.primary};
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    align-self: center;
   }
 `;
 
@@ -714,25 +968,49 @@ const Catalog = () => {
         <CatalogContainer>
           <MainContent>
             <UnauthorizedContainer>
-              <RenderIcon
-                name="FaLock"
-                size={60}
-                style={{ color: "var(--color-error, #ef4444)" }}
-              />
-              <UnauthorizedTitle>
-                Solicitar Acceso a {empresaName}
-              </UnauthorizedTitle>
-
               {!requestSubmitted ? (
-                <>
-                  <UnauthorizedMessage>
-                    No tienes permisos para acceder al catálogo de{" "}
-                    <strong>{empresaName}</strong>. Completa el siguiente
-                    formulario para solicitar acceso y nos contactaremos
-                    contigo.
-                  </UnauthorizedMessage>
+                <UnauthorizedContent>
+                  <UnauthorizedLeft>
+                    <BackLink onClick={(e) => { e.preventDefault(); navigate("/"); }}>
+                      <RenderIcon name="FaArrowLeft" size={14} />
+                      Volver al Inicio
+                    </BackLink>
+                    <TitleWithIcon>
+                      <UnauthorizedIconWrapper>
+                        <RenderIcon
+                          name="FaLock"
+                          size={30}
+                          style={{ color: "var(--color-warning, #f59e0b)" }}
+                        />
+                      </UnauthorizedIconWrapper>
+                      <UnauthorizedTitle>
+                        Solicitar Acceso a {empresaName}
+                      </UnauthorizedTitle>
+                    </TitleWithIcon>
+                    <UnauthorizedMessage>
+                      No tienes permisos para acceder al catálogo de{" "}
+                      <strong>{empresaName}</strong>. Completa el siguiente
+                      formulario para solicitar acceso y nos contactaremos
+                      contigo.
+                    </UnauthorizedMessage>
+                    <UnauthorizedFeatures>
+                      <UnauthorizedFeature>
+                        <RenderIcon name="FaCircleCheck" size={18} />
+                        <span>Proceso rápido y sencillo</span>
+                      </UnauthorizedFeature>
+                      <UnauthorizedFeature>
+                        <RenderIcon name="FaCircleCheck" size={18} />
+                        <span>Respuesta en 24-48 horas</span>
+                      </UnauthorizedFeature>
+                      <UnauthorizedFeature>
+                        <RenderIcon name="FaCircleCheck" size={18} />
+                        <span>Acceso completo al catálogo</span>
+                      </UnauthorizedFeature>
+                    </UnauthorizedFeatures>
+                  </UnauthorizedLeft>
 
-                  <AccessRequestForm onSubmit={handleAccessRequestSubmit}>
+                  <UnauthorizedRight>
+                    <AccessRequestForm onSubmit={handleAccessRequestSubmit}>
                     {/* Información del usuario (solo lectura) */}
                     <FormGroup>
                       <FormLabel>RUC / Cédula</FormLabel>
@@ -740,10 +1018,6 @@ const Catalog = () => {
                         type="text"
                         value={user?.ACCOUNT_USER || "No disponible"}
                         disabled
-                        style={{
-                          backgroundColor: "#f3f4f6",
-                          cursor: "not-allowed",
-                        }}
                       />
                     </FormGroup>
 
@@ -753,10 +1027,6 @@ const Catalog = () => {
                         type="text"
                         value={user?.NAME_USER || "No disponible"}
                         disabled
-                        style={{
-                          backgroundColor: "#f3f4f6",
-                          cursor: "not-allowed",
-                        }}
                       />
                     </FormGroup>
 
@@ -766,10 +1036,6 @@ const Catalog = () => {
                         type="email"
                         value={user?.EMAIL || "No disponible"}
                         disabled
-                        style={{
-                          backgroundColor: "#f3f4f6",
-                          cursor: "not-allowed",
-                        }}
                       />
                     </FormGroup>
 
@@ -803,34 +1069,30 @@ const Catalog = () => {
                         "Enviar Solicitud"
                       )}
                     </SubmitButton>
-                  </AccessRequestForm>
-
-                  <BackButton onClick={() => navigate("/")}>
-                    Volver al Inicio
-                  </BackButton>
-                </>
+                    </AccessRequestForm>
+                  </UnauthorizedRight>
+                </UnauthorizedContent>
               ) : (
                 <>
                   <SuccessMessage>
                     <RenderIcon
-                      name="FaCheckCircle"
-                      size={40}
-                      style={{ marginBottom: "12px" }}
+                      name="FaCircleCheck"
+                      size={48}
+                      style={{ marginBottom: "1rem", display: "block", margin: "0 auto 1rem" }}
                     />
-                    <p
-                      style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}
-                    >
+                    <p style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>
                       ¡Solicitud Enviada Exitosamente!
                     </p>
-                    <p style={{ margin: "8px 0 0 0" }}>
+                    <p style={{ margin: "0.75rem 0 0 0", fontSize: "1rem" }}>
                       Hemos recibido tu solicitud de acceso a{" "}
                       <strong>{empresaName}</strong>. Nos contactaremos contigo
                       pronto.
                     </p>
                   </SuccessMessage>
-                  <UnauthorizedButton onClick={() => navigate("/")}>
+                  <BackLink onClick={(e) => { e.preventDefault(); navigate("/"); }}>
+                    <RenderIcon name="FaArrowLeft" size={14} />
                     Volver al Inicio
-                  </UnauthorizedButton>
+                  </BackLink>
                 </>
               )}
             </UnauthorizedContainer>

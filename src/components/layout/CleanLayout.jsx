@@ -4,10 +4,13 @@ import styled from "styled-components";
 const CleanContainer = styled.div`
   width: 100%;
   min-height: 100vh;
-  height: 100%;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background-color: ${({theme}) => theme.colors.background};
 `;
 

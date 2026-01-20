@@ -734,7 +734,7 @@ const BonosActivados = () => {
                 placeholder="Buscar por Master, factura, cliente o CI/RUC..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                leftIconName="FaSearch"
+                leftIconName="FaMagnifyingGlass"
                 style={{
                   minWidth: "200px",
                   width: isMobile ? "100%" : "auto",
@@ -761,7 +761,7 @@ const BonosActivados = () => {
           {filteredGrupos.length === 0 ? (
             <EmptyState>
               <EmptyIcon>
-                <RenderIcon name="FaSearch" size={48} />
+                <RenderIcon name="FaMagnifyingGlass" size={48} />
               </EmptyIcon>
               <EmptyTitle>No se encontraron bonos</EmptyTitle>
               <EmptyDescription>
@@ -968,7 +968,7 @@ const BonosActivados = () => {
                 bonos
               </ModalTitle>
               <CloseButton onClick={handleCloseImportModal}>
-                <RenderIcon name="FaTimes" size={18} />
+                <RenderIcon name="FaXmark" size={18} />
               </CloseButton>
             </ModalHeader>
 
@@ -976,7 +976,7 @@ const BonosActivados = () => {
               <UploadsColumn>
                 <UploadSection>
                   <UploadTitle>
-                    <RenderIcon name="FaCheckCircle" size={16} />
+                    <RenderIcon name="FaCircleCheck" size={16} />
                     Suba aquí para usar bonos
                   </UploadTitle>
                   <UploadHint>
@@ -1045,7 +1045,7 @@ const BonosActivados = () => {
                   <ResultSection>
                     <ResultHeader>
                       <RenderIcon
-                        name={processType === "use" ? "FaCheckCircle" : "FaBan"}
+                        name={processType === "use" ? "FaCircleCheck" : "FaBan"}
                         size={18}
                       />
                       Resumen de procesamiento (

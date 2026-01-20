@@ -3,7 +3,7 @@ import RenderIcon from "../ui/RenderIcon";
 
 const PageContainerStyled = styled.div`
   max-width: ${({ $fullWidth }) => ($fullWidth ? "100%" : "1400px")};
-  margin: 5px auto;
+  margin: auto;
   flex-grow: 1;
 `;
 

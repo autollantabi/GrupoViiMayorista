@@ -80,7 +80,7 @@ const useCatalogFlow = (
       LLANTAS: "FaCar",
       "LLANTAS MOTO": "FaMotorcycle",
       LUBRICANTES: "FaOilCan",
-      HERRAMIENTAS: "FaTools",
+      HERRAMIENTAS: "FaWrench",
     };
     return icons[linea] || "FaBox";
   };

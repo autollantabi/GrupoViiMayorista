@@ -718,7 +718,7 @@ const UsersAdministration = () => {
         <div style={{ display: "flex", gap: "16px" }}>
           <SearchContainer>
             <SearchIcon>
-              <RenderIcon name={"FaSearch"} size={14} />
+              <RenderIcon name={"FaMagnifyingGlass"} size={14} />
             </SearchIcon>
             <SearchInput
               type="text"
@@ -781,7 +781,7 @@ const UsersAdministration = () => {
             <ModalHeader>
               <ModalTitle>Crear Nuevo Usuario</ModalTitle>
               <RenderIcon
-                name={"FaTimes"}
+                name={"FaXmark"}
                 size={20}
                 onClick={handleCloseModals}
               />
@@ -878,7 +878,7 @@ const UsersAdministration = () => {
             <ModalHeader>
               <ModalTitle>Editar Usuario</ModalTitle>
               <RenderIcon
-                name={"FaTimes"}
+                name={"FaXmark"}
                 size={20}
                 onClick={handleCloseModals}
               />
@@ -1001,7 +1001,7 @@ const UsersAdministration = () => {
             <ModalHeader>
               <ModalTitle>Eliminar Usuario</ModalTitle>
               <RenderIcon
-                name={"FaTimes"}
+                name={"FaXmark"}
                 size={20}
                 onClick={handleCloseModals}
               />

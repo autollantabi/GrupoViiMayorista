@@ -968,7 +968,7 @@ const VerificarBono = () => {
 
             <InfoSection>
               <SectionTitle>
-                <RenderIcon name="FaTicketAlt" size={14} />
+                <RenderIcon name="FaTicket" size={14} />
                 Lista de Bonos ({selectedCount} seleccionados)
               </SectionTitle>
               <BonosList>
@@ -1234,7 +1234,7 @@ const VerificarBono = () => {
 
             <InfoSection>
               <SectionTitle>
-                <RenderIcon name="FaTicketAlt" size={14} />
+                <RenderIcon name="FaTicket" size={14} />
                 Lista de Bonos ({selectedCount} seleccionados)
               </SectionTitle>
               <BonosList>
@@ -1278,7 +1278,7 @@ const VerificarBono = () => {
                                 }}
                                 disabled={selectedBonos[bono.ID_BONUS]}
                               >
-                                <RenderIcon name="FaTimes" size={10} />
+                                <RenderIcon name="FaXmark" size={10} />
                                 Rechazar
                               </SmallButton>
                             )}

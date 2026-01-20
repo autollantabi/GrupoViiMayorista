@@ -18,9 +18,23 @@ import { api_cart_deleteProductsFromCart } from "../../api/cart/apiCart";
 const PageTitle = styled.div`
   display: flex;
   align-items: center;
-  margin: 0 0 12px 0;
+  margin: 0 0 2rem 0;
   color: ${({ theme }) => theme.colors.text};
-  gap: 12px;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    background: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+        : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
 `;
 
 const CartEmptyState = styled.div`
@@ -28,23 +42,35 @@ const CartEmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 4rem 2rem;
   text-align: center;
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+
+  @media (max-width: 768px) {
+    padding: 3rem 1.5rem;
+    border-radius: 16px;
+  }
 `;
 
 const EmptyCartIcon = styled.div`
-  font-size: 4rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-bottom: 16px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const EmptyCartText = styled.p`
-  font-size: 1.2rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-bottom: 24px;
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: 2rem;
+  font-weight: 500;
 `;
 
 const CartLayout = styled.div`
@@ -60,66 +86,118 @@ const CartLayout = styled.div`
 const CartItemsList = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    border-radius: 16px;
+  }
 `;
 
 const CartItemContainer = styled.div`
   display: flex;
-  padding: 16px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 1.5rem;
+  border-bottom: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+  gap: 1.5rem;
+  transition: background-color 0.2s ease;
 
   &:last-child {
     border-bottom: none;
   }
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      theme.mode === "dark" ? `${theme.colors.background}50` : `${theme.colors.background}`};
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 1rem;
+    flex-direction: column;
+  }
 `;
 
 const ItemImage = styled.img`
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 12px;
   background-color: ${({ theme }) => theme.colors.white};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+    align-self: center;
+  }
 `;
 
 const ImagePlaceholder = styled.div`
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.background}80` : "#f5f5f5"};
   color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-align: center;
-  padding: 10px;
-  border-radius: 4px;
-  border: 2px dashed ${({ theme }) => theme.colors.border};
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px dashed ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+  }
 `;
 
 const ItemDetails = styled.div`
   flex: 1;
-  padding: 0 16px;
+  padding: 0 1rem;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
 `;
 
 const ItemName = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 1rem;
+  margin: 0;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
   color: ${({ theme }) => theme.colors.text};
   cursor: pointer;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: color 0.2s ease;
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
-    text-decoration: underline;
   }
 `;
 
 const ItemBrand = styled.span`
   font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-weight: 500;
 `;
 
 const ItemPricing = styled.div`
@@ -188,18 +266,40 @@ const QuantityInput = styled.input`
 const OrderSummary = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
-  padding: 20px;
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  padding: 2rem;
   height: fit-content;
+  position: sticky;
+  top: 70px;
+
+  @media (max-width: 768px) {
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: static;
+  }
 `;
 
 const SummaryTitle = styled.h2`
-  font-size: 1.2rem;
-  margin: 0 0 10px 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: clamp(1.2rem, 3vw, 1.4rem);
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   color: ${({ theme }) => theme.colors.text};
+  font-weight: 700;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const SummaryRow = styled.div`
@@ -252,40 +352,89 @@ const StockAlertBanner = styled.div`
 `;
 
 const ShippingSection = styled.div`
-  margin: 24px 0;
+  margin: 2rem 0;
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  border-radius: 8px;
-  box-shadow: 0 2px 8px ${({ theme }) => theme.colors.shadow};
-  padding: 20px;
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.2rem;
-  margin: 0 0 16px 0;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  margin: 0 0 1.5rem 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.75rem;
   color: ${({ theme }) => theme.colors.text};
+  font-weight: 700;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const AddressCard = styled.div`
-  border: 1px solid
+  border: 2px solid
     ${({ theme, selected }) =>
-      selected ? theme.colors.primary : theme.colors.border};
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 12px;
+      selected
+        ? theme.colors.primary
+        : theme.mode === "dark"
+        ? `${theme.colors.border}40`
+        : `${theme.colors.border}30`};
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 1rem;
   background-color: ${({ theme, selected }) =>
-    selected ? `${theme.colors.primary || "#E3F2FD"}15` : "transparent"};
+    selected
+      ? theme.mode === "dark"
+        ? `${theme.colors.primary}15`
+        : `${theme.colors.primary}08`
+      : theme.mode === "dark"
+      ? `${theme.colors.background}80`
+      : "transparent"};
+  transition: all 0.3s ease;
+  box-shadow: ${({ theme, selected }) =>
+    selected
+      ? theme.mode === "dark"
+        ? "0 4px 16px rgba(0, 0, 0, 0.15)"
+        : "0 4px 16px rgba(0, 0, 0, 0.08)"
+      : "none"};
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-      `${theme.colors.primary || "#E3F2FD"}15`};
+      theme.mode === "dark"
+        ? `${theme.colors.primary}12`
+        : `${theme.colors.primary}08`};
+    transform: translateY(-2px);
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 6px 20px rgba(0, 0, 0, 0.2)"
+        : "0 6px 20px rgba(0, 0, 0, 0.1)"};
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 12px;
   }
 `;
 
@@ -325,20 +474,34 @@ const IconButton = styled(Button)`
 const NewAddressButton = styled(Button)`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: none;
-  border: 1px dashed ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  padding: 12px;
+  justify-content: center;
+  gap: 0.75rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.background}80` : "transparent"};
+  border: 2px dashed ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 12px;
+  padding: 1rem;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 1rem;
   cursor: pointer;
   color: ${({ theme }) => theme.colors.primary};
+  font-weight: 600;
+  transition: all 0.3s ease;
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-      `${theme.colors.primaryLight || "#E3F2FD"}15`};
+      theme.mode === "dark"
+        ? `${theme.colors.primary}15`
+        : `${theme.colors.primary}08`};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}20`};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+    border-radius: 10px;
   }
 `;
 
@@ -346,40 +509,115 @@ const NewAddressButton = styled(Button)`
 const CompanyTabs = styled.div`
   display: flex;
   overflow-x: auto;
-  margin-bottom: 24px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 2rem;
+  border-bottom: 2px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  gap: 0.5rem;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    height: 2px;
+    background: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `linear-gradient(90deg, ${theme.colors.primary}40, transparent)`
+        : `linear-gradient(90deg, ${theme.colors.primary}30, transparent)`};
+    width: 100%;
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
 `;
 
-const CompanyTab = styled(Button)`
-  padding: 12px 24px;
+const CompanyTab = styled.button`
+  padding: 0.875rem 1.5rem;
   background: none;
   border: none;
-  border-bottom: 2px solid
+  border-bottom: 3px solid
     ${({ theme, $active }) => ($active ? theme.colors.primary : "transparent")};
   color: ${({ theme, $active }) =>
-    $active ? theme.colors.primary : theme.colors.textLight};
-  font-weight: ${({ $active }) => ($active ? 600 : 400)};
+    $active ? theme.colors.primary : theme.colors.textSecondary};
+  font-weight: ${({ $active }) => ($active ? "600" : "500")};
+  font-size: 0.95rem;
   cursor: pointer;
   white-space: nowrap;
-  border-radius: 0;
+  border-radius: 12px 12px 0 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: ${({ theme, $active }) =>
+    $active
+      ? theme.mode === "dark"
+        ? `${theme.colors.primary}10`
+        : `${theme.colors.primary}08`
+      : "transparent"};
+
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: ${({ theme }) => theme.colors.primary};
+    transform: ${({ $active }) => ($active ? "scaleX(1)" : "scaleX(0)")};
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme, $active }) =>
+      !$active
+        ? theme.mode === "dark"
+          ? `${theme.colors.primary}08`
+          : `${theme.colors.primary}05`
+        : theme.mode === "dark"
+        ? `${theme.colors.primary}15`
+        : `${theme.colors.primary}12`};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
   }
 `;
 
 const CompanySummary = styled.div`
-  padding: 12px;
-  margin-bottom: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 16px;
+  background-color: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.background}50` : `${theme.colors.background}`};
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: ${({ theme }) => `${theme.colors.primary}50`};
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 4px 16px rgba(0, 0, 0, 0.15)"
+        : "0 4px 16px rgba(0, 0, 0, 0.08)"};
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
 `;
 
 const CompanyName = styled.div`
-  font-weight: bold;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed ${({ theme }) => theme.colors.border};
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const ValidationWarning = styled.div`
@@ -389,24 +627,27 @@ const ValidationWarning = styled.div`
 `;
 
 const EmptyAddressState = styled.div`
-  padding: 16px;
+  padding: 2rem 1rem;
   text-align: center;
-  color: ${({ theme }) => theme.colors.textLight};
-  border: 1px dashed ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
-  background-color: ${({ theme }) => `${theme.colors.background}80`};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  border: 2px dashed ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  background-color: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.background}80` : `${theme.colors.background}`};
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  min-height: 100px;
+  gap: 0.75rem;
 
-  &::before {
-    content: "📍";
-    font-size: 1.5rem;
-    margin-bottom: 8px;
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+    min-height: 80px;
   }
 `;
 
@@ -427,23 +668,38 @@ const ProcessingCard = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  padding: 24px;
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 25px rgba(0, 0, 0, 0.3)"
+      : "0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 25px rgba(0, 0, 0, 0.15)"};
+  padding: 2.5rem;
   width: 90%;
-  max-width: 400px;
+  max-width: 450px;
   text-align: center;
   z-index: 1000;
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+    max-width: 90%;
+  }
 `;
 
 const ProcessingTitle = styled.h3`
-  margin: 0 0 16px 0;
+  margin: 0 0 1rem 0;
   color: ${({ theme }) => theme.colors.text};
+  font-size: clamp(1.2rem, 3vw, 1.4rem);
+  font-weight: 700;
 `;
 
 const ProcessingMessage = styled.p`
-  margin-bottom: 20px;
-  color: ${({ theme }) => theme.colors.textLight};
+  margin-bottom: 1.5rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1rem;
+  line-height: 1.6;
 `;
 
 const SuccessIcon = styled.div`
@@ -460,14 +716,50 @@ const ProgressIndicator = styled.div`
   gap: 8px;
 `;
 
+const LineTitle = styled.h3`
+  margin-bottom: 1rem;
+  padding: 1rem 1.5rem;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 16px;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+
+  @media (max-width: 768px) {
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    font-size: 1rem;
+  }
+`;
+
 const CompanyCheckoutButton = styled(Button)`
   width: 100%;
-  margin-top: 16px;
+  margin-top: 1rem;
   background-color: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.white};
-  &:hover {
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 0.875rem 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}30`};
+
+  &:hover:not(:disabled) {
     background-color: ${({ theme }) =>
       theme.colors.primaryDark || theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px ${({ theme }) => `${theme.colors.primary}40`};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -570,9 +862,8 @@ const MemoizedProductImage = memo(({ src, alt }) => {
   if (imageError || !imageSrc) {
     return (
       <ImagePlaceholder>
-        <div>
-          <div>Imagen no disponible</div>
-        </div>
+        <RenderIcon name="FaImage" size={32} />
+        <div>Imagen no disponible</div>
       </ImagePlaceholder>
     );
   }
@@ -581,6 +872,7 @@ const MemoizedProductImage = memo(({ src, alt }) => {
     <>
       {imageLoading && (
         <ImagePlaceholder>
+          <RenderLoader size="24px" showSpinner={true} />
           <div>Cargando...</div>
         </ImagePlaceholder>
       )}
@@ -1100,7 +1392,9 @@ const Carrito = () => {
       <PageContainer style={{ padding: "16px" }}>
         <PageTitle>Carrito de compras</PageTitle>
         <CartEmptyState>
-          <EmptyCartIcon>⏳</EmptyCartIcon>
+          <EmptyCartIcon>
+            <RenderLoader size="48px" showSpinner={true} floatingSpinner={true} />
+          </EmptyCartIcon>
           <EmptyCartText>Cargando tu carrito...</EmptyCartText>
         </CartEmptyState>
       </PageContainer>
@@ -1115,7 +1409,7 @@ const Carrito = () => {
         <PageTitle>Carrito de compras</PageTitle>
         <CartEmptyState>
           <RenderIcon
-            name="FaShoppingCart"
+            name="FaCartShopping"
             size={40}
             color={theme.colors.primary}
             style={{ marginBottom: "16px" }}
@@ -1335,7 +1629,8 @@ const Carrito = () => {
 
   return (
     <PageContainer style={{ padding: "16px" }}>
-      <PageTitle>
+        <PageTitle>
+        <RenderIcon name="FaCartShopping" size={28} />
         <h1>Carrito de compras</h1>
       </PageTitle>
 
@@ -1346,9 +1641,9 @@ const Carrito = () => {
             key={company}
             $active={selectedCompany === company}
             onClick={() => setSelectedCompany(company)}
-            text={company}
-            size="small"
-          />
+          >
+            {company}
+          </CompanyTab>
         ))}
       </CompanyTabs>
 
@@ -1360,19 +1655,9 @@ const Carrito = () => {
               {Object.entries(groupedCart[selectedCompany].lines).map(
                 ([line, lineData]) => (
                   <div key={line} style={{ marginBottom: "24px" }}>
-                    <h3
-                      style={{
-                        marginBottom: "12px",
-                        padding: "8px 16px",
-                        backgroundColor: theme.colors.surface,
-                        borderRadius: "6px",
-                        color: theme.colors.text,
-                        fontSize: "1.1rem",
-                        fontWeight: 600,
-                      }}
-                    >
+                    <LineTitle>
                       {line}
-                    </h3>
+                    </LineTitle>
                     <CartItemsList>
                       {lineData.items.map((item) => (
                         <CartItem
@@ -1394,7 +1679,7 @@ const Carrito = () => {
           {/* Sección de dirección de envío para la empresa seleccionada */}
           <ShippingSection>
             <SectionTitle>
-              <RenderIcon name="FaMapMarkerAlt" size={20} />
+              <RenderIcon name="FaMapPin" size={20} />
               Dirección de envío para {selectedCompany}
             </SectionTitle>
 
@@ -1454,10 +1739,16 @@ const Carrito = () => {
                               <span
                                 style={{
                                   marginLeft: 8,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
                                   color: theme.colors.success,
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
                                 }}
                               >
-                                • Predeterminada
+                                <RenderIcon name="FaCircleCheck" size={12} />
+                                Predeterminada
                               </span>
                             )}
                           </AddressDetails>
@@ -1501,7 +1792,8 @@ const Carrito = () => {
               </div>
             ) : (
               <EmptyAddressState>
-                No tienes direcciones de envío para esta empresa.
+                <RenderIcon name="FaMapPin" size={32} color={theme.colors.textSecondary} />
+                <div>No tienes direcciones de envío para esta empresa.</div>
               </EmptyAddressState>
             )}
 
@@ -1629,7 +1921,8 @@ const Carrito = () => {
               </div>
             ) : (
               <EmptyAddressState>
-                No tienes direcciones de facturación para esta empresa.
+                <RenderIcon name="FaFileInvoice" size={32} color={theme.colors.textSecondary} />
+                <div>No tienes direcciones de facturación para esta empresa.</div>
               </EmptyAddressState>
             )}
 
@@ -1757,7 +2050,7 @@ const Carrito = () => {
                         color={theme.colors.white}
                         variant="outlined"
                         size="small"
-                        leftIconName={"FaShoppingCart"}
+                        leftIconName={"FaCartShopping"}
                         backgroundColor={theme.colors.primary}
                         style={{ width: "100%" }}
                         onClick={() =>
@@ -1819,7 +2112,7 @@ const Carrito = () => {
                     setShowConfirmModal(false);
                     setCompanyToCheckout(null);
                   }}
-                  leftIconName="FaTimes"
+                  leftIconName="FaXmark"
                 />
               </ProcessingCard>
             </ProcessingOverlay>
@@ -1851,7 +2144,7 @@ const Carrito = () => {
           <ProcessingCard>
             <SuccessIcon>
               <RenderIcon
-                name="FaCheckCircle"
+                name="FaCircleCheck"
                 size={48}
                 color={theme.colors.success}
               />
@@ -1882,7 +2175,7 @@ const Carrito = () => {
                 variant="outlined"
                 style={{ flex: 1 }}
                 onClick={handleContinueShopping}
-                leftIconName="FaShoppingCart"
+                leftIconName="FaCartShopping"
               />
             </div>
             <Button

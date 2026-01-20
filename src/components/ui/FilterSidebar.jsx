@@ -1147,7 +1147,7 @@ const FilterSidebar = React.memo(
               <Button
                 text="Limpiar filtros"
                 variant="outlined"
-                leftIconName="FaTimes"
+                leftIconName="FaXmark"
                 size="small"
                 onClick={clearAllFilters}
                 fullWidth={false}
@@ -1264,7 +1264,7 @@ const FilterSidebar = React.memo(
                         onChange={(e) =>
                           handleSearchChange("marcas", e.target.value)
                         }
-                        leftIconName="FaSearch"
+                        leftIconName="FaMagnifyingGlass"
                         fullWidth
                       />
                       {searchTerms["marcas"] && (
@@ -1272,7 +1272,7 @@ const FilterSidebar = React.memo(
                           onClick={() => clearSearch("marcas")}
                           title="Limpiar búsqueda"
                         >
-                          <RenderIcon name="FaTimes" size={12} />
+                          <RenderIcon name="FaXmark" size={12} />
                         </ClearSearchButton>
                       )}
                     </SearchInput>
@@ -1327,7 +1327,7 @@ const FilterSidebar = React.memo(
                             onChange={(e) =>
                               handleSearchChange(filterType, e.target.value)
                             }
-                            leftIconName="FaSearch"
+                            leftIconName="FaMagnifyingGlass"
                             fullWidth
                           />
                           {searchTerms[filterType] && (
@@ -1335,7 +1335,7 @@ const FilterSidebar = React.memo(
                               onClick={() => clearSearch(filterType)}
                               title="Limpiar búsqueda"
                             >
-                              <RenderIcon name="FaTimes" size={12} />
+                              <RenderIcon name="FaXmark" size={12} />
                             </ClearSearchButton>
                           )}
                         </SearchInput>
@@ -1421,7 +1421,7 @@ const FilterSidebar = React.memo(
             <ModalHeader>
               <ModalTitle>Filtros de Productos</ModalTitle>
               <CloseButton onClick={closeModal}>
-                <RenderIcon name="FaTimes" size={20} />
+                <RenderIcon name="FaXmark" size={20} />
               </CloseButton>
             </ModalHeader>
 
@@ -1603,7 +1603,7 @@ const FilterSidebar = React.memo(
                         onChange={(e) =>
                           handleSearchChange("marcas", e.target.value)
                         }
-                        leftIconName="FaSearch"
+                        leftIconName="FaMagnifyingGlass"
                         fullWidth={true}
                       />
                     </div>
@@ -1684,7 +1684,7 @@ const FilterSidebar = React.memo(
                             onChange={(e) =>
                               handleSearchChange(filterType, e.target.value)
                             }
-                            leftIconName="FaSearch"
+                            leftIconName="FaMagnifyingGlass"
                             fullWidth={true}
                           />
                         </div>

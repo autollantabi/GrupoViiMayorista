@@ -1,10 +1,15 @@
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Button from "../ui/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useAppTheme } from "../../context/AppThemeContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ROUTES } from "../../constants/routes";
+import {
+  api_access_sections_get_permission_by_email_and_section,
+} from "../../api/accessSections/apiAccessSections";
+import GrupoViiLogo from "../../assets/GrupoViiLogo.png";
 
 import RenderIcon from "../ui/RenderIcon";
 
@@ -14,15 +19,17 @@ const HeaderContainer = styled.header`
   background-color: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.white};
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  gap: 1rem;
   z-index: 500;
   box-shadow: 0 2px 4px ${({ theme }) => theme.colors.shadow};
   position: relative;
-  height: 45px;
+  min-height: 45px;
+  height: auto;
 
   @media (min-width: 768px) {
+    grid-template-columns: auto 1fr auto;
     padding: 0.5rem 2rem;
   }
 
@@ -36,14 +43,21 @@ const HeaderContainer = styled.header`
 `;
 
 const Logo = styled.div`
-  font-size: 1.2rem;
-  font-weight: bold;
   cursor: pointer;
-  color: ${({ theme }) => theme.colors.white};
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  height: 35px;
+  
+  img {
+    height: 50%;
+    width: auto;
+    object-fit: contain;
+  }
 
   @media (min-width: 768px) {
-    font-size: 1.4rem;
+    height: 40px;
   }
 `;
 
@@ -189,9 +203,13 @@ const RightSection = styled.div`
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
+  justify-self: end;
+  flex-wrap: wrap;
+  min-width: fit-content;
 
   @media (min-width: 768px) {
     gap: 0.3rem;
+    flex-wrap: nowrap;
   }
 `;
 
@@ -235,14 +253,119 @@ const UserEmail = styled.div`
   }
 `;
 
+const NavigationMenu = styled.nav`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-self: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const NavLink = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme, $active }) =>
+    $active ? theme.colors.white : "rgba(255, 255, 255, 0.8)"};
+  font-size: 0.9rem;
+  font-weight: ${({ $active }) => ($active ? 600 : 500)};
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.white};
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: ${({ theme }) => theme.colors.white};
+    transform: ${({ $active }) => ($active ? "scaleX(1)" : "scaleX(0)")};
+    transition: transform 0.2s ease;
+  }
+
+  &:hover::after {
+    transform: scaleX(1);
+  }
+`;
+
 export default function Header() {
   const { user, isClient, isVisualizacion, isReencaucheUser, logout } =
     useAuth();
   const { hasItems } = useCart(); // Solo usamos hasItems para mostrar indicador
   const { isDarkMode, toggleTheme } = useAppTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [accessSections, setAccessSections] = useState([]);
+
+  // Verificar si estamos en el home
+  const isHome = location.pathname === ROUTES.ECOMMERCE.HOME;
+
+  // Obtener accesos a secciones
+  useEffect(() => {
+    if (!user?.EMAIL) return;
+
+    const fetchAccessSections = async () => {
+      try {
+        const [response1, response2, response3] = await Promise.all([
+          api_access_sections_get_permission_by_email_and_section(user.EMAIL, "APPSHELL"),
+          api_access_sections_get_permission_by_email_and_section(user.EMAIL, "REENCAUCHE"),
+          api_access_sections_get_permission_by_email_and_section(user.EMAIL, "XCOIN")
+        ]);
+
+        const sections = [];
+        if (response1.success && response1.data) {
+          sections.push(response1.data);
+        }
+        if (response2.success && response2.data) {
+          sections.push(response2.data);
+        }
+        if (response3.success && response3.data) {
+          sections.push(response3.data);
+        }
+        setAccessSections(sections);
+      } catch (error) {
+        console.error("Error fetching access sections:", error);
+        setAccessSections([]);
+      }
+    };
+
+    fetchAccessSections();
+  }, [user?.EMAIL]);
+
+  const hasAppShellAccess = accessSections.some(
+    (section) => section.SECTION_PERMITTED_USER === "APPSHELL"
+  );
+  
+  const hasReencaucheAccess = accessSections.some(
+    (section) => section.SECTION_PERMITTED_USER === "REENCAUCHE"
+  );
+
+  const hasXCoinAccess = accessSections.some(
+    (section) => section.SECTION_PERMITTED_USER === "XCOIN"
+  );
 
   // Función para manejar la búsqueda en todas las empresas
   const handleSearchAllCompanies = () => {
@@ -298,18 +421,114 @@ export default function Header() {
     setIsUserMenuOpen(false);
   };
 
+  const handleNavClick = (path) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
+
+  // Función helper para hacer scroll a un elemento esperando a que esté disponible
+  const scrollToElement = (selector, maxAttempts = 20, interval = 100) => {
+    let attempts = 0;
+    
+    const tryScroll = () => {
+      const element = document.querySelector(selector);
+      
+      if (element) {
+        // Verificar que el elemento esté visible y tenga dimensiones
+        const rect = element.getBoundingClientRect();
+        if (rect.height > 0 || rect.width > 0) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          return true;
+        }
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(tryScroll, interval);
+      } else {
+        // Último intento después de esperar un poco más
+        setTimeout(() => {
+          const element = document.querySelector(selector);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 500);
+      }
+      
+      return false;
+    };
+    
+    tryScroll();
+  };
+
+  // Función para manejar la navegación y scroll a una sección
+  const handleNavigateAndScroll = (selector) => {
+    setIsMobileMenuOpen(false);
+    
+    if (location.pathname !== ROUTES.ECOMMERCE.HOME) {
+      // Si no estamos en el home, navegar primero
+      navigate(ROUTES.ECOMMERCE.HOME);
+      // Esperar un poco más para que React Router complete la navegación
+      setTimeout(() => {
+        scrollToElement(selector);
+      }, 100);
+    } else {
+      // Si ya estamos en el home, hacer scroll directamente
+      scrollToElement(selector);
+    }
+  };
+
   return (
     <>
       <HeaderContainer>
         <Logo onClick={handleGoToHome}>
-          <RenderIcon name="FaHome" size={18} />
+          <img src={GrupoViiLogo} alt="Grupo VII" />
         </Logo>
+
+        <NavigationMenu>
+          <NavLink
+            $active={false}
+            onClick={() => handleNavigateAndScroll("#inicio")}
+          >
+            Inicio
+          </NavLink>
+          <NavLink
+            $active={false}
+            onClick={() => handleNavigateAndScroll("#empresas-grid")}
+          >
+            Catálogos
+          </NavLink>
+          {hasAppShellAccess && (
+            <NavLink
+              $active={false}
+              onClick={() => handleNavigateAndScroll("#club-shell-maxx")}
+            >
+              Club Shell Maxx
+            </NavLink>
+          )}
+          {hasReencaucheAccess && (
+            <NavLink
+              $active={false}
+              onClick={() => handleNavigateAndScroll("#bonos-haohua")}
+            >
+              Bonos Haohua
+            </NavLink>
+          )}
+          {hasXCoinAccess && (
+            <NavLink
+              $active={false}
+              onClick={() => handleNavigateAndScroll("#xcoin")}
+            >
+              XCoin
+            </NavLink>
+          )}
+        </NavigationMenu>
 
         <RightSection>
           <DesktopOnlySection>
             {!isReencaucheUser && (
               <IconButton
-                leftIconName="FaSearch"
+                leftIconName="FaMagnifyingGlass"
                 iconSize={18}
                 onClick={handleSearchAllCompanies}
               />
@@ -318,7 +537,7 @@ export default function Header() {
             {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
                 text={hasItems && <CartIndicator />}
-                leftIconName={"FaShoppingCart"}
+                leftIconName={"FaCartShopping"}
                 iconSize={18}
                 onClick={handleGoToCart}
               />
@@ -347,7 +566,7 @@ export default function Header() {
 
                 {isClient && !isVisualizacion && !isReencaucheUser && (
                   <UserMenuItem onClick={handleOrderHistory}>
-                    <RenderIcon name="FaHistory" size={16} />
+                    <RenderIcon name="FaBagShopping" size={16} />
                     Mis Pedidos
                   </UserMenuItem>
                 )}
@@ -370,7 +589,7 @@ export default function Header() {
                   </div>
                 </UserMenuItem>
                 <UserMenuItem onClick={handleLogout}>
-                  <RenderIcon name="FaSignOutAlt" size={16} />
+                  <RenderIcon name="FaDoorClosed" size={16} />
                   Cerrar Sesión
                 </UserMenuItem>
               </UserMenuDropdown>
@@ -381,7 +600,7 @@ export default function Header() {
             {isClient && !isVisualizacion && !isReencaucheUser && (
               <IconButton
                 text={hasItems && <CartIndicator />}
-                leftIconName={"FaShoppingCart"}
+                leftIconName={"FaCartShopping"}
                 iconSize={20}
                 onClick={handleGoToCart}
               />
@@ -401,41 +620,77 @@ export default function Header() {
         <UserEmail>{user?.CORREOS?.[0] || user?.EMAIL || "Usuario"}</UserEmail>
 
         <MobileMenuContent>
+          <UserMenuItem
+            $active={location.pathname === ROUTES.ECOMMERCE.HOME}
+            onClick={() => {
+              handleNavClick(ROUTES.ECOMMERCE.HOME);
+            }}
+          >
+            <RenderIcon name="FaHouse" size={16} />
+            Inicio
+          </UserMenuItem>
+          <UserMenuItem
+            onClick={() => {
+              handleNavigateAndScroll("#empresas-grid");
+            }}
+          >
+            <RenderIcon name="FaBuilding" size={16} />
+            Catálogos
+          </UserMenuItem>
+          {hasAppShellAccess && (
+            <UserMenuItem
+              onClick={() => {
+                handleNavigateAndScroll("#club-shell-maxx");
+              }}
+            >
+              <RenderIcon name="FaMobile" size={16} />
+              Club Shell Maxx
+            </UserMenuItem>
+          )}
+          {hasReencaucheAccess && (
+            <UserMenuItem
+              onClick={() => {
+                handleNavigateAndScroll("#bonos-haohua");
+              }}
+            >
+              <RenderIcon name="FaTicket" size={16} />
+              Bonos Haohua
+            </UserMenuItem>
+          )}
+          {hasXCoinAccess && (
+            <UserMenuItem
+              onClick={() => {
+                handleNavigateAndScroll("#xcoin");
+              }}
+            >
+              <RenderIcon name="FaCoins" size={16} />
+              XCoin
+            </UserMenuItem>
+          )}
           {!isReencaucheUser && (
             <UserMenuItem onClick={handleSearchAllCompanies}>
-              <RenderIcon name="FaSearch" size={16} />
+              <RenderIcon name="FaMagnifyingGlass" size={16} />
               Buscar en todas las empresas
             </UserMenuItem>
           )}
-
           {!isReencaucheUser && (
             <UserMenuItem onClick={handleProfile}>
               <RenderIcon name="FaUser" size={16} />
               Perfil
             </UserMenuItem>
           )}
-
           {isClient && !isVisualizacion && !isReencaucheUser && (
-            <>
-              {/* <UserMenuItem onClick={handleGoToCart}>
-                <RenderIcon name="FaShoppingCart" size={16} />
-                Carrito {itemCount > 0 && `(${itemCount})`}
-              </UserMenuItem> */}
-
-              <UserMenuItem onClick={handleOrderHistory}>
-                <RenderIcon name="FaHistory" size={16} />
-                Mis Pedidos
-              </UserMenuItem>
-            </>
+            <UserMenuItem onClick={handleOrderHistory}>
+              <RenderIcon name="FaBagShopping" size={16} />
+              Mis Pedidos
+            </UserMenuItem>
           )}
-
           <UserMenuItem onClick={toggleTheme}>
             <RenderIcon name={isDarkMode ? "FaSun" : "FaMoon"} size={16} />
             Cambiar a tema {isDarkMode ? "claro" : "oscuro"}
           </UserMenuItem>
-
           <UserMenuItem onClick={handleLogout}>
-            <RenderIcon name="FaSignOutAlt" size={16} />
+            <RenderIcon name="FaDoorClosed" size={16} />
             Cerrar Sesión
           </UserMenuItem>
         </MobileMenuContent>

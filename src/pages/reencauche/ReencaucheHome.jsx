@@ -94,7 +94,7 @@ const ReencaucheHome = () => {
 
   const features = [
     {
-      icon: "FaCheckCircle",
+      icon: "FaCircleCheck",
       title: "Bonos Activados",
       description:
         "Visualiza todos los bonos que has activado y su estado actual.",

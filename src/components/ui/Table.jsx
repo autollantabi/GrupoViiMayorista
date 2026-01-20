@@ -17,20 +17,42 @@ import styled from "styled-components";
 const SortableHeader = styled.div`
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   cursor: pointer;
   user-select: none;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  margin: -0.25rem -0.5rem;
+  border-radius: 8px;
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
+    background-color: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `${theme.colors.primary}10`
+        : `${theme.colors.primary}08`};
   }
 
   > span {
-    margin-right: 8px;
+    flex: 1;
   }
 
   > svg {
-    font-size: 14px;
+    font-size: 0.875rem;
+    opacity: ${({ $active }) => ($active ? 1 : 0.5)};
+    transition: opacity 0.2s ease;
+    color: ${({ theme, $active }) =>
+      $active ? theme.colors.primary : theme.colors.textSecondary};
   }
+
+  ${({ $active, theme }) =>
+    $active &&
+    `
+    color: ${theme.colors.primary};
+    > svg {
+      opacity: 1;
+    }
+  `}
 `;
 
 /**
@@ -162,7 +184,10 @@ const DataTable = ({
                 $align={column.align}
               >
                 {column.sortable !== false ? (
-                  <SortableHeader onClick={() => handleSort(column.field)}>
+                  <SortableHeader
+                    onClick={() => handleSort(column.field)}
+                    $active={sortField === column.field}
+                  >
                     <span>{column.header}</span>
                     {sortField === column.field ? (
                       sortDirection === "asc" ? (
@@ -189,6 +214,7 @@ const DataTable = ({
             <TableRow
               key={rowIndex}
               $striped={striped}
+              $isEven={rowIndex % 2 !== 0}
               $clickable={!!onRowClick}
               onClick={() => onRowClick && onRowClick(row)}
             >
@@ -210,15 +236,15 @@ const DataTable = ({
           <PageButton
             onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
-            size="small"
-            text={"Primera"}
-          />
+          >
+            Primera
+          </PageButton>
           <PageButton
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            size="small"
-            text={"Anterior"}
-          />
+          >
+            Anterior
+          </PageButton>
 
           {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
             // Lógica para mostrar páginas alrededor de la actual
@@ -238,24 +264,24 @@ const DataTable = ({
                 key={pageNum}
                 $active={currentPage === pageNum}
                 onClick={() => handlePageChange(pageNum)}
-                size="small"
-                text={pageNum}
-              />
+              >
+                {pageNum}
+              </PageButton>
             );
           })}
 
           <PageButton
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            size="small"
-            text={"Siguiente"}
-          />
+          >
+            Siguiente
+          </PageButton>
           <PageButton
             onClick={() => handlePageChange(totalPages)}
             disabled={currentPage === totalPages}
-            size="small"
-            text={"Última"}
-          />
+          >
+            Última
+          </PageButton>
         </Pagination>
       )}
     </>

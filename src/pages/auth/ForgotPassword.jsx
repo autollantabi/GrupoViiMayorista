@@ -9,19 +9,24 @@ import styled from "styled-components";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { api_users_getByEmail } from "../../api/users/apiUsers";
-import PageContainer from "../../components/layout/PageContainer";
 
 // Styled Components (reutilizando algunos del Login)
-const StyledPageContainer = styled(PageContainer)`
+const StyledPageContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  margin: 0;
   padding: 2rem 1rem;
   position: relative;
+  overflow: hidden;
   background: ${({ theme }) =>
-    theme.name === "dark"
+    theme.mode === "dark"
       ? `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface}15 50%, ${theme.colors.background} 100%)`
       : `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.primary}05 50%, ${theme.colors.background} 100%)`};
 
@@ -33,21 +38,47 @@ const StyledPageContainer = styled(PageContainer)`
     right: 0;
     bottom: 0;
     background: ${({ theme }) =>
-      theme.name === "dark"
+      theme.mode === "dark"
         ? `radial-gradient(circle at 20% 50%, ${
             theme.colors.primary
-          }08 0%, transparent 50%),
+          }12 0%, transparent 50%),
            radial-gradient(circle at 80% 80%, ${
              theme.colors.accent || theme.colors.primary
-           }06 0%, transparent 50%)`
+           }08 0%, transparent 50%)`
         : `radial-gradient(circle at 20% 50%, ${
             theme.colors.primary
-          }08 0%, transparent 50%),
+          }10 0%, transparent 50%),
            radial-gradient(circle at 80% 80%, ${
              theme.colors.accent || theme.colors.primary
            }06 0%, transparent 50%)`};
     pointer-events: none;
     z-index: 0;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`
+        : `radial-gradient(circle, ${theme.colors.primary}06 0%, transparent 70%)`};
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-30px, -30px) scale(1.1);
+    }
   }
 
   > * {
@@ -69,19 +100,24 @@ const StyledPageContainer = styled(PageContainer)`
 `;
 
 const Card = styled(FlexBoxComponent)`
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 20px 60px rgba(0, 0, 0, 0.3), 0 8px 25px rgba(0, 0, 0, 0.2)"
+      : "0 20px 60px rgba(0, 0, 0, 0.1), 0 8px 25px rgba(0, 0, 0, 0.08)"};
   padding: 3.5rem 3rem;
   max-width: 480px;
   width: 100%;
-  margin: 1rem;
+  margin: 0 auto;
   position: relative;
   overflow: hidden;
-  animation: slideUp 0.5s ease-out;
-  backdrop-filter: blur(10px);
+  animation: slideUp 0.6s ease-out;
+  backdrop-filter: blur(20px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
 
   &::before {
     content: "";
@@ -97,19 +133,43 @@ const Card = styled(FlexBoxComponent)`
     );
   }
 
+  &::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: ${({ theme }) =>
+      theme.mode === "dark"
+        ? `radial-gradient(circle, ${theme.colors.primary}10 0%, transparent 70%)`
+        : `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`};
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18), 0 10px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: ${({ theme }) =>
+      theme.mode === "dark"
+        ? "0 25px 70px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.25)"
+        : "0 25px 70px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)"};
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
   }
 
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(40px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -117,19 +177,20 @@ const Card = styled(FlexBoxComponent)`
     width: 90%;
     max-width: 450px;
     padding: 3rem 2.5rem;
+    margin: 0 auto;
   }
 
   @media (max-width: 480px) {
     width: 95%;
     padding: 2.5rem 2rem;
-    margin: 0.5rem;
-    border-radius: 16px;
+    margin: 0 auto;
+    border-radius: 20px;
   }
 
   @media (max-width: 360px) {
     width: 98%;
     padding: 2rem 1.5rem;
-    margin: 0.25rem;
+    margin: 0 auto;
   }
 `;
 
@@ -149,21 +210,22 @@ const Form = styled.form`
 `;
 
 const Title = styled.h1`
-  font-size: 2.25rem;
+  font-size: clamp(2rem, 4vw, 2.5rem);
   margin-bottom: 0.5rem;
   margin-top: 0;
   color: ${({ theme }) => theme.colors.text};
   text-align: center;
-  font-weight: 700;
+  font-weight: 800;
   background: linear-gradient(
     135deg,
-    ${({ theme }) => theme.colors.primary},
-    ${({ theme }) => theme.colors.accent || theme.colors.primary}
+    ${({ theme }) => theme.colors.text} 0%,
+    ${({ theme }) => theme.colors.primary} 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 
   @media (max-width: 768px) {
     font-size: 2rem;
@@ -179,12 +241,13 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.h2`
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 2vw, 1.15rem);
   font-weight: 400;
   margin-bottom: 2.5rem;
   color: ${({ theme }) => theme.colors.textSecondary};
   text-align: center;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
+  line-height: 1.6;
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -205,13 +268,13 @@ const Subtitle = styled.h2`
 const BackLink = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 24px;
+  margin: 0;
   align-self: flex-start;
 
   &:hover {
@@ -221,20 +284,18 @@ const BackLink = styled.div`
   }
 
   @media (max-width: 768px) {
-    font-size: 0.85rem;
-    margin-bottom: 20px;
+    font-size: 0.75rem;
+    gap: 5px;
   }
 
   @media (max-width: 480px) {
-    font-size: 0.8rem;
-    margin-bottom: 18px;
-    gap: 6px;
+    font-size: 0.7rem;
+    gap: 4px;
   }
 
   @media (max-width: 360px) {
-    font-size: 0.75rem;
-    margin-bottom: 16px;
-    gap: 4px;
+    font-size: 0.65rem;
+    gap: 3px;
   }
 `;
 
@@ -560,7 +621,7 @@ const ForgotPassword = () => {
     <StyledPageContainer>
       <Card flexDirection="column" alignItems="center">
         <BackLink onClick={handleBack}>
-          <FaArrowLeft /> {step === 1 ? "Volver al inicio de sesión" : "Volver"}
+          <FaArrowLeft />
         </BackLink>
 
         <Title>Recuperar contraseña</Title>

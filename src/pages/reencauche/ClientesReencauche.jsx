@@ -950,7 +950,7 @@ const ClientesReencauche = () => {
         {/* Sección de bonos disponibles */}
         <BonosDisponiblesContainer>
           <BonosDisponiblesInfo>
-            <RenderIcon name="FaTicketAlt" size={16} />
+            <RenderIcon name="FaTicket" size={16} />
             <BonosDisponiblesLabel>Bonos disponibles:</BonosDisponiblesLabel>
             {loadingBonosDisponibles ? (
               <div
@@ -1030,7 +1030,7 @@ const ClientesReencauche = () => {
         ) : filteredClients.length === 0 ? (
           <EmptyState>
             <EmptyIcon>
-              <RenderIcon name="FaSearch" size={64} />
+              <RenderIcon name="FaMagnifyingGlass" size={64} />
             </EmptyIcon>
             <h3>No se encontraron clientes</h3>
             <p>
@@ -1092,7 +1092,7 @@ const ClientesReencauche = () => {
                         ? theme.colors.success
                         : theme.colors.textLight
                     }
-                    leftIconName="FaTicketAlt"
+                    leftIconName="FaTicket"
                     onClick={() => handleNewBono(client.ID_CUSTOMERRETREAD)}
                     disabled={!hayBonosDisponibles}
                     title={
@@ -1140,7 +1140,7 @@ const ClientesReencauche = () => {
                   Detalles del Cliente
                 </ModalTitle>
                 <CloseButton onClick={handleCloseDetailsModal}>
-                  <RenderIcon name="FaTimes" size={16} />
+                  <RenderIcon name="FaXmark" size={16} />
                 </CloseButton>
               </ModalHeader>
               <ModalBody>
@@ -1185,7 +1185,7 @@ const ClientesReencauche = () => {
 
                 <BonosSection>
                   <SectionTitle>
-                    <RenderIcon name="FaTicketAlt" size={20} />
+                    <RenderIcon name="FaTicket" size={20} />
                     Bonos por Factura (
                     {
                       getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length
@@ -1319,7 +1319,7 @@ const ClientesReencauche = () => {
                   ) : (
                     <EmptyBonos>
                       <EmptyBonosIcon>
-                        <RenderIcon name="FaTicketAlt" size={48} />
+                        <RenderIcon name="FaTicket" size={48} />
                       </EmptyBonosIcon>
                       <h4>No hay bonos registrados</h4>
                       <p>Este cliente aún no tiene bonos asociados.</p>

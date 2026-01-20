@@ -261,7 +261,7 @@ export const PRODUCT_LINE_CONFIG = {
         field: "tipounidad",
         label: "Tipo Unidad",
         defaultValue: "-",
-        transform: (item) => item.DMA_TIPO_UNIDAD,
+        transform: (item) => item.DMA_MEDIDA,
       },
       {
         field: "unidadescaja",
@@ -291,7 +291,7 @@ export const PRODUCT_LINE_CONFIG = {
       }
     ],
     nameTemplate: (item) => `${item.DMA_NOMBREITEM || ""}`,
-    descriptionTemplate: (item) => `${item.DMA_CARACTERISTICASESP || ""}`,
+    descriptionTemplate: (item) => `${item.DMA_DESCRIPCIONESP || ""}`,
     categoryLabels: CATEGORY_TYPE_LABELS,
     categoryOrder: CATEGORY_TYPE_ORDER.HERRAMIENTAS,
   },
