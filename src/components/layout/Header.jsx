@@ -48,16 +48,16 @@ const Logo = styled.div`
   align-items: center;
   justify-content: center;
   justify-self: start;
-  height: 35px;
+  height: 25px;
   
   img {
-    height: 50%;
+    height: 20px;
     width: auto;
     object-fit: contain;
   }
 
   @media (min-width: 768px) {
-    height: 40px;
+    height: 25px;
   }
 `;
 

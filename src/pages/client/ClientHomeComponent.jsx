@@ -1531,7 +1531,7 @@ const TypewriterComponent = ({ texts, typingSpeed = 100, deletingSpeed = 50, pau
 
 const ClientHomeComponent = () => {
   const { user } = useAuth();
-  const { isDarkMode } = useAppTheme();
+  const { isDarkMode, theme } = useAppTheme();
   const navigate = useNavigate();
   const [productsInfo, setProductsInfo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1951,7 +1951,7 @@ const ClientHomeComponent = () => {
         <XCoinContainer>
           <XCoinContent>
             <XCoinIconWrapper>
-              <RenderIcon name="FaCoins" size={40} />
+              <RenderIcon name="FaCoins" size={40} style={{ color: theme.colors.primary }} />
             </XCoinIconWrapper>
             <XCoinTitle>XCoin - Sistema de Recompensas</XCoinTitle>
             <XCoinDescription>
