@@ -377,7 +377,7 @@ const AppShell = () => {
 
       if (response.success) {
         toast.success(
-          "¡Acceso a Lider Shell solicitado exitosamente! Te contactaremos pronto."
+          "¡Acceso a Club Shell Maxx solicitado exitosamente! Te contactaremos pronto."
         );
 
         // Limpiar formulario
@@ -405,9 +405,9 @@ const AppShell = () => {
   return (
     <>
       <SEO
-        title="Lider Shell - Únete a nuestra aplicación"
-        description="Únete a Lider Shell para recompensarte por tus ventas. Llena el formulario para poder acceder a Lider Shell."
-        keywords="lider shell, maxximundo, recompensas, ventas, aplicación móvil"
+        title="Club Shell Maxx - Únete a nuestra aplicación"
+        description="Únete a Club Shell Maxx para recompensarte por tus ventas. Llena el formulario para poder acceder a Club Shell Maxx."
+        keywords="club shell maxx, maxximundo, recompensas, ventas, aplicación móvil"
       />
       <PageContainer>
         <Container>
