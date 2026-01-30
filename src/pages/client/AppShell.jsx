@@ -1,25 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import PageContainer from "../../components/layout/PageContainer";
-import RenderIcon from "../../components/ui/RenderIcon";
 import SEO from "../../components/seo/SEO";
 import { toast } from "react-toastify";
 import { ROUTES } from "../../constants/routes";
-import { api_shell_createUser } from "../../api/shell/apiShell";
+import { api_shell_createUser, api_shell_searchManager } from "../../api/shell/apiShell";
 import { useAuth } from "../../context/AuthContext";
+import RenderIcon from "../../components/ui/RenderIcon";
 
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem;
 `;
 
 const WelcomeSection = styled.div`
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 1rem;
   padding: 3rem 2rem;
   background: ${({ theme }) =>
     theme.mode === "dark" ? theme.colors.surface : "#ffffff"};
@@ -45,7 +45,7 @@ const WelcomeSection = styled.div`
 
   @media (max-width: 768px) {
     padding: 2rem 1.5rem;
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
   }
 `;
 
@@ -173,9 +173,102 @@ const SubmitButtonContainer = styled.div`
   }
 `;
 
+const AlreadyRegisteredBox = styled.div`
+  text-align: center;
+  padding: 2.5rem 2rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `linear-gradient(160deg, ${theme.colors.primary}22 0%, ${theme.colors.primary}08 100%)`
+      : `linear-gradient(160deg, ${theme.colors.primary}14 0%, ${theme.colors.primary}06 100%)`};
+  border-radius: 20px;
+  border: 1px solid ${({ theme }) => `${theme.colors.primary}35`};
+  margin-top: 1rem;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 ${theme.colors.primary}20`
+      : `0 8px 24px ${theme.colors.primary}12, inset 0 1px 0 rgba(255,255,255,0.5)`};
+  animation: fadeInUp 0.5s ease-out;
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+`;
+
+const AlreadyRegisteredIconWrap = styled.div`
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => `${theme.colors.primary}25`};
+  border-radius: 50%;
+  border: 2px solid ${({ theme }) => `${theme.colors.primary}50`};
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const AlreadyRegisteredTitle = styled.h3`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.02em;
+`;
+
+const AlreadyRegisteredText = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 1.05rem;
+  margin: 0;
+  line-height: 1.65;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const AlreadyRegisteredEmailWrap = styled.div`
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}10`};
+  border-radius: 12px;
+  border: 1px dashed ${({ theme }) => `${theme.colors.primary}40`};
+`;
+
+const AlreadyRegisteredEmailLabel = styled.span`
+  display: block;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+`;
+
+const AlreadyRegisteredEmail = styled.p`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  word-break: break-all;
+`;
+
 const AppShell = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(true);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState(null);
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -184,7 +277,45 @@ const AppShell = () => {
     fechaNacimiento: "",
     telefono: "",
   });
-  const { user } = useAuth();
+  console.log(user);
+
+  // Scroll al tope al entrar a la página
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Verificar si el usuario ya está registrado en la app Shell
+  useEffect(() => {
+    const sapCode = user?.ACCOUNT_USER;
+    if (!sapCode) {
+      setCheckingRegistration(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function verificarRegistro() {
+      try {
+        const result = await api_shell_searchManager(sapCode);
+        if (cancelled) return;
+        if (result.success) {
+          console.log(result);
+          setAlreadyRegistered(true);
+          const email = result.data?.EMAIL;
+          setRegisteredEmail(email ?? null);
+        }
+      } catch {
+        if (!cancelled) setAlreadyRegistered(false);
+      } finally {
+        if (!cancelled) setCheckingRegistration(false);
+      }
+    }
+
+    verificarRegistro();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.ACCOUNT_USER]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -299,99 +430,123 @@ const AppShell = () => {
           </WelcomeSection>
 
           <FormSection>
-            <FormTitle>Formulario de Registro</FormTitle>
-          <FormContainer onSubmit={handleSubmit}>
-            <FormRow>
-              <Input
-                label="Nombre"
-                type="text"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleInputChange}
-                placeholder="Ingresa tu nombre"
-                required
-                fullWidth
-                leftIconName="FaUser"
-              />
+            {!alreadyRegistered && <FormTitle>Formulario de Registro</FormTitle>}
+            {checkingRegistration ? (
+              <AlreadyRegisteredBox>
+                <AlreadyRegisteredText>Verificando si ya estás registrado...</AlreadyRegisteredText>
+              </AlreadyRegisteredBox>
+            ) : alreadyRegistered ? (
+              <>
+                <AlreadyRegisteredBox>
+                  <AlreadyRegisteredIconWrap>
+                    <RenderIcon name="FaCircleCheck" size={32} />
+                  </AlreadyRegisteredIconWrap>
+                  <AlreadyRegisteredTitle>Ya estás registrado en la app</AlreadyRegisteredTitle>
+                  <AlreadyRegisteredText>
+                    Tu cuenta ya está asociada a Club Shell Maxx. No necesitas volver a registrarte para acceder a la aplicación.
+                  </AlreadyRegisteredText>
+                  {registeredEmail && (
+                    <AlreadyRegisteredEmailWrap>
+                      <AlreadyRegisteredEmailLabel>Correo registrado</AlreadyRegisteredEmailLabel>
+                      <AlreadyRegisteredEmail>{registeredEmail}</AlreadyRegisteredEmail>
+                    </AlreadyRegisteredEmailWrap>
+                  )}
+                </AlreadyRegisteredBox>
+              </>
+            ) : (
+              <FormContainer onSubmit={handleSubmit}>
+                <FormRow>
+                  <Input
+                    label="Nombre"
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    placeholder="Ingresa tu nombre"
+                    required
+                    fullWidth
+                    leftIconName="FaUser"
+                  />
 
-              <Input
-                label="Apellido"
-                type="text"
-                name="apellido"
-                value={formData.apellido}
-                onChange={handleInputChange}
-                placeholder="Ingresa tu apellido"
-                required
-                fullWidth
-                leftIconName="FaUser"
-              />
-            </FormRow>
+                  <Input
+                    label="Apellido"
+                    type="text"
+                    name="apellido"
+                    value={formData.apellido}
+                    onChange={handleInputChange}
+                    placeholder="Ingresa tu apellido"
+                    required
+                    fullWidth
+                    leftIconName="FaUser"
+                  />
+                </FormRow>
 
-            <Input
-              label="Cédula"
-              type="text"
-              name="cedula"
-              value={formData.cedula}
-              onChange={handleInputChange}
-              placeholder="Ingresa tu cédula"
-              required
-              fullWidth
-              leftIconName="FaIdCard"
-            />
+                <Input
+                  label="Cédula"
+                  type="text"
+                  name="cedula"
+                  value={formData.cedula}
+                  onChange={handleInputChange}
+                  placeholder="Ingresa tu cédula"
+                  required
+                  fullWidth
+                  leftIconName="FaIdCard"
+                />
 
-            <Input
-              label="Correo"
-              type="email"
-              name="correo"
-              value={formData.correo}
-              onChange={handleInputChange}
-              placeholder="correo@ejemplo.com"
-              required
-              fullWidth
-              leftIconName="FaEnvelope"
-            />
+                <Input
+                  label="Correo"
+                  type="email"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleInputChange}
+                  placeholder="correo@ejemplo.com"
+                  required
+                  fullWidth
+                  leftIconName="FaEnvelope"
+                />
 
-            <Input
-              label="Fecha de Nacimiento"
-              type="date"
-              name="fechaNacimiento"
-              value={formData.fechaNacimiento}
-              onChange={handleInputChange}
-              required
-              fullWidth
-              leftIconName="FaCalendar"
-            />
+                <Input
+                  label="Fecha de Nacimiento"
+                  type="date"
+                  name="fechaNacimiento"
+                  value={formData.fechaNacimiento}
+                  onChange={handleInputChange}
+                  required
+                  fullWidth
+                  leftIconName="FaCalendar"
+                />
 
-            <Input
-              label="Teléfono"
-              type="tel"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleInputChange}
-              placeholder="0999999999"
-              required
-              fullWidth
-              leftIconName="FaPhone"
-            />
+                <Input
+                  label="Teléfono"
+                  type="tel"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleInputChange}
+                  placeholder="0999999999"
+                  required
+                  fullWidth
+                  leftIconName="FaPhone"
+                />
 
-            <SubmitButtonContainer>
-              <Button
-                type="submit"
-                text={isSubmitting ? "Procesando..." : "Registrarse"}
-                leftIconName="FaPaperPlane"
-                disabled={isSubmitting}
-                style={{ minWidth: "200px" }}
-              />
-              <Button
-                type="button"
-                text="Cancelar"
-                variant="outlined"
-                onClick={() => navigate(ROUTES.ECOMMERCE.HOME)}
-                style={{ minWidth: "200px" }}
-              />
-            </SubmitButtonContainer>
-          </FormContainer>
-        </FormSection>
+                <SubmitButtonContainer>
+                  <Button
+                    type="submit"
+                    text={isSubmitting ? "Procesando..." : "Registrarse"}
+                    leftIconName="FaPaperPlane"
+                    disabled={isSubmitting}
+                    style={{ minWidth: "200px" }}
+                  />
+                  <Button
+                    type="button"
+                    text="Cancelar"
+                    variant="outlined"
+                    onClick={() => navigate(ROUTES.ECOMMERCE.HOME)}
+                    style={{ minWidth: "200px" }}
+                  />
+                </SubmitButtonContainer>
+              </FormContainer>
+            )}
+          </FormSection>
         </Container>
       </PageContainer>
     </>
