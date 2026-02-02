@@ -3,6 +3,12 @@ import styled from "styled-components";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../context/AppThemeContext";
+import {
+  api_xcoin_getBalance,
+  api_xcoin_getProducts,
+  api_xcoin_getRedemptionHistory,
+  api_xcoin_createRedemption,
+} from "../../api/xcoin/apiXcoin";
 import PageContainer from "../../components/layout/PageContainer";
 import RenderIcon from "../../components/ui/RenderIcon";
 import Button from "../../components/ui/Button";
@@ -376,59 +382,137 @@ const PointsTabButton = styled.button`
   }
 `;
 
-const ClaimedRewardsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
+const ClaimedRewardsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const ClaimedRewardCard = styled.div`
-  padding: 1.5rem;
+  padding: 0.65rem;
   background: ${({ theme }) =>
     theme.mode === "dark"
       ? `${theme.colors.background}80`
       : `${theme.colors.background}`};
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid
     ${({ theme }) =>
       theme.mode === "dark"
         ? `${theme.colors.border}40`
         : `${theme.colors.border}30`};
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
   transition: all 0.2s ease;
 
   &:hover {
-    transform: translateY(-2px);
     box-shadow: ${({ theme }) =>
       theme.mode === "dark"
-        ? "0 4px 12px rgba(0, 0, 0, 0.2)"
-        : "0 4px 12px rgba(0, 0, 0, 0.08)"};
+        ? "0 4px 12px rgba(0, 0, 0, 0.15)"
+        : "0 4px 12px rgba(0, 0, 0, 0.06)"};
+  }
+
+  @media (min-width: 600px) {
+    padding: 0.75rem;
+    gap: 0.6rem;
   }
 `;
 
-const ClaimedRewardIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  background: ${({ theme }) => theme.colors.primary}20;
-  border-radius: 12px;
+const ClaimedRewardImageWrap = styled.div`
+  width: 100%;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: ${({ theme }) => theme.colors.primary}10;
+  border: 1px solid ${({ theme }) => `${theme.colors.border}25`};
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  svg {
+    color: ${({ theme }) => theme.colors.primary};
+    opacity: 0.45;
+    font-size: 1.5rem;
+  }
+
+  @media (min-width: 600px) {
+    height: 80px;
+  }
 `;
 
 const ClaimedRewardInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
   flex: 1;
 `;
 
 const ClaimedRewardName = styled.h3`
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   color: ${({ theme }) => theme.colors.text};
-  font-size: 1.1rem;
+  font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  @media (min-width: 600px) {
+    font-size: 0.88rem;
+  }
+`;
+
+const ClaimedRewardMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.7rem;
+
+  @media (min-width: 600px) {
+    font-size: 0.74rem;
+  }
+`;
+
+const ClaimedRewardMetaItem = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+`;
+
+const ClaimedRewardFooter = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.4rem;
+  border-top: 1px solid ${({ theme }) => `${theme.colors.border}25`};
 `;
 
 const ClaimedRewardDetails = styled.div`
@@ -446,17 +530,20 @@ const ClaimedRewardDetail = styled.div`
   font-size: 0.9rem;
 `;
 
-const StatusBadge = styled.div`
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+const ClaimedRedeemButton = styled(Button)`
+  padding: 0.35rem 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  background: ${({ theme, $status }) =>
-    $status === "activo"
-      ? theme.colors.success + "20"
-      : theme.colors.textSecondary + "20"};
-  color: ${({ theme, $status }) =>
-    $status === "activo" ? theme.colors.success : theme.colors.textSecondary};
+  border-radius: 6px;
+  white-space: nowrap;
+  width: 100%;
+  justify-content: center;
+  min-height: 32px;
+
+  @media (min-width: 600px) {
+    font-size: 0.76rem;
+    padding: 0.4rem 0.65rem;
+  }
 `;
 
 // Sección de categorías (derecha) - Tabs alineados a la derecha
@@ -677,6 +764,26 @@ const RewardName = styled.h3`
   color: ${({ theme }) => theme.colors.text};
 `;
 
+const RewardChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+`;
+
+const RewardChip = styled.span`
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? `${theme.colors.textSecondary}20`
+      : `${theme.colors.textSecondary}12`};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  border: 1px solid ${({ theme }) => `${theme.colors.border}50`};
+`;
+
 const RewardDescription = styled.p`
   font-size: 0.85rem;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -730,114 +837,166 @@ const EmptyStateText = styled.p`
   margin: 0.5rem 0;
 `;
 
-// Mock data - Esto debería venir de una API
-const mockRewards = [
-  {
-    id: 1,
-    name: "Descuento 10% en Llantas",
-    description: "Obtén un 10% de descuento en tu próxima compra de llantas",
-    points: 500,
-    category: "llantas",
-    image: null,
-  },
-  {
-    id: 2,
-    name: "Descuento 15% en Llantas Moto",
-    description: "Descuento especial del 15% en llantas para motocicleta",
-    points: 750,
-    category: "llantas-moto",
-    image: null,
-  },
-  {
-    id: 3,
-    name: "Kit de Herramientas Básico",
-    description: "Kit completo de herramientas para tu taller",
-    points: 1200,
-    category: "herramientas",
-    image: null,
-  },
-  {
-    id: 4,
-    name: "Descuento 20% en Llantas Premium",
-    description: "Descuento del 20% en llantas de gama alta",
-    points: 1500,
-    category: "llantas",
-    image: null,
-  },
-  {
-    id: 5,
-    name: "Descuento 12% en Llantas Moto",
-    description: "Descuento del 12% en llantas para motocicleta",
-    points: 600,
-    category: "llantas-moto",
-    image: null,
-  },
-  {
-    id: 6,
-    name: "Herramienta Especializada",
-    description: "Herramienta profesional para tu negocio",
-    points: 2000,
-    category: "herramientas",
-    image: null,
-  },
-];
+// Imagen con fallback si la URL no carga o es inválida (sin wrapper para usar dentro de RewardImage o modal)
+const RewardImageWithFallback = ({ src, alt, iconSize = 64 }) => {
+  const [imageError, setImageError] = useState(false);
+  const showImage = src && typeof src === "string" && src.trim() !== "" && !imageError;
+  if (showImage) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onError={() => setImageError(true)}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    );
+  }
+  return <RenderIcon name="FaGift" size={iconSize} />;
+};
+
+// Descripción: solo el texto; si es solo "-" o vacío, no mostrar nada
+const normalizeDescription = (desc) => {
+  const s = typeof desc === "string" ? desc.trim() : "";
+  return s === "" || s === "-" ? "" : s;
+};
+
+// Mapea producto de la API al formato del UI (categoría por ENTERPRISE)
+const mapProductToReward = (p) => ({
+  id: p.ID_PRODUCT,
+  name: p.PRODUCT_NAME || "Producto",
+  description: normalizeDescription(p.DESCRIPTION),
+  brand: p.BRAND || null,
+  enterprise: p.ENTERPRISE || null,
+  points: p.POINTS_COST ?? 0,
+  category: (p.ENTERPRISE || p.BRAND || "other").toLowerCase().replace(/\s+/g, "-"),
+  image: p.PRODUCT_IMAGE_URL || null,
+  raw: p,
+});
+
+// Mapea item del historial al formato del UI (usa PRODUCT si viene en la respuesta)
+const mapRedemptionToClaimed = (r, productsById) => {
+  const product = r.PRODUCT || productsById[r.ID_PRODUCT];
+  const name = product?.PRODUCT_NAME || `Producto #${r.ID_PRODUCT}`;
+  const image = product?.PRODUCT_IMAGE_URL || null;
+  const isActive = product?.IS_ACTIVE ?? r.IS_ACTIVE ?? true;
+  return {
+    id: r.ID_REDEEM,
+    rewardId: r.ID_PRODUCT,
+    name,
+    image,
+    brand: product?.BRAND || null,
+    enterprise: product?.ENTERPRISE || null,
+    quantity: r.QUANTITY ?? 1,
+    points: r.POINTS_USED ?? 0,
+    claimedAt: r.REDEEM_DATE,
+    isActive: !!isActive,
+    status: isActive ? "activo" : "inactivo",
+  };
+};
 
 const XCoinHome = () => {
   const { user } = useAuth();
   const { theme } = useAppTheme();
   const [userPoints, setUserPoints] = useState(0);
+  const [balanceData, setBalanceData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [rewards, setRewards] = useState(mockRewards);
+  const [rewards, setRewards] = useState([]);
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [selectedReward, setSelectedReward] = useState(null);
+  const [redeemQuantity, setRedeemQuantity] = useState(1);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [claimedRewards, setClaimedRewards] = useState([]);
-  const [activeTab, setActiveTab] = useState("catalog"); // "catalog" o "claimed"
+  const [activeTab, setActiveTab] = useState("catalog");
+  const [isSubmittingRedeem, setIsSubmittingRedeem] = useState(false);
 
-  // Simular carga de puntos del usuario
+  // Cargar productos (catálogo)
   useEffect(() => {
-    // TODO: Reemplazar con llamada real a la API
-    const loadUserPoints = async () => {
-      setLoading(true);
-      // Simular delay de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Mock: puntos del usuario
-      setUserPoints(1500);
+    let cancelled = false;
+    async function load() {
+      setLoadingProducts(true);
+      const res = await api_xcoin_getProducts();
+      console.log(res);
+      if (cancelled) return;
+      if (res.success && Array.isArray(res.data)) {
+        setRewards(res.data.map(mapProductToReward));
+      } else {
+        setRewards([]);
+      }
+      setLoadingProducts(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Cargar balance del usuario (puntos disponibles)
+  useEffect(() => {
+    const accountUser = user?.ACCOUNT_USER;
+    if (!accountUser) {
       setLoading(false);
-    };
+      return;
+    }
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const res = await api_xcoin_getBalance(accountUser);
+      console.log(res);
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setUserPoints(res.data.AVAILABLE_POINTS ?? 0);
+        setBalanceData(res.data);
+      } else {
+        setUserPoints(0);
+      }
+      setLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user?.ACCOUNT_USER]);
 
-    loadUserPoints();
-  }, []);
-
-  // Cargar premios reclamados
+  // Cargar historial de canjes (cuando tenemos ID_USER del balance y productos cargados)
   useEffect(() => {
-    // TODO: Reemplazar con llamada real a la API
-    const loadClaimedRewards = async () => {
-      // Mock: premios reclamados
-      setClaimedRewards([
-        {
-          id: 1,
-          rewardId: 1,
-          name: "Descuento 10% en Llantas",
-          points: 500,
-          claimedAt: "2024-01-15T10:30:00",
-          status: "activo",
-        },
-        {
-          id: 2,
-          rewardId: 3,
-          name: "Descuento 15% en Herramientas",
-          points: 800,
-          claimedAt: "2024-01-10T14:20:00",
-          status: "usado",
-        },
-      ]);
-    };
+    const idUser = balanceData?.ID_USER;
+    if (!idUser || rewards.length === 0) return;
+    let cancelled = false;
+    const byId = {};
+    rewards.forEach((r) => {
+      if (r.raw) byId[r.id] = r.raw;
+    });
+    async function load() {
+      const res = await api_xcoin_getRedemptionHistory(idUser);
+      console.log(res);
+      if (cancelled) return;
+      if (res.success && Array.isArray(res.data)) {
+        const mapped = res.data.map((r) => mapRedemptionToClaimed(r, byId));
+        setClaimedRewards(mapped);
+      } else {
+        setClaimedRewards([]);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [balanceData?.ID_USER, rewards.length]);
 
-    loadClaimedRewards();
-  }, []);
+  // Categorías únicas a partir de los productos (Todas + marcas/empresas)
+  const categories = useMemo(() => {
+    const base = [{ id: "all", label: "Todas" }];
+    const seen = new Set();
+    rewards.forEach((r) => {
+      if (r.category && r.category !== "other" && !seen.has(r.category)) {
+        seen.add(r.category);
+        const label = r.category
+          .split("-")
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(" ");
+        base.push({ id: r.category, label });
+      }
+    });
+    return base;
+  }, [rewards]);
 
   // Filtrar recompensas por categoría
   const filteredRewards = useMemo(() => {
@@ -850,20 +1009,94 @@ const XCoinHome = () => {
   // Manejar clic en botón canjear - abre modal con detalles
   const handleClaimReward = (reward) => {
     setSelectedReward(reward);
+    setRedeemQuantity(1);
     setIsRewardModalOpen(true);
   };
 
+  // Máximo de cantidad por puntos y stock (para el modal de canje)
+  const maxRedeemQuantity = useMemo(() => {
+    if (!selectedReward) return 0;
+    const byPoints = selectedReward.points > 0 ? Math.floor(userPoints / selectedReward.points) : 0;
+    const stock = selectedReward.raw?.STOCK_QUANTITY ?? 0;
+    const byStock = typeof stock === "number" && stock >= 0 ? stock : 999;
+    return Math.min(byPoints, byStock);
+  }, [selectedReward, userPoints]);
+
+  // Total de puntos a canjear (cantidad × puntos unitarios)
+  const redeemTotalPoints = selectedReward ? redeemQuantity * selectedReward.points : 0;
+  const canAffordRedeem = userPoints >= redeemTotalPoints && redeemQuantity >= 1 && redeemQuantity <= maxRedeemQuantity;
+
+  // Ajustar cantidad si el máximo baja (p. ej. por stock o puntos)
+  useEffect(() => {
+    if (selectedReward && redeemQuantity > maxRedeemQuantity) {
+      setRedeemQuantity(maxRedeemQuantity);
+    }
+    if (selectedReward && maxRedeemQuantity === 0) {
+      setRedeemQuantity(0);
+    }
+  }, [selectedReward, maxRedeemQuantity, redeemQuantity]);
+
   // Confirmar canje de recompensa
-  const handleConfirmClaim = () => {
-    if (selectedReward && userPoints >= selectedReward.points) {
-      // TODO: Implementar lógica de reclamación con API
+  const handleConfirmClaim = async () => {
+    if (!selectedReward || !canAffordRedeem) return;
+    const idUser = balanceData?.ID_USER;
+    if (!idUser) {
+      toast.error("No se pudo identificar tu cuenta. Intenta de nuevo.");
+      return;
+    }
+    setIsSubmittingRedeem(true);
+    const res = await api_xcoin_createRedemption({
+      idUser,
+      idProduct: selectedReward.id,
+      quantity: redeemQuantity,
+    });
+    setIsSubmittingRedeem(false);
+    if (res.success) {
+      const total = redeemQuantity * selectedReward.points;
+      const productId = selectedReward.id;
+      const qty = redeemQuantity;
       toast.success(
-        `¡Recompensa reclamada! Has canjeado "${selectedReward.name}" por ${selectedReward.points.toLocaleString()} puntos.`
+        `¡Recompensa reclamada! Has canjeado ${redeemQuantity} x "${selectedReward.name}" por ${total.toLocaleString()} puntos.`
       );
-      // Actualizar puntos del usuario
-      setUserPoints((prev) => prev - selectedReward.points);
+      setUserPoints((prev) => prev - total);
+      // Actualizar stock solo del producto canjeado
+      setRewards((prev) =>
+        prev.map((r) =>
+          r.id === productId
+            ? {
+                ...r,
+                raw: {
+                  ...r.raw,
+                  STOCK_QUANTITY: Math.max(
+                    0,
+                    (r.raw?.STOCK_QUANTITY ?? 0) - qty
+                  ),
+                },
+              }
+            : r
+        )
+      );
       setIsRewardModalOpen(false);
       setSelectedReward(null);
+      setRedeemQuantity(1);
+      // Refrescar balance e historial
+      if (user?.ACCOUNT_USER) {
+        const balanceRes = await api_xcoin_getBalance(user.ACCOUNT_USER);
+        if (balanceRes.success && balanceRes.data) {
+          setUserPoints(balanceRes.data.AVAILABLE_POINTS ?? 0);
+          setBalanceData(balanceRes.data);
+        }
+      }
+      if (idUser) {
+        const historyRes = await api_xcoin_getRedemptionHistory(idUser);
+        if (historyRes.success && Array.isArray(historyRes.data)) {
+          const byId = {};
+          rewards.forEach((r) => { if (r.raw) byId[r.id] = r.raw; });
+          setClaimedRewards(historyRes.data.map((r) => mapRedemptionToClaimed(r, byId)));
+        }
+      }
+    } else {
+      toast.error(res.message || "Error al realizar el canje");
     }
   };
 
@@ -905,13 +1138,6 @@ const XCoinHome = () => {
    - Los cambios serán notificados a través de la plataforma.
 
 Al aceptar estas políticas, confirmas que has leído y comprendido todos los términos y condiciones del sistema de recompensas XCoin.`;
-
-  const categories = [
-    { id: "all", label: "Todas" },
-    { id: "llantas", label: "Llantas" },
-    { id: "llantas-moto", label: "Llantas Moto" },
-    { id: "herramientas", label: "Herramientas" },
-  ];
 
   return (
     <>
@@ -1008,7 +1234,14 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                 <RewardsSection>
                   <RewardsDivider />
 
-                  {filteredRewards.length === 0 ? (
+                  {loadingProducts ? (
+                    <EmptyState>
+                      <RenderLoader />
+                      <EmptyStateText style={{ marginTop: "1rem" }}>
+                        Cargando catálogo...
+                      </EmptyStateText>
+                    </EmptyState>
+                  ) : filteredRewards.length === 0 ? (
                     <EmptyState>
                       <EmptyStateIcon>
                         <RenderIcon name="FaGift" size={64} />
@@ -1020,21 +1253,41 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   ) : (
                     <RewardsGrid>
                       {filteredRewards.map((reward) => {
+                        const stock = reward.raw?.STOCK_QUANTITY ?? 0;
+                        const hasStock = typeof stock === "number" && stock > 0;
                         const canAfford = userPoints >= reward.points;
+                        const canRedeem = hasStock && canAfford;
+                        const buttonText = !hasStock
+                          ? "Sin stock"
+                          : !canAfford
+                            ? "Puntos insuficientes"
+                            : "Canjear";
                         return (
-                          <RewardCard key={reward.id} $canAfford={canAfford}>
+                          <RewardCard key={reward.id} $canAfford={canRedeem}>
                             <RewardImage>
-                              {reward.image ? (
-                                <img src={reward.image} alt={reward.name} />
-                              ) : (
-                                <RenderIcon name="FaGift" size={64} />
-                              )}
+                              <RewardImageWithFallback
+                                src={reward.image}
+                                alt={reward.name}
+                                iconSize={64}
+                              />
                             </RewardImage>
                             <RewardInfo>
                               <RewardName>{reward.name}</RewardName>
-                              <RewardDescription>
-                                {reward.description}
-                              </RewardDescription>
+                              {(reward.brand || reward.enterprise) && (
+                                <RewardChips>
+                                  {reward.brand && (
+                                    <RewardChip>{reward.brand}</RewardChip>
+                                  )}
+                                  {reward.enterprise && (
+                                    <RewardChip>{reward.enterprise}</RewardChip>
+                                  )}
+                                </RewardChips>
+                              )}
+                              {reward.description ? (
+                                <RewardDescription>
+                                  {reward.description}
+                                </RewardDescription>
+                              ) : null}
                             </RewardInfo>
                             <RewardFooter>
                               <RewardPoints>
@@ -1042,12 +1295,12 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                                 {reward.points.toLocaleString()}
                               </RewardPoints>
                               <ClaimButton
-                                text={canAfford ? "Canjear" : "Insuficiente"}
-                                variant={canAfford ? "solid" : "outline"}
-                                disabled={!canAfford}
+                                text={buttonText}
+                                variant={canRedeem ? "solid" : "outline"}
+                                disabled={!canRedeem}
                                 onClick={() => handleClaimReward(reward)}
                                 backgroundColor={
-                                  canAfford ? theme.colors.primary : undefined
+                                  canRedeem ? theme.colors.primary : undefined
                                 }
                               />
                             </RewardFooter>
@@ -1059,70 +1312,118 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                 </RewardsSection>
               </>
             ) : (
-              <ClaimedRewardsList>
+              <ClaimedRewardsGrid>
                 {claimedRewards.length === 0 ? (
                   <div
                     style={{
+                      gridColumn: "1 / -1",
                       textAlign: "center",
-                      padding: "3rem 1rem",
+                      padding: "2rem 1rem",
                       color: theme.colors.textSecondary,
                     }}
                   >
-                    <RenderIcon name="FaGift" size={64} />
+                    <RenderIcon name="FaGift" size={48} />
                     <p
                       style={{
-                        marginTop: "1rem",
-                        fontSize: "1.1rem",
+                        marginTop: "0.75rem",
+                        fontSize: "1rem",
                         fontWeight: 600,
                       }}
                     >
                       Aún no has reclamado ninguna recompensa
                     </p>
-                    <p style={{ marginTop: "0.5rem", fontSize: "0.9rem" }}>
-                      Explora el catálogo y canjea tus puntos por increíbles
-                      premios
+                    <p style={{ marginTop: "0.35rem", fontSize: "0.85rem" }}>
+                      Explora el catálogo y canjea tus puntos por increíbles premios
                     </p>
                   </div>
                 ) : (
-                  claimedRewards.map((claimed) => (
-                    <ClaimedRewardCard key={claimed.id}>
-                      <ClaimedRewardIcon>
-                        <RenderIcon
-                          name="FaGift"
-                          size={32}
-                          style={{ color: theme.colors.primary }}
-                        />
-                      </ClaimedRewardIcon>
-                      <ClaimedRewardInfo>
-                        <ClaimedRewardName>{claimed.name}</ClaimedRewardName>
-                        <ClaimedRewardDetails>
-                          <ClaimedRewardDetail>
-                            <RenderIcon name="FaCoins" size={16} />
-                            <span>
-                              {claimed.points.toLocaleString()} puntos
-                            </span>
-                          </ClaimedRewardDetail>
-                          <ClaimedRewardDetail>
-                            <RenderIcon name="FaCalendar" size={14} />
-                            <span>
-                              {new Date(
-                                claimed.claimedAt
-                              ).toLocaleDateString("es-ES", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </span>
-                          </ClaimedRewardDetail>
-                          <StatusBadge $status={claimed.status}>
-                            {claimed.status === "activo" ? "Activo" : "Usado"}
-                          </StatusBadge>
-                        </ClaimedRewardDetails>
-                      </ClaimedRewardInfo>
-                    </ClaimedRewardCard>
-                  ))
+                  claimedRewards.map((claimed) => {
+                    const rewardInCatalog = rewards.find(
+                      (r) => r.id === claimed.rewardId
+                    );
+                    const pointsPerUnit =
+                      claimed.quantity > 0
+                        ? Math.floor(claimed.points / claimed.quantity)
+                        : 0;
+                    const hasStock =
+                      rewardInCatalog &&
+                      (rewardInCatalog.raw?.STOCK_QUANTITY ?? 0) > 0;
+                    const canAffordAgain =
+                      rewardInCatalog && userPoints >= (rewardInCatalog.points ?? pointsPerUnit);
+                    const canRedeemAgain =
+                      claimed.isActive &&
+                      rewardInCatalog &&
+                      hasStock &&
+                      canAffordAgain;
+                    const redeemAgainText = !claimed.isActive
+                      ? "No disponible"
+                      : !rewardInCatalog
+                        ? "No disponible"
+                        : !hasStock
+                          ? "Sin stock"
+                          : !canAffordAgain
+                            ? "Puntos insuficientes"
+                            : "Canjear otra vez";
+                    return (
+                      <ClaimedRewardCard key={claimed.id}>
+                        <ClaimedRewardImageWrap>
+                          <RewardImageWithFallback
+                            src={claimed.image}
+                            alt={claimed.name}
+                            iconSize={28}
+                          />
+                        </ClaimedRewardImageWrap>
+                        <ClaimedRewardInfo>
+                          <ClaimedRewardName>{claimed.name}</ClaimedRewardName>
+                          {(claimed.brand || claimed.enterprise) && (
+                            <RewardChips>
+                              {claimed.brand && (
+                                <RewardChip>{claimed.brand}</RewardChip>
+                              )}
+                              {claimed.enterprise && (
+                                <RewardChip>{claimed.enterprise}</RewardChip>
+                              )}
+                            </RewardChips>
+                          )}
+                          <ClaimedRewardMeta>
+                            <ClaimedRewardMetaItem>
+                              <RenderIcon name="FaBox" size={9} />
+                              {claimed.quantity} ud.
+                            </ClaimedRewardMetaItem>
+                            <ClaimedRewardMetaItem>
+                              <RenderIcon name="FaCoins" size={9} />
+                              {claimed.points.toLocaleString()} pts
+                            </ClaimedRewardMetaItem>
+                            <ClaimedRewardMetaItem>
+                              <RenderIcon name="FaCalendar" size={9} />
+                              {new Date(claimed.claimedAt).toLocaleDateString(
+                                "es-ES",
+                                { day: "numeric", month: "short", year: "2-digit" }
+                              )}
+                            </ClaimedRewardMetaItem>
+                          </ClaimedRewardMeta>
+                        </ClaimedRewardInfo>
+                        <ClaimedRewardFooter>
+                          <ClaimedRedeemButton
+                            text={redeemAgainText}
+                            variant={canRedeemAgain ? "solid" : "outline"}
+                            disabled={!canRedeemAgain}
+                            onClick={() =>
+                              canRedeemAgain &&
+                              rewardInCatalog &&
+                              handleClaimReward(rewardInCatalog)
+                            }
+                            backgroundColor={
+                              canRedeemAgain ? theme.colors.primary : undefined
+                            }
+                            leftIconName={canRedeemAgain ? "FaGift" : undefined}
+                          />
+                        </ClaimedRewardFooter>
+                      </ClaimedRewardCard>
+                    );
+                  })
                 )}
-              </ClaimedRewardsList>
+              </ClaimedRewardsGrid>
             )}
           </MainContainer>
         </XCoinContainer>
@@ -1164,6 +1465,7 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
           onClose={() => {
             setIsRewardModalOpen(false);
             setSelectedReward(null);
+            setRedeemQuantity(1);
           }}
           title={selectedReward?.name || "Detalles de Recompensa"}
           titleIcon="FaGift"
@@ -1177,17 +1479,20 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   onClick={() => {
                     setIsRewardModalOpen(false);
                     setSelectedReward(null);
+                    setRedeemQuantity(1);
                   }}
                   style={{ flex: 1 }}
                 />
                 <Button
                   text={
-                    userPoints >= selectedReward.points
-                      ? `Canjear por ${selectedReward.points.toLocaleString()} puntos`
-                      : "Puntos insuficientes"
+                    isSubmittingRedeem
+                      ? "Procesando..."
+                      : canAffordRedeem
+                        ? `Canjear por ${redeemTotalPoints.toLocaleString()} puntos`
+                        : "Puntos insuficientes"
                   }
                   variant="solid"
-                  disabled={userPoints < selectedReward.points}
+                  disabled={!canAffordRedeem || isSubmittingRedeem}
                   onClick={handleConfirmClaim}
                   backgroundColor={theme.colors.primary}
                   style={{ flex: 1 }}
@@ -1220,43 +1525,147 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   }`,
                 }}
               >
-                {selectedReward.image ? (
-                  <img
-                    src={selectedReward.image}
-                    alt={selectedReward.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <RenderIcon name="FaGift" size={80} />
-                )}
+                <RewardImageWithFallback
+                  src={selectedReward.image}
+                  alt={selectedReward.name}
+                  iconSize={80}
+                />
               </div>
 
+              {/* Chips Brand / Enterprise */}
+              {(selectedReward.brand || selectedReward.enterprise) && (
+                <RewardChips style={{ marginBottom: "20px" }}>
+                  {selectedReward.brand && (
+                    <RewardChip>{selectedReward.brand}</RewardChip>
+                  )}
+                  {selectedReward.enterprise && (
+                    <RewardChip>{selectedReward.enterprise}</RewardChip>
+                  )}
+                </RewardChips>
+              )}
+
               {/* Descripción */}
-              <div style={{ marginBottom: "24px" }}>
-                <h3
+              {selectedReward.description ? (
+                <div style={{ marginBottom: "24px" }}>
+                  <h3
+                    style={{
+                      margin: "0 0 12px 0",
+                      color: theme.colors.text,
+                      fontSize: "1.1rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Descripción
+                  </h3>
+                  <p
+                    style={{
+                      margin: 0,
+                      color: theme.colors.textSecondary,
+                      lineHeight: 1.6,
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    {selectedReward.description}
+                  </p>
+                </div>
+              ) : null}
+
+              {/* Cantidad */}
+              <div
+                style={{
+                  marginBottom: "24px",
+                  padding: "16px",
+                  background:
+                    theme.mode === "dark"
+                      ? `${theme.colors.background}80`
+                      : `${theme.colors.background}`,
+                  borderRadius: "12px",
+                  border: `1px solid ${
+                    theme.mode === "dark"
+                      ? `${theme.colors.border}40`
+                      : `${theme.colors.border}30`
+                  }`,
+                }}
+              >
+                <div
                   style={{
-                    margin: "0 0 12px 0",
-                    color: theme.colors.text,
-                    fontSize: "1.1rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  Descripción
-                </h3>
-                <p
-                  style={{
-                    margin: 0,
+                    fontSize: "0.85rem",
                     color: theme.colors.textSecondary,
-                    lineHeight: 1.6,
-                    fontSize: "0.95rem",
+                    marginBottom: "8px",
                   }}
                 >
-                  {selectedReward.description}
-                </p>
+                  Cantidad
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0" }}>
+                    <button
+                      type="button"
+                      onClick={() => setRedeemQuantity((q) => Math.max(maxRedeemQuantity === 0 ? 0 : 1, q - 1))}
+                      disabled={redeemQuantity <= (maxRedeemQuantity === 0 ? 0 : 1)}
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        border: `1px solid ${theme.colors.border}`,
+                        borderRadius: "8px 0 0 8px",
+                        background: theme.colors.surface,
+                        color: theme.colors.text,
+                        fontSize: "1.25rem",
+                        cursor: redeemQuantity <= (maxRedeemQuantity === 0 ? 0 : 1) ? "not-allowed" : "pointer",
+                        opacity: redeemQuantity <= (maxRedeemQuantity === 0 ? 0 : 1) ? 0.5 : 1,
+                      }}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={maxRedeemQuantity === 0 ? 0 : 1}
+                      max={maxRedeemQuantity}
+                      value={redeemQuantity}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        if (!Number.isNaN(v)) {
+                          const minQ = maxRedeemQuantity === 0 ? 0 : 1;
+                          setRedeemQuantity(Math.max(minQ, Math.min(maxRedeemQuantity, v)));
+                        }
+                      }}
+                      style={{
+                        width: "56px",
+                        height: "36px",
+                        border: `1px solid ${theme.colors.border}`,
+                        borderLeft: "none",
+                        borderRight: "none",
+                        borderRadius: 0,
+                        textAlign: "center",
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        background: theme.colors.surface,
+                        color: theme.colors.text,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setRedeemQuantity((q) => Math.min(maxRedeemQuantity, q + 1))}
+                      disabled={redeemQuantity >= maxRedeemQuantity}
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        border: `1px solid ${theme.colors.border}`,
+                        borderRadius: "0 8px 8px 0",
+                        background: theme.colors.surface,
+                        color: theme.colors.text,
+                        fontSize: "1.25rem",
+                        cursor: redeemQuantity >= maxRedeemQuantity ? "not-allowed" : "pointer",
+                        opacity: redeemQuantity >= maxRedeemQuantity ? 0.5 : 1,
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span style={{ fontSize: "0.9rem", color: theme.colors.textSecondary }}>
+                    Máx. {maxRedeemQuantity} (stock y puntos)
+                  </span>
+                </div>
               </div>
 
               {/* Información de puntos */}
@@ -1286,7 +1695,7 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                       marginBottom: "4px",
                     }}
                   >
-                    Costo de canje
+                    Costo total ({redeemQuantity} × {selectedReward.points.toLocaleString()} pts)
                   </div>
                   <div
                     style={{
@@ -1299,7 +1708,7 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                     }}
                   >
                     <RenderIcon name="FaCoins" size={24} />
-                    {selectedReward.points.toLocaleString()} puntos
+                    {redeemTotalPoints.toLocaleString()} puntos
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -1325,7 +1734,7 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
               </div>
 
               {/* Mensaje si no tiene suficientes puntos */}
-              {userPoints < selectedReward.points && (
+              {userPoints < redeemTotalPoints && (
                 <div
                   style={{
                     marginTop: "16px",
@@ -1346,8 +1755,8 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   <RenderIcon name="FaExclamationTriangle" size={18} />
                   <span>
                     Necesitas{" "}
-                    {(selectedReward.points - userPoints).toLocaleString()}{" "}
-                    puntos más para canjear esta recompensa
+                    {(redeemTotalPoints - userPoints).toLocaleString()}{" "}
+                    puntos más para canjear {redeemQuantity} {redeemQuantity === 1 ? "unidad" : "unidades"}
                   </span>
                 </div>
               )}
