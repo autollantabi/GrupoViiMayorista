@@ -1014,8 +1014,9 @@ const SearchResults = () => {
       }
 
       // Navegar al detalle del producto
+      const empresaId = product.empresaId || "";
       navigate(
-        `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+        `/productos/${encodeURIComponent(empresaId)}/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
         {
           state: {
             product,

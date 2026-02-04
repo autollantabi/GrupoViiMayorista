@@ -533,8 +533,9 @@ const DetallePedido = () => {
     const product = orderDetails?.detalle?.find(
       (item) => item.PRODUCT_ID === productId
     );
+    const empresaId = orderDetails?.empresaInfo?.id || "";
 
-    navigate(`/productos/${productId}`, {
+    navigate(`/productos/${encodeURIComponent(empresaId)}/${productId}`, {
       state: {
         product: product
           ? {

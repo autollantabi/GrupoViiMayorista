@@ -922,7 +922,8 @@ const CartItem = ({
   const subTotal = priceWithIVA * item.quantity;
 
   const handleItemClick = () => {
-    navigate(`/productos/${item.id}`, {
+    const empresaId = item.empresaId || "";
+    navigate(`/productos/${encodeURIComponent(empresaId)}/${item.id}`, {
       state: {
         product: item, // Pasar el producto completo
         empresaId: item.empresaId,

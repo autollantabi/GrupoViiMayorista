@@ -860,8 +860,9 @@ const Catalog = () => {
     const currentUrl = `/catalogo/${empresaName || ""}${location.search}`;
 
     // Navegar directamente al detalle del producto
+    const empresaId = empresaName || product.empresaId;
     navigate(
-      `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+      `/productos/${encodeURIComponent(empresaId)}/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
       {
         state: {
           product: product,

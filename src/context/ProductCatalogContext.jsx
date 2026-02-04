@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 import {
   api_products_getProductByCodigo,
   api_products_getProductByField,
+  api_products_getProductById,
   api_products_searchProducts,
 } from "../api/products/apiProducts";
 import { PRODUCT_LINE_CONFIG } from "../constants/productLineConfig";
@@ -140,6 +141,20 @@ export const ProductCatalogProvider = ({ children }) => {
     }
   };
 
+  /** Carga un solo producto por ID y empresa. La API siempre requiere empresaId. Ruta: /productos/:empresaId/:id */
+  const loadProductById = async (productId, empresaId) => {
+    try {
+      const resp = await api_products_getProductById(productId, empresaId);
+
+      if (resp.success && resp.data) {
+        return mapApiProductToAppFormat(resp.data);
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  };
+
   // Forzar recarga desde la API
   const reloadProductsForEmpresa = async (empresaName, ordenamiento) => {
     setLoadingByEmpresa((prev) => ({ ...prev, [empresaName]: true }));
@@ -218,6 +233,7 @@ export const ProductCatalogProvider = ({ children }) => {
         mapApiProductToAppFormat, // Exportar el mapeo para uso externo si se requiere
         loadProductsBySearchTerm, // Nueva función para búsqueda
         loadProductByCodigo,
+        loadProductById,
       }}
     >
       {children}

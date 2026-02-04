@@ -22,7 +22,7 @@ export const useProductStructuredData = (product) => {
       },
       "offers": {
         "@type": "Offer",
-        "url": `${baseUrl}/productos/${product.id}`,
+        "url": `${baseUrl}/productos/${product.empresaId || ""}/${product.id}`,
         "priceCurrency": "USD",
         "price": product.price || 0,
         "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",

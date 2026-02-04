@@ -32,7 +32,7 @@ Resumen de los headers HTTP configurados en el proyecto para seguridad y privaci
 Política configurada (resumida):
 
 - **default-src 'self'** — Por defecto solo recursos del mismo origen.
-- **script-src 'self'** — Scripts solo desde el mismo origen (bundle de Vite).
+- **script-src** — En **desarrollo** (Vite): `'self' 'unsafe-inline' 'unsafe-eval'` para que HMR y React Refresh funcionen (Vite inyecta scripts inline). En **producción** (vercel.json): `'self'` solo (sin inline).
 - **style-src 'self' 'unsafe-inline' https://fonts.googleapis.com** — Estilos propios, inline (styled-components) y Google Fonts.
 - **font-src 'self' https://fonts.gstatic.com** — Fuentes propias y Google.
 - **img-src 'self' data: https:** — Imágenes propias, data URL e imágenes HTTPS (API, ui-avatars.com, etc.).

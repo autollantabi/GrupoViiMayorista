@@ -581,8 +581,9 @@ const DetallePedidoCoordinador = () => {
   const handleProductClick = (productId) => {
     // Buscar el producto en los detalles del pedido
     const product = orderDetails?.detalle?.find(item => item.PRODUCT_ID === productId);
-    
-    navigate(`/productos/${productId}`, {
+    const empresaId = orderDetails?.empresaInfo?.id || "";
+
+    navigate(`/productos/${encodeURIComponent(empresaId)}/${productId}`, {
       state: {
         product: product ? {
           id: product.PRODUCT_ID,

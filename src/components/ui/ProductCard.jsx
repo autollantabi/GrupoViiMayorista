@@ -1071,8 +1071,9 @@ const ProductCard = ({
     }
 
     // Navegar al detalle del producto pasando la URL anterior y filtros
+    const empresaId = product.empresaId || "";
     navigate(
-      `/productos/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
+      `/productos/${encodeURIComponent(empresaId)}/${product.id}?prevUrl=${encodeURIComponent(currentUrl)}`,
       {
         state: {
           product,

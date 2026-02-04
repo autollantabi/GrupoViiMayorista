@@ -93,6 +93,38 @@ export const api_products_getProductByCodigo = async (value, empresaId) => {
 };
 
 /**
+ * Obtiene un solo producto por su ID (identificador) y empresa.
+ * Ruta: GET /web/productos/getProductoById/{productId}/{empresaId}
+ * empresaId es obligatorio: no existe API sin empresa.
+ * @param {string} productId - ID del producto (ej. DMA_IDENTIFICADORITEM)
+ * @param {string} empresaId - ID de la empresa (obligatorio)
+ * @return {Promise<Object>} - Respuesta de la API con data = objeto producto
+ */
+export const api_products_getProductById = async (productId, empresaId) => {
+  try {
+    const base = "/web/productos";
+    const response = await api.get(
+      `${base}/getProductoById/${encodeURIComponent(productId)}/${encodeURIComponent(empresaId)}`
+    );
+    return {
+      success: true,
+      message: response.data.message || "Producto obtenido correctamente",
+      data: response.data.data || response.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al obtener el producto";
+
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
  * Obtiene información de productos (incluyendo cantidad)
  * @return {Promise<Object>} - Respuesta de la API
  */

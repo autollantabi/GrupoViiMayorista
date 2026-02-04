@@ -20,7 +20,7 @@ export const ROUTES = {
   ECOMMERCE: {
     HOME: "/",
     CATALOGO: "/catalogo/:empresaName?",
-    DETALLE_PRODUCTO: "/productos/:id",
+    DETALLE_PRODUCTO: "/productos/:empresaId/:id",
     CARRITO: "/carrito",
     MIS_PEDIDOS: "/mis-pedidos",
     DETALLE_PEDIDO: "/mis-pedidos/:orderId",

@@ -1016,11 +1016,11 @@ const renderSpecifications = (product) => {
 };
 
 const DetalleProducto = () => {
-  const { id } = useParams();
+  const { id, empresaId: empresaIdParam } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loadProductByCodigo } = useProductCatalog();
+  const { loadProductByCodigo, loadProductById } = useProductCatalog();
   const { navigateToHomeByRole, isClient, isVisualizacion } = useAuth();
   const { addToCart, cart } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -1038,12 +1038,13 @@ const DetalleProducto = () => {
   const structuredData = useProductStructuredData(product);
 
   const resolvedEmpresaId = useMemo(() => {
+    if (empresaIdParam) return empresaIdParam;
     const companyFromState = location.state?.empresaId;
     if (companyFromState) return companyFromState;
     if (product?.empresaId) return product.empresaId;
     if (product?.empresa) return product.empresa;
     return null;
-  }, [location.state, product?.empresaId, product?.empresa]);
+  }, [empresaIdParam, location.state, product?.empresaId, product?.empresa]);
 
   const [isHovering, setIsHovering] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -1052,6 +1053,8 @@ const DetalleProducto = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [loadingProduct, setLoadingProduct] = useState(false);
+  const [productNotFound, setProductNotFound] = useState(false);
   const hoverTimeoutRef = useRef(null);
   const hasFetchedProductRef = useRef(false);
   const quantityIntervalRef = useRef(null);
@@ -1273,6 +1276,24 @@ const DetalleProducto = () => {
     return Math.max(0, product.stock - currentInCart);
   }, [product, currentInCart]);
 
+  // Calcular el máximo de cantidad basado en el stock disponible (siempre declarado para cumplir Rules of Hooks)
+  const maxQuantity = useMemo(() => {
+    if (!product) return 0;
+    return product.stock || 0;
+  }, [product]);
+
+  // Asegurar que la cantidad no exceda el stock disponible (siempre declarado para cumplir Rules of Hooks)
+  useEffect(() => {
+    const maxStock = product?.stock || 0;
+    if (maxStock === 0) {
+      setQuantity(0);
+    } else if (quantity > maxStock) {
+      setQuantity(maxStock);
+    } else if (quantity === 0 && maxStock > 0) {
+      setQuantity(1);
+    }
+  }, [product?.stock]);
+
   // Funciones para manejar la imagen
   const handleImageLoad = () => {
     setImageLoading(false);
@@ -1317,6 +1338,7 @@ const DetalleProducto = () => {
 
   useEffect(() => {
     hasFetchedProductRef.current = false;
+    setProductNotFound(false);
   }, [id]);
 
   const resolvedImageSrc = useMemo(() => {
@@ -1337,56 +1359,57 @@ const DetalleProducto = () => {
   }, [resolvedImageSrc]);
 
   useEffect(() => {
+    if (!id) {
+      setProductNotFound(true);
+      return;
+    }
     if (hasFetchedProductRef.current) {
       return;
     }
 
-    if (!resolvedEmpresaId) {
-      if (!product) {
-        handleNavigate();
-      }
-      return;
-    }
+    const aplicarProducto = (productoApi) => {
+      if (!productoApi) return false;
+      setProduct((prev) => {
+        if (!prev) return productoApi;
+        const merged = {
+          ...prev,
+          ...productoApi,
+        };
+        if (!productoApi?.image && prev.image) merged.image = prev.image;
+        if (!productoApi?.description && prev.description) merged.description = prev.description;
+        if (!productoApi?.brand && prev.brand) merged.brand = prev.brand;
+        return merged;
+      });
+      hasFetchedProductRef.current = true;
+      return true;
+    };
 
     const cargarProducto = async () => {
-      const productoApi = await loadProductByCodigo(id, resolvedEmpresaId);
+      if (resolvedEmpresaId) {
+        const productoApi = await loadProductByCodigo(id, resolvedEmpresaId);
+        if (aplicarProducto(productoApi)) return;
+        if (!product) handleNavigate();
+        return;
+      }
 
-      if (productoApi) {
-        setProduct((prev) => {
-          if (!prev) {
-            return productoApi;
-          }
-
-          const merged = {
-            ...prev,
-            ...productoApi,
-          };
-
-          // Preservar la imagen previa si la nueva es falsy
-          if (!productoApi?.image && prev.image) {
-            merged.image = prev.image;
-          }
-
-          // Preservar la descripción previa si la nueva es falsy
-          if (!productoApi?.description && prev.description) {
-            merged.description = prev.description;
-          }
-
-          // Preservar la marca previa si la nueva es falsy
-          if (!productoApi?.brand && prev.brand) {
-            merged.brand = prev.brand;
-          }
-
-          return merged;
-        });
-        hasFetchedProductRef.current = true;
-      } else if (!product) {
-        handleNavigate();
+      // Sin empresaId en la URL no se puede consultar (la API siempre requiere empresaId)
+      if (!resolvedEmpresaId) {
+        setProductNotFound(true);
+        return;
+      }
+      setLoadingProduct(true);
+      setProductNotFound(false);
+      try {
+        const productoApi = await loadProductById(id, resolvedEmpresaId);
+        if (aplicarProducto(productoApi)) return;
+        setProductNotFound(true);
+      } finally {
+        setLoadingProduct(false);
       }
     };
 
     cargarProducto();
-  }, [id, resolvedEmpresaId, loadProductByCodigo, product]);
+  }, [id, resolvedEmpresaId, loadProductByCodigo, loadProductById, product]);
 
   // Limpiar timeout al desmontar el componente
   useEffect(() => {
@@ -1430,28 +1453,41 @@ const DetalleProducto = () => {
     };
   }, [isHovering]);
 
-  if (!product) {
-    return <div>Cargando...</div>;
+  // Limpiar intervalos de cantidad al desmontar (siempre declarado para cumplir Rules of Hooks)
+  useEffect(() => {
+    return () => {
+      if (quantityIntervalRef.current) {
+        if (typeof quantityIntervalRef.current === "number") {
+          clearTimeout(quantityIntervalRef.current);
+        } else {
+          clearInterval(quantityIntervalRef.current);
+        }
+      }
+    };
+  }, []);
+
+  if (loadingProduct || (!product && !productNotFound)) {
+    return (
+      <PageContainer>
+        <div style={{ padding: "2rem", textAlign: "center" }}>Cargando producto...</div>
+      </PageContainer>
+    );
   }
 
-  // Calcular el máximo de cantidad basado en el stock disponible
-  const maxQuantity = useMemo(() => {
-    if (!product) return 0;
-    // Usar el stock como máximo, si no hay stock retornar 0
-    return product.stock || 0;
-  }, [product]);
+  if (productNotFound) {
+    return (
+      <PageContainer>
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <p style={{ marginBottom: "1rem" }}>Producto no encontrado.</p>
+          <Button onClick={() => navigateToHomeByRole()}>Ir al inicio</Button>
+        </div>
+      </PageContainer>
+    );
+  }
 
-  // Asegurar que la cantidad no exceda el stock disponible
-  useEffect(() => {
-    const maxStock = product?.stock || 0;
-    if (maxStock === 0) {
-      setQuantity(0);
-    } else if (quantity > maxStock) {
-      setQuantity(maxStock);
-    } else if (quantity === 0 && maxStock > 0) {
-      setQuantity(1);
-    }
-  }, [product?.stock]);
+  if (!product) {
+    return null;
+  }
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
@@ -1576,19 +1612,6 @@ const DetalleProducto = () => {
     handleQuantityButtonMouseUp();
   };
 
-  // Limpiar intervalos al desmontar
-  useEffect(() => {
-    return () => {
-      if (quantityIntervalRef.current) {
-        if (typeof quantityIntervalRef.current === "number") {
-          clearTimeout(quantityIntervalRef.current);
-        } else {
-          clearInterval(quantityIntervalRef.current);
-        }
-      }
-    };
-  }, []);
-
   const handleAddToCart = () => {
     if (!isAddingToCart && product.stock > 0 && quantity > 0) {
       setIsAddingToCart(true);
@@ -1641,7 +1664,7 @@ const DetalleProducto = () => {
             : ""
         }`}
         image={product?.image}
-        url={`https://viicommerce.com/productos/${product?.id}`}
+        url={`https://viicommerce.com/productos/${product?.empresaId || resolvedEmpresaId || ""}/${product?.id}`}
         type="product"
         structuredData={structuredData}
       />

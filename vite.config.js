@@ -18,11 +18,11 @@ export default defineConfig({
         "max-age=31536000; includeSubDomains; preload",
       "Content-Security-Policy": [
         "default-src 'self'",
-        "script-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https:",
-        "connect-src 'self' https: http://localhost:4200 http://localhost:5000 http://localhost:3000 http://127.0.0.1:4200 http://127.0.0.1:5000 http://127.0.0.1:3000",
+        "connect-src 'self' https: http:",
         "frame-ancestors 'self'",
         "base-uri 'self'",
         "form-action 'self'",
