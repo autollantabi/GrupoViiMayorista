@@ -36,7 +36,7 @@ Justificación de las tecnologías elegidas, alternativas que se infieren del co
 
 ### Axios
 
-- **Uso:** Cliente HTTP en `constants/api.js` y `constants/apiShell.js`; interceptor para `id-session` en la API principal.
+- **Uso:** Cliente HTTP en `constants/api.js`; interceptor para `id-session` en la API principal. Shell usa la misma instancia (proxy en backend).
 - **Justificación (inferida):** Interceptores, manejo de errores, API sencilla. El proyecto no usa fetch directamente para las APIs de negocio.
 - **Alternativas:** fetch nativo, ky, got. fetch no tiene interceptores nativos; axios permite centralizar cabeceras y manejo de errores.
 - **Trade-off:** Dependencia adicional; en entornos modernos fetch podría ser suficiente si se encapsula en una capa propia.

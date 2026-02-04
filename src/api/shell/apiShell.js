@@ -1,4 +1,4 @@
-import apiShell from "../../constants/apiShell";
+import api from "../../constants/api";
 
 /**
  * Busca si un usuario ya está registrado en la app Shell por código SAP
@@ -7,7 +7,7 @@ import apiShell from "../../constants/apiShell";
  */
 export const api_shell_searchManager = async (sapCode) => {
   try {
-    const response = await apiShell.get(`/usuarios/search-manager/${sapCode}`);
+    const response = await api.get(`/club-shell-maxx/usuarios/search-manager/${sapCode}`);
     return {
       success: true,
       message: response.data.message || "Usuario encontrado exitosamente",
@@ -49,7 +49,7 @@ export const api_shell_searchManager = async (sapCode) => {
  */
 export const api_shell_createUser = async (userData) => {
   try {
-    const response = await apiShell.post("/usuarios", {
+    const response = await api.post("/club-shell-maxx/usuarios", {
       name: userData.name,
       lastname: userData.lastname,
       card_id: userData.card_id,

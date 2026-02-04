@@ -121,7 +121,7 @@ Si el login falla, se muestra mensaje (toast) y no se guarda sesión.
 
 ## Flujo App Shell (Lider Shell)
 
-1. Usuario accede a `/app-shell` (AppShell). Se busca usuario por código SAP con api_shell_searchManager; se puede crear usuario en la app Lider Shell con api_shell_createUser. Todas las llamadas usan la instancia apiShell (API Key, sin id-session).
+1. Usuario accede a `/app-shell` (AppShell). Se busca usuario por código SAP con api_shell_searchManager; se puede crear usuario en la app Lider Shell con api_shell_createUser. Las llamadas van por la API principal (api.js) a rutas `/club-shell-maxx/...`; el backend hace de proxy y añade la API Key.
 
 ---
 

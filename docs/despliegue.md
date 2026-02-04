@@ -30,7 +30,7 @@ Variables críticas para producción (ver [docs/setup.md](setup.md)):
 - `VITE_API_URL` — API principal.
 - `VITE_API_IMAGES_URL` — Imágenes de productos.
 - `VITE_SECRET_KEY_TOKEN` — Cifrado del session ID.
-- Si se usan: `VITE_API_APP_SHELL`, `VITE_API_KEY_APP_SHELL`, `VITE_PRODUCTION_URL`, `VITE_DEVELOPMENT_URL`, etc.
+- Si se usan: `VITE_PRODUCTION_URL`, `VITE_DEVELOPMENT_URL`, etc.
 
 Si alguna variable obligatoria falta, el código puede tener `undefined` en runtime (ej. baseURL del axios) y las peticiones fallarán.
 
@@ -50,13 +50,13 @@ Abrir la URL que indique `serve` (ej. http://localhost:3000). Comprobar que logi
 ### Desarrollo
 
 - **Comando:** `npm run dev` (Vite en modo desarrollo, puerto 4200).
-- **Variables:** Usar `.env` con `VITE_API_URL` apuntando al backend de desarrollo (o local). Para App Shell, `VITE_API_APP_SHELL_DESARROLLO` y `VITE_API_KEY_APP_SHELL`. Para bonos/reencauche, `VITE_DEVELOPMENT_URL` si aplica.
+- **Variables:** Usar `.env` con `VITE_API_URL` apuntando al backend de desarrollo (o local). Para bonos/reencauche, `VITE_DEVELOPMENT_URL` si aplica.
 - **API:** El backend debe permitir CORS desde `http://localhost:4200` (y opcionalmente desde la IP de la red local si se usa `host: true`).
 
 ### Producción (build)
 
 - **Comando:** `npm run build` en un entorno con variables de producción definidas.
-- **Variables:** `VITE_API_URL` y `VITE_API_IMAGES_URL` con las URLs de producción. `VITE_SECRET_KEY_TOKEN` debe ser la misma que use el front para descifrar sesiones (y coherente con lo que el backend espera). Para App Shell: `VITE_API_APP_SHELL`, `VITE_API_KEY_APP_SHELL`. Para bonos: `VITE_PRODUCTION_URL` (y `VITE_NODE_ENV` si el código lo usa).
+- **Variables:** `VITE_API_URL` y `VITE_API_IMAGES_URL` con las URLs de producción. `VITE_SECRET_KEY_TOKEN` debe ser la misma que use el front para descifrar sesiones (y coherente con lo que el backend espera). Para bonos: `VITE_PRODUCTION_URL` (y `VITE_NODE_ENV` si el código lo usa).
 - **Salida:** `dist/` listo para servir en cualquier host estático o CDN.
 
 No hay archivos `.env.production` o `.env.development` en el repositorio; la separación de entornos se hace definiendo variables distintas en cada sistema (local, CI, Vercel, etc.).
@@ -89,7 +89,7 @@ El backend debe permitir el origen del front en producción (ej. `https://viicom
 
 ### Variables sensibles
 
-- **VITE_*** se incluyen en el bundle del cliente. No poner secretos de backend ni claves que no deban ser públicas. `VITE_SECRET_KEY_TOKEN` y `VITE_API_KEY_APP_SHELL` son conocidas por quien inspeccione el bundle; la seguridad depende del diseño del backend y de la API Shell (ver [docs/decisiones-tecnicas.md](decisiones-tecnicas.md) y [docs/apis.md](apis.md)).
+- **VITE_*** se incluyen en el bundle del cliente. No poner secretos de backend ni claves que no deban ser públicas. `VITE_SECRET_KEY_TOKEN` es conocida por quien inspeccione el bundle; la seguridad depende del diseño del backend (ver [docs/decisiones-tecnicas.md](decisiones-tecnicas.md) y [docs/apis.md](apis.md)).
 
 ### Caché y assets
 

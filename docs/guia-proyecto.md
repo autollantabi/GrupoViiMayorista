@@ -39,12 +39,11 @@ Si el backend no está disponible, login y la mayoría de pantallas fallarán al
 | Catálogo y productos | `src/context/ProductCatalogContext.jsx`, `src/api/products/`, `src/hooks/useCatalogFlow.js`, `src/config/catalogFlow.json`, `src/constants/productLineConfig.js`, `src/components/catalog/` |
 | Pedidos | `src/api/order/`, páginas en `src/pages/compras/` y `src/pages/coordinadora/` |
 | Bonos / reencauche | `src/api/bonos/`, `src/utils/bonoUtils.js`, `src/utils/bonoHTMLGenerator.js`, `src/pages/reencauche/`, `src/constants/bonoStates.js` |
-| App Shell (Lider Shell) | `src/constants/apiShell.js`, `src/api/shell/`, `src/pages/client/AppShell.jsx` |
+| App Shell (Lider Shell) | `src/api/shell/`, `src/pages/client/AppShell.jsx` |
 | XCoin | `src/api/xcoin/`, `src/pages/xcoin/XCoinHome.jsx` |
 | Tema (claro/oscuro) | `src/context/AppThemeContext.jsx`, `src/constants/theme.js` |
 | Layout, Header, Sidebar | `src/components/layout/` |
-| Cliente HTTP principal | `src/constants/api.js` (axios con interceptor id-session) |
-| Cliente HTTP Shell | `src/constants/apiShell.js` (axios con X-Portal-API-Key) |
+| Cliente HTTP | `src/constants/api.js` (axios con interceptor id-session; Shell va por proxy en el backend) |
 | Definición de rutas y páginas | `src/App.jsx`, `src/routes/routes.jsx` |
 | Redirección por rol al entrar en "/" | `src/pages/Home.jsx` |
 
@@ -53,7 +52,7 @@ Si el backend no está disponible, login y la mayoría de pantallas fallarán al
 ## APIs e integraciones (resumen)
 
 - **API principal:** Base URL en `VITE_API_URL`. Autenticación por header `id-session` (session ID descifrado). Usada por auth, users, cart, order, products, bonos, profile, email, access, accessSections, optionsCatalog, xcoin. Ver [docs/apis.md](apis.md).
-- **API App Shell:** Base URL en `VITE_API_APP_SHELL` / `VITE_API_APP_SHELL_DESARROLLO`. Autenticación por header `X-Portal-API-Key` (`VITE_API_KEY_APP_SHELL`). Usada solo por `api/shell` (búsqueda por código SAP, creación de usuario Lider Shell).
+- **App Shell (Lider Shell):** Las llamadas van por la API principal (`VITE_API_URL`) a rutas como `/club-shell-maxx/...`; el backend actúa como proxy y añade la API Key. Usado por `api/shell` (búsqueda por código SAP, creación de usuario Lider Shell).
 - **Imágenes:** Base URL en `VITE_API_IMAGES_URL` (`constants/links.js`). Las URLs de imágenes de productos se construyen con esta base + path.
 
 No hay otras integraciones de terceros documentadas en el código (ej. analytics, chat) más allá de las APIs anteriores.

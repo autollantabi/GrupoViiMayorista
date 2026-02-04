@@ -15,7 +15,7 @@ Capas identificables:
 
 1. **Presentación:** páginas en `pages/`, componentes en `components/`.
 2. **Estado y lógica de negocio:** contextos en `context/`, hooks en `hooks/`, utils en `utils/`.
-3. **Acceso a datos:** capa `api/` sobre axios (instancia en `constants/api.js`; API Shell en `constants/apiShell.js`).
+3. **Acceso a datos:** capa `api/` sobre axios (instancia única en `constants/api.js`; Shell usa rutas del mismo backend vía proxy).
 4. **Configuración y constantes:** `constants/`, `config/`.
 
 ---
@@ -52,7 +52,7 @@ PortalMayoristaVii/
     │   ├── order/
     │   ├── products/
     │   ├── profile/
-    │   ├── shell/                # Usa constants/apiShell.js (API Key)
+    │   ├── shell/                # Rutas /club-shell-maxx/... vía api (proxy en backend)
     │   ├── users/
     │   └── xcoin/
     ├── assets/                   # Imágenes (logos empresas, ClubShell, etc.)
@@ -83,11 +83,11 @@ PortalMayoristaVii/
 
 | Carpeta | Responsabilidad |
 |---------|-----------------|
-| **api/** | Módulos que llaman a la API REST (y a apiShell para Shell). Cada subcarpeta es un dominio (auth, cart, order, products, bonos, shell, xcoin, etc.). Devuelven `{ success, message, data?, error? }`. |
+| **api/** | Módulos que llaman a la API REST. Cada subcarpeta es un dominio (auth, cart, order, products, bonos, shell, xcoin, etc.). Devuelven `{ success, message, data?, error? }`. Shell usa la misma instancia `api` (proxy en backend). |
 | **assets/** | Imágenes y recursos estáticos referenciados desde código (logos por empresa, ClubShell, GrupoVii). |
 | **components/** | Componentes reutilizables: layout (Header, Sidebar, Layouts), catálogo, UI (Button, Input, Modal, Table), export/PDF, SEO. |
 | **config/** | Configuración en JSON (p. ej. `catalogFlow.json`: líneas de negocio y pasos del flujo de catálogo). |
-| **constants/** | Rutas (`routes.js`), roles (`roles.js`), tema (`theme.js`), cliente API (`api.js`, `apiShell.js`), links (`links.js`), impuestos (`taxes.js`), estados de bonos (`bonoStates.js`), líneas de producto (`productLineConfig.js`). |
+| **constants/** | Rutas (`routes.js`), roles (`roles.js`), tema (`theme.js`), cliente API (`api.js`), links (`links.js`), impuestos (`taxes.js`), estados de bonos (`bonoStates.js`), líneas de producto (`productLineConfig.js`). |
 | **context/** | Estado global: Auth, Cart, ProductCatalog, AppTheme. ProductCacheContext está definido pero no conectado en `main.jsx`. |
 | **hooks/** | Lógica reutilizable: flujo de catálogo (`useCatalogFlow`), tema del sistema (`usePreferredTheme`), datos estructurados SEO (`useStructuredData`), navegación por rol (`useNavigateByRole`). |
 | **mock/** | Datos de prueba (empresas en `products.js`, pedidos coordinadora en `coordinadora/pedidosMock.js`). |
@@ -102,7 +102,7 @@ PortalMayoristaVii/
 ## Separación de responsabilidades
 
 - **Rutas:** Solo definición en `routes.jsx` y protección en `ProtectedRoutes.jsx`. Redirección por rol en `Home.jsx` y en `getHomeForRole` (ProtectedRoutes).
-- **API:** Solo llamadas HTTP y normalización de respuestas; sin estado React. Las instancias axios están en `constants/api.js` y `constants/apiShell.js`.
+- **API:** Solo llamadas HTTP y normalización de respuestas; sin estado React. La instancia axios está en `constants/api.js`.
 - **Contextos:** Estado y acciones de dominio (login, carrito, catálogo, tema). Los componentes y páginas consumen vía hooks (`useAuth`, `useCart`, etc.).
 - **Páginas:** Orquestan UI y llamadas a contextos/hooks/api; la UI reutilizable vive en `components/`.
 
@@ -117,7 +117,7 @@ PortalMayoristaVii/
 - **Carrito y pedidos:** CartContext, `api/cart`, `api/order`, `constants/taxes.js`.
 - **Layout y navegación:** AuthenticatedLayout, CleanLayout, Header, Sidebar, `routes/routes.jsx`, ProtectedRoute, `constants/routes.js`, `constants/roles.js`.
 - **Reencauche:** `api/bonos`, `utils/bonoUtils`, `utils/bonoHTMLGenerator`, páginas en `pages/reencauche/`, `constants/bonoStates.js`.
-- **Shell:** `api/shell`, `constants/apiShell.js` (API Key y URL distinta).
+- **Shell:** `api/shell` (rutas `/club-shell-maxx/...` vía `api`; el backend hace de proxy a la API App Shell).
 - **XCoin:** `api/xcoin`, página XCoinHome.
 - **Tema y SEO:** AppThemeContext, `constants/theme.js`, SEO.jsx, useStructuredData.
 
@@ -256,7 +256,7 @@ No hay uso explícito de Factory, Observer (más allá del propio React) ni otro
 - **API:** try/catch en cada función; retorno `{ success: false, message, error }`; en algunos casos `throw` (ej. api_auth_me) para que el llamador (AuthContext) reaccione.
 - **Contextos:** AuthContext y CartContext capturan errores de API, muestran toast.error y actualizan estado.
 - **UI:** Errores con react-toastify (toast.error, toast.success); no hay página de error global además de 404/Unauthorized.
-- **Logs:** console.error en api, contextos y utils; console.warn en apiShell si falta VITE_API_KEY_APP_SHELL. No hay logging remoto.
+- **Logs:** console.error en api, contextos y utils. No hay logging remoto.
 - **Casos no controlados:** Si VITE_API_URL o VITE_SECRET_KEY_TOKEN no están definidos, la app puede fallar en runtime. No hay Error Boundary global; un error no capturado en un componente puede dejar la SPA en blanco.
 
 ---

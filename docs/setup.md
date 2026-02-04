@@ -33,9 +33,6 @@ Todas las variables usadas en el código tienen prefijo **`VITE_`** para que Vit
 
 | Variable | Uso | Cuándo |
 |----------|-----|--------|
-| `VITE_API_APP_SHELL` | URL del API App Shell (producción). `src/constants/apiShell.js`. | Si se usa integración App Shell / Lider Shell |
-| `VITE_API_APP_SHELL_DESARROLLO` | URL del API App Shell en desarrollo. | Mismo caso, entorno dev |
-| `VITE_API_KEY_APP_SHELL` | API Key para el header `X-Portal-API-Key`. | Mismo caso |
 | `VITE_NODE_ENV` | Comparación con `"production"` para elegir URLs (ej. bonos). | Opcional; Vite define `MODE` |
 | `VITE_PRODUCTION_URL` | URL base del front en producción (verificación de bonos, etc.). | Flujo reencauche/bonos |
 | `VITE_DEVELOPMENT_URL` | URL base del front en desarrollo. | Mismo flujo en dev |
@@ -46,11 +43,6 @@ Todas las variables usadas en el código tienen prefijo **`VITE_`** para que Vit
 VITE_API_URL=https://api.tudominio.com
 VITE_API_IMAGES_URL=https://cdn.tudominio.com/imagenes
 VITE_SECRET_KEY_TOKEN=tu_clave_secreta_aqui
-
-# Opcional: App Shell
-# VITE_API_APP_SHELL=https://api-shell.tudominio.com
-# VITE_API_APP_SHELL_DESARROLLO=http://localhost:3001
-# VITE_API_KEY_APP_SHELL=tu_api_key_shell
 
 # Opcional: URLs para bonos/reencauche
 # VITE_PRODUCTION_URL=https://viicommerce.com
@@ -151,11 +143,6 @@ o usar cualquier servidor estático que sirva `index.html` para todas las rutas 
 - **Causa:** Otro proceso (otra instancia del proyecto, otro servicio) usando el puerto.
 - **Solución:** Cerrar el otro proceso o cambiar el puerto en `vite.config.js` (y en `package.json` en el script `dev` si se desea mantener consistencia).
 
-### App Shell: "APP_SHELL_API_KEY no está definido"
-
-- **Causa:** Se entra a flujos que usan la API Shell (ej. App Shell / Lider Shell) sin tener `VITE_API_KEY_APP_SHELL` en `.env`.
-- **Solución:** Añadir `VITE_API_KEY_APP_SHELL` (y las URLs de App Shell si aplica) o no usar esas pantallas hasta tener configuración.
-
 ### Imágenes de productos no cargan
 
 - **Causa:** `VITE_API_IMAGES_URL` incorrecta o recursos no accesibles (red, CORS, 404).
@@ -186,7 +173,7 @@ o usar cualquier servidor estático que sirva `index.html` para todas las rutas 
 - **VITE_SECRET_KEY_TOKEN:** Si falta o cambia, obtenerSessionID() devuelve null y el usuario queda deslogueado; el backend puede seguir aceptando el mismo idSession si no se ha invalidado.
 - **react-router-dom:** Toda la navegación depende de él; si falla, la SPA no enruta.
 - **AuthContext:** Casi todas las pantallas dependen de user/isAuthenticated; si el contexto no está disponible o falla la validación inicial, la app puede quedarse en "Cargando…" o redirigir siempre a login.
-- **axios:** Todas las llamadas API pasan por la instancia de api.js (o apiShell.js); un interceptor roto afecta a todas las peticiones autenticadas.
+- **axios:** Todas las llamadas API pasan por la instancia de api.js; un interceptor roto afecta a todas las peticiones autenticadas.
 - **styled-components / ThemeProvider:** Si el tema no se inyecta, los componentes que usan `theme` pueden verse rotos o con estilos por defecto.
 
 ---

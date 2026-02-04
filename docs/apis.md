@@ -6,10 +6,9 @@ El proyecto consume APIs REST externas. En este documento se describen los clien
 
 ## Instancias HTTP o clientes utilizados
 
-Hay **dos clientes axios** distintos:
+Hay **un único cliente axios** en el frontend:
 
-1. **API principal del portal** — `src/constants/api.js` (exportado como `api`). Usado por la mayoría de los módulos en `src/api/` (auth, users, cart, order, products, bonos, profile, email, access, accessSections, optionsCatalog, xcoin).
-2. **API App Shell (Lider Shell)** — `src/constants/apiShell.js` (exportado como `apiShell`). Usado solo por `src/api/shell/apiShell.js`.
+1. **API principal del portal** — `src/constants/api.js` (exportado como `api`). Usado por todos los módulos en `src/api/` (auth, users, cart, order, products, bonos, profile, email, access, accessSections, optionsCatalog, xcoin, **shell**). Las llamadas a App Shell (Lider Shell) se hacen a rutas del mismo backend (ej. `/club-shell-maxx/...`), que actúa como proxy y añade la cabecera `X-Portal-API-Key` al reenviar a la API App Shell.
 
 ---
 
@@ -90,34 +89,9 @@ La lista no es exhaustiva; para el listado completo de endpoints hay que revisar
 
 ---
 
-## API App Shell (Lider Shell)
+## App Shell (Lider Shell) vía proxy
 
-### URL y entorno
-
-- **Base URL:** En desarrollo `import.meta.env.VITE_API_APP_SHELL_DESARROLLO`, en producción `import.meta.env.VITE_API_APP_SHELL` (según `import.meta.env.DEV`).
-- **Timeout:** 300 000 ms (300 s).
-
-### Cabeceras
-
-- **X-Portal-API-Key:** Valor de `import.meta.env.VITE_API_KEY_APP_SHELL`. Se asigna a `apiShell.defaults.headers.common` solo si la variable está definida; si no, se muestra un `console.warn` y las peticiones van sin esta cabecera (la API puede rechazarlas).
-- **Content-Type:** `application/json` por defecto en la instancia.
-
-### Servicios que la usan
-
-- **Shell:** `src/api/shell/apiShell.js` — búsqueda de usuario por código SAP y creación de usuario en la app Lider Shell.
-
-### Endpoints representativos
-
-| Método | Path (ejemplo) | Uso |
-|--------|----------------|-----|
-| GET | /usuarios/search-manager/:sapCode | Buscar usuario por código SAP |
-| POST | /usuarios | Crear usuario (name, lastname, card_id, email, phone, roleId, birth_date, sap_code, direcciones) |
-
-### Riesgos o dependencias
-
-- **API Key en el cliente:** `VITE_API_KEY_APP_SHELL` se incluye en el bundle del frontend; cualquier usuario puede inspeccionarla. Se asume que la API Shell restringe por otros medios o que la key es de bajo riesgo en el cliente.
-- **Timeout largo:** 300 s; operaciones muy lentas pueden bloquear la UI si no se manejan con cancelación o feedback adecuado.
-- **Independencia del session del portal:** Esta API no usa el header `id-session`; la autenticación es solo por API Key.
+Las funciones de App Shell (búsqueda por código SAP, creación de usuario Lider Shell) están en `src/api/shell/apiShell.js` y usan la **misma instancia** `api` de `src/constants/api.js`. Las rutas son relativas a `VITE_API_URL` (ej. `/club-shell-maxx/usuarios/search-manager/:sapCode`, `/club-shell-maxx/usuarios`). El backend es quien reenvía esas peticiones a la API App Shell y añade la cabecera `X-Portal-API-Key`; el frontend no expone ni usa esa clave. Ver [docs/seguridad-headers.md](seguridad-headers.md) si aplica.
 
 ---
 
@@ -125,7 +99,6 @@ La lista no es exhaustiva; para el listado completo de endpoints hay que revisar
 
 | Cliente | Archivo | Base URL (env) | Cabecera de autenticación |
 |---------|---------|----------------|----------------------------|
-| API principal | `src/constants/api.js` | VITE_API_URL | id-session (session ID descifrado) |
-| API App Shell | `src/constants/apiShell.js` | VITE_API_APP_SHELL / VITE_API_APP_SHELL_DESARROLLO | X-Portal-API-Key (VITE_API_KEY_APP_SHELL) |
+| API principal (incl. proxy Shell) | `src/constants/api.js` | VITE_API_URL | id-session (session ID descifrado) |
 
 Para variables de entorno necesarias ver [docs/setup.md](setup.md). Para flujos que usan estas APIs ver [docs/flujo-funcional.md](flujo-funcional.md).
