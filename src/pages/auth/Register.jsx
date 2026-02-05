@@ -594,9 +594,9 @@ const AdditionalAccessText = styled.p`
 
 // Información de contacto reutilizable
 const contactInfo = {
-  phone: "02-222-3333",
-  emailSoporte: "soporte@maxximundo.com",
-  emailVentas: "ventas@maxximundo.com",
+  phone: "+593 (07) 2800 022",
+  emailSoporte: "comunicacion@maxximundo.com",
+  emailVentas: "comunicacion@maxximundo.com",
 };
 
 const Register = () => {
@@ -657,8 +657,8 @@ const Register = () => {
 
   // Verificar identificación - con manejo mejorado de casos especiales
   const handleVerify = async () => {
-    if (identification.length < 10) {
-      setError("La cédula o RUC debe tener al menos 10 dígitos");
+    if (identification.length !== 13) {
+      setError("El RUC debe tener 13 dígitos");
       return;
     }
 
@@ -796,18 +796,18 @@ const Register = () => {
     }
   };
 
-  // Renderizar paso 1: Ingreso de cédula/RUC
+  // Renderizar paso 1: Ingreso de RUC
   const renderStep1 = () => (
     <>
       <Title>Registro de usuario</Title>
-      <Subtitle>Ingresa tu cédula o RUC</Subtitle>
+      <Subtitle>Ingresa el RUC de la empresa asociada</Subtitle>
 
       <StyledForm>
         <Input
-          label="Cédula o RUC"
+          label="RUC"
           value={identification}
           onChange={handleIdentificationChange}
-          placeholder="Ejemplo: 1234567890001"
+          placeholder="Ejemplo: 0102999999001"
           required
           leftIconName="FaIdCard"
           leftIconLibrary={4}
@@ -816,7 +816,7 @@ const Register = () => {
 
         {error ? (
           <ContactMessage>
-            <p>{error}Por favor comuníquese con soporte para poder ayudarlo.</p>
+            <p>{error}{" "}Por favor comuníquese con soporte para poder ayudarlo.</p>
             <p style={{ marginTop: "8px", fontWeight: "500" }}>Contacto:</p>
             <ul style={{ margin: "4px 0 0 16px" }}>
               <li>Teléfono: {contactInfo.phone}</li>
@@ -843,7 +843,7 @@ const Register = () => {
         <Button
           type="submit"
           text="Verificar"
-          disabled={identification.length < 10 || loading}
+          disabled={identification.length !== 13 || loading}
           onClick={async (e) => {
             e.preventDefault();
             await handleVerify();
