@@ -277,7 +277,6 @@ const AppShell = () => {
     fechaNacimiento: "",
     telefono: "",
   });
-  console.log(user);
 
   // Scroll al tope al entrar a la página
   useEffect(() => {
@@ -299,7 +298,6 @@ const AppShell = () => {
         const result = await api_shell_searchManager(sapCode);
         if (cancelled) return;
         if (result.success) {
-          console.log(result);
           setAlreadyRegistered(true);
           const email = result.data?.EMAIL;
           setRegisteredEmail(email ?? null);

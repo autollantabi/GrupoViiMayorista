@@ -1141,7 +1141,6 @@ const ProductGridView = ({
               key={`${product.empresaId}-${product.id}-${index}`}
               data-product-id={product.id}
             >
-              {console.log(product)}
               <ProductCard
                 product={product}
                 lineConfig={

@@ -919,7 +919,6 @@ const XCoinHome = () => {
     async function load() {
       setLoadingProducts(true);
       const res = await api_xcoin_getProducts();
-      console.log(res);
       if (cancelled) return;
       if (res.success && Array.isArray(res.data)) {
         setRewards(res.data.map(mapProductToReward));
@@ -943,7 +942,6 @@ const XCoinHome = () => {
     async function load() {
       setLoading(true);
       const res = await api_xcoin_getBalance(accountUser);
-      console.log(res);
       if (cancelled) return;
       if (res.success && res.data) {
         setUserPoints(res.data.AVAILABLE_POINTS ?? 0);
@@ -968,7 +966,6 @@ const XCoinHome = () => {
     });
     async function load() {
       const res = await api_xcoin_getRedemptionHistory(idUser);
-      console.log(res);
       if (cancelled) return;
       if (res.success && Array.isArray(res.data)) {
         const mapped = res.data.map((r) => mapRedemptionToClaimed(r, byId));
