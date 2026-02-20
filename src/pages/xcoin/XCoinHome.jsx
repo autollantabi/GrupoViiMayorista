@@ -436,6 +436,8 @@ const ClaimedRewardCard = styled.div`
 const ClaimedRewardImageWrap = styled.div`
   width: 100%;
   height: 72px;
+  padding: 6px;
+  box-sizing: border-box;
   border-radius: 8px;
   overflow: hidden;
   background: ${({ theme }) => theme.colors.primary}10;
@@ -448,7 +450,7 @@ const ClaimedRewardImageWrap = styled.div`
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
   svg {
     color: ${({ theme }) => theme.colors.primary};
@@ -723,6 +725,8 @@ const RewardCard = styled.div`
 const RewardImage = styled.div`
   width: 100%;
   height: 140px;
+  padding: 8px;
+  box-sizing: border-box;
   background: ${({ theme }) =>
     theme.mode === "dark"
       ? `${theme.colors.background}80`
@@ -741,7 +745,7 @@ const RewardImage = styled.div`
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   svg {
@@ -848,7 +852,7 @@ const RewardImageWithFallback = ({ src, alt, iconSize = 64 }) => {
         alt={alt}
         loading="lazy"
         onError={() => setImageError(true)}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
     );
   }
@@ -1505,6 +1509,8 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                 style={{
                   width: "100%",
                   height: "200px",
+                  padding: "10px",
+                  boxSizing: "border-box",
                   background:
                     theme.mode === "dark"
                       ? `${theme.colors.background}80`
