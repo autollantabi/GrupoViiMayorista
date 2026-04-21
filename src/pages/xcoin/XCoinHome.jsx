@@ -59,10 +59,10 @@ const HeroSection = styled.section`
     right: 0;
     bottom: 0;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `radial-gradient(ellipse at top center, ${theme.colors.primary}20 0%, transparent 70%),
+    theme.mode === "dark"
+      ? `radial-gradient(ellipse at top center, ${theme.colors.primary}20 0%, transparent 70%),
            radial-gradient(ellipse at bottom center, ${theme.colors.primary}15 0%, transparent 70%)`
-        : `radial-gradient(ellipse at top center, ${theme.colors.primary}18 0%, transparent 70%),
+      : `radial-gradient(ellipse at top center, ${theme.colors.primary}18 0%, transparent 70%),
            radial-gradient(ellipse at bottom center, ${theme.colors.primary}12 0%, transparent 70%)`};
     pointer-events: none;
     animation: pulse 4s ease-in-out infinite;
@@ -234,9 +234,9 @@ const MainContainer = styled.div`
   border: none;
   border-top: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
   box-shadow: ${({ theme }) =>
     theme.mode === "dark"
       ? "0 -4px 16px rgba(0, 0, 0, 0.15)"
@@ -261,21 +261,21 @@ const MainContainer = styled.div`
     width: 50px;
     height: 5px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}80`
-        : `${theme.colors.border}70`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}80`
+      : `${theme.colors.border}70`};
     border-radius: 3px;
     box-shadow: 0 2px 4px ${({ theme }) =>
-      theme.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.1)"};
+    theme.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.1)"};
     transition: all 0.2s ease;
   }
 
   &:hover::before {
     width: 60px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}`
-        : `${theme.colors.border}90`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}`
+      : `${theme.colors.border}90`};
   }
 
   @media (max-width: 768px) {
@@ -356,9 +356,9 @@ const PointsTabsContainer = styled.div`
   margin-top: 1rem;
   border-bottom: 2px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
 `;
 
 const PointsTabButton = styled.button`
@@ -367,7 +367,7 @@ const PointsTabButton = styled.button`
   border: none;
   border-bottom: 3px solid
     ${({ theme, $active }) =>
-      $active ? theme.colors.primary : "transparent"};
+    $active ? theme.colors.primary : "transparent"};
   color: ${({ theme, $active }) =>
     $active ? theme.colors.primary : theme.colors.textSecondary};
   font-size: 0.9rem;
@@ -384,7 +384,7 @@ const PointsTabButton = styled.button`
 
 const ClaimedRewardsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-top: 0.75rem;
   width: 100%;
@@ -392,14 +392,14 @@ const ClaimedRewardsGrid = styled.div`
   box-sizing: border-box;
 
   @media (min-width: 600px) {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
   @media (min-width: 900px) {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
   }
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
   }
 `;
 
@@ -412,9 +412,9 @@ const ClaimedRewardCard = styled.div`
   border-radius: 10px;
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -422,9 +422,9 @@ const ClaimedRewardCard = styled.div`
 
   &:hover {
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 4px 12px rgba(0, 0, 0, 0.15)"
-        : "0 4px 12px rgba(0, 0, 0, 0.06)"};
+    theme.mode === "dark"
+      ? "0 4px 12px rgba(0, 0, 0, 0.15)"
+      : "0 4px 12px rgba(0, 0, 0, 0.06)"};
   }
 
   @media (min-width: 600px) {
@@ -548,6 +548,60 @@ const ClaimedRedeemButton = styled(Button)`
   }
 `;
 
+// Historial de estados (basado en AppShell pero adaptado al tema)
+const HistorialLista = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.colors.border}40;
+    border-radius: 3px;
+  }
+`;
+
+const HistorialFlecha = styled.span`
+  display: inline-flex;
+  align-items: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  opacity: 0.5;
+  font-size: 0.8rem;
+`;
+
+const HistorialItem = styled.div`
+  display: inline-flex;
+  flex-direction: column;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: ${({ theme, $colorBg }) =>
+    $colorBg || (theme.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)")};
+  border: 1px solid ${({ theme, $colorText }) =>
+    $colorText ? `${$colorText}40` : (theme.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")};
+  min-width: 80px;
+
+  .historial-status {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: ${({ $colorText, theme }) => $colorText || theme.colors.text};
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .historial-date {
+    font-size: 0.6rem;
+    color: ${({ theme }) => theme.colors.textSecondary};
+    margin-top: 2px;
+  }
+`;
+
 // Sección de categorías (derecha) - Tabs alineados a la derecha
 const CategoriesSection = styled.div`
   display: flex;
@@ -560,9 +614,9 @@ const TabsContainer = styled.div`
   gap: 0.5rem;
   border-bottom: 2px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
   overflow-x: auto;
   flex-wrap: nowrap;
   width: 100%;
@@ -586,9 +640,9 @@ const TabsContainer = styled.div`
   
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}60`
-        : `${theme.colors.border}40`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}60`
+      : `${theme.colors.border}40`};
     border-radius: 2px;
   }
 `;
@@ -607,15 +661,15 @@ const TabButton = styled.button`
   white-space: nowrap;
   border-bottom: 3px solid
     ${({ theme, $active }) =>
-      $active ? theme.colors.primary : "transparent"};
+    $active ? theme.colors.primary : "transparent"};
   margin-bottom: -2px;
 
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.primary}10`
-        : `${theme.colors.primary}08`};
+    theme.mode === "dark"
+      ? `${theme.colors.primary}10`
+      : `${theme.colors.primary}08`};
   }
 
   @media (max-width: 768px) {
@@ -623,6 +677,22 @@ const TabButton = styled.button`
     font-size: 0.9rem;
   }
 `;
+
+const COLORS_ESTADO = {
+  recibido: { bg: "#dbeafe", text: "#1d4ed8" },
+  procesado: { bg: "#fef3c7", text: "#b45309" },
+  enviado: { bg: "#d1fae5", text: "#047857" },
+  entregado: { bg: "#ccfbf1", text: "#0f766e" },
+  cancelado: { bg: "#fee2e2", text: "#b91c1c" },
+};
+
+const DEFAULT_COLOR_ESTADO = { bg: "transparent", text: undefined };
+
+const getColorEstado = (nombreEstado) => {
+  if (!nombreEstado) return DEFAULT_COLOR_ESTADO;
+  const key = String(nombreEstado).toLowerCase().trim();
+  return COLORS_ESTADO[key] || DEFAULT_COLOR_ESTADO;
+};
 
 // Estilos para el modal de políticas
 const PolicyText = styled.div`
@@ -645,9 +715,9 @@ const CheckboxContainer = styled.div`
   border-radius: 12px;
   border: 2px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
 `;
 
 const Checkbox = styled.input`
@@ -714,11 +784,11 @@ const RewardCard = styled.div`
   &:hover {
     transform: translateY(-4px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 8px 24px rgba(0, 0, 0, 0.25)"
-        : "0 8px 24px rgba(0, 0, 0, 0.12)"};
+    theme.mode === "dark"
+      ? "0 8px 24px rgba(0, 0, 0, 0.25)"
+      : "0 8px 24px rgba(0, 0, 0, 0.12)"};
     border-color: ${({ theme, $canAfford }) =>
-      $canAfford ? theme.colors.primary : theme.colors.border};
+    $canAfford ? theme.colors.primary : theme.colors.border};
   }
 `;
 
@@ -738,9 +808,9 @@ const RewardImage = styled.div`
   overflow: hidden;
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+    theme.mode === "dark"
+      ? `${theme.colors.border}40`
+      : `${theme.colors.border}30`};
 
   img {
     width: 100%;
@@ -884,6 +954,15 @@ const mapRedemptionToClaimed = (r, productsById) => {
   const name = product?.PRODUCT_NAME || `Producto #${r.ID_PRODUCT}`;
   const image = product?.PRODUCT_IMAGE_URL || null;
   const isActive = product?.IS_ACTIVE ?? r.IS_ACTIVE ?? true;
+
+  // Extraer historial de estados
+  const history = (r.REDEEM_HISTORY || []).map(h => ({
+    id: h.ID_HISTORY,
+    statusId: h.ID_STATUS,
+    statusName: h.STATUS?.STATUS_NAME || h.ESTADO_CANJE?.STATUS_NAME || "Recibido",
+    createdAt: h.createdAt || h.REDEEM_DATE || r.REDEEM_DATE,
+  }));
+
   return {
     id: r.ID_REDEEM,
     rewardId: r.ID_PRODUCT,
@@ -896,6 +975,7 @@ const mapRedemptionToClaimed = (r, productsById) => {
     claimedAt: r.REDEEM_DATE,
     isActive: !!isActive,
     status: isActive ? "activo" : "inactivo",
+    history,
   };
 };
 
@@ -916,6 +996,7 @@ const XCoinHome = () => {
   const [claimedRewards, setClaimedRewards] = useState([]);
   const [activeTab, setActiveTab] = useState("catalog");
   const [isSubmittingRedeem, setIsSubmittingRedeem] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Cargar productos (catálogo)
   useEffect(() => {
@@ -969,6 +1050,7 @@ const XCoinHome = () => {
       if (r.raw) byId[r.id] = r.raw;
     });
     async function load() {
+      setLoadingHistory(true);
       const res = await api_xcoin_getRedemptionHistory(idUser);
       if (cancelled) return;
       if (res.success && Array.isArray(res.data)) {
@@ -977,6 +1059,7 @@ const XCoinHome = () => {
       } else {
         setClaimedRewards([]);
       }
+      setLoadingHistory(false);
     }
     load();
     return () => { cancelled = true; };
@@ -1065,15 +1148,15 @@ const XCoinHome = () => {
         prev.map((r) =>
           r.id === productId
             ? {
-                ...r,
-                raw: {
-                  ...r.raw,
-                  STOCK_QUANTITY: Math.max(
-                    0,
-                    (r.raw?.STOCK_QUANTITY ?? 0) - qty
-                  ),
-                },
-              }
+              ...r,
+              raw: {
+                ...r.raw,
+                STOCK_QUANTITY: Math.max(
+                  0,
+                  (r.raw?.STOCK_QUANTITY ?? 0) - qty
+                ),
+              },
+            }
             : r
         )
       );
@@ -1089,12 +1172,14 @@ const XCoinHome = () => {
         }
       }
       if (idUser) {
+        setLoadingHistory(true);
         const historyRes = await api_xcoin_getRedemptionHistory(idUser);
         if (historyRes.success && Array.isArray(historyRes.data)) {
           const byId = {};
           rewards.forEach((r) => { if (r.raw) byId[r.id] = r.raw; });
           setClaimedRewards(historyRes.data.map((r) => mapRedemptionToClaimed(r, byId)));
         }
+        setLoadingHistory(false);
       }
     } else {
       toast.error(res.message || "Error al realizar el canje");
@@ -1146,7 +1231,7 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
         title="XCoin - Sistema de Recompensas"
         description="Gana puntos por tus compras y canjéalos por increíbles recompensas"
       />
-      <PageContainer 
+      <PageContainer
         fullWidth={true}
         style={{ position: "relative", overflow: "visible", padding: 0 }}
       >
@@ -1312,118 +1397,163 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   )}
                 </RewardsSection>
               </>
+            ) : loadingHistory ? (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  textAlign: "center",
+                  padding: "4rem 2rem",
+                }}
+              >
+                <RenderLoader />
+                <p
+                  style={{
+                    marginTop: "1rem",
+                    color: theme.colors.textSecondary,
+                  }}
+                >
+                  Cargando historial de canjes...
+                </p>
+              </div>
+            ) : claimedRewards.length === 0 ? (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  textAlign: "center",
+                  padding: "2rem 1rem",
+                  color: theme.colors.textSecondary,
+                }}
+              >
+                <RenderIcon name="FaGift" size={48} />
+                <p
+                  style={{
+                    marginTop: "0.75rem",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  Aún no has reclamado ninguna recompensa
+                </p>
+                <p style={{ marginTop: "0.35rem", fontSize: "0.85rem" }}>
+                  Explora el catálogo y canjea tus puntos por increíbles premios
+                </p>
+              </div>
             ) : (
               <ClaimedRewardsGrid>
-                {claimedRewards.length === 0 ? (
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      textAlign: "center",
-                      padding: "2rem 1rem",
-                      color: theme.colors.textSecondary,
-                    }}
-                  >
-                    <RenderIcon name="FaGift" size={48} />
-                    <p
-                      style={{
-                        marginTop: "0.75rem",
-                        fontSize: "1rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Aún no has reclamado ninguna recompensa
-                    </p>
-                    <p style={{ marginTop: "0.35rem", fontSize: "0.85rem" }}>
-                      Explora el catálogo y canjea tus puntos por increíbles premios
-                    </p>
-                  </div>
-                ) : (
-                  claimedRewards.map((claimed) => {
-                    const rewardInCatalog = rewards.find(
-                      (r) => r.id === claimed.rewardId
-                    );
-                    const pointsPerUnit =
-                      claimed.quantity > 0
-                        ? Math.floor(claimed.points / claimed.quantity)
-                        : 0;
-                    const hasStock =
-                      rewardInCatalog &&
-                      (rewardInCatalog.raw?.STOCK_QUANTITY ?? 0) > 0;
-                    const canAffordAgain =
-                      rewardInCatalog && userPoints >= (rewardInCatalog.points ?? pointsPerUnit);
-                    const canRedeemAgain =
-                      claimed.isActive &&
-                      rewardInCatalog &&
-                      hasStock &&
-                      canAffordAgain;
-                    const redeemAgainText = !claimed.isActive
+                {claimedRewards.map((claimed) => {
+                  const rewardInCatalog = rewards.find(
+                    (r) => r.id === claimed.rewardId
+                  );
+                  const pointsPerUnit =
+                    claimed.quantity > 0
+                      ? Math.floor(claimed.points / claimed.quantity)
+                      : 0;
+                  const hasStock =
+                    rewardInCatalog &&
+                    (rewardInCatalog.raw?.STOCK_QUANTITY ?? 0) > 0;
+                  const canAffordAgain =
+                    rewardInCatalog &&
+                    userPoints >= (rewardInCatalog.points ?? pointsPerUnit);
+                  const canRedeemAgain =
+                    claimed.isActive &&
+                    rewardInCatalog &&
+                    hasStock &&
+                    canAffordAgain;
+                  const redeemAgainText = !claimed.isActive
+                    ? "No disponible"
+                    : !rewardInCatalog
                       ? "No disponible"
-                      : !rewardInCatalog
-                        ? "No disponible"
-                        : !hasStock
-                          ? "Sin stock"
-                          : !canAffordAgain
-                            ? "Puntos insuficientes"
-                            : "Canjear otra vez";
-                    return (
-                      <ClaimedRewardCard key={claimed.id}>
-                        <ClaimedRewardImageWrap>
-                          <RewardImageWithFallback
-                            src={claimed.image}
-                            alt={claimed.name}
-                            iconSize={28}
-                          />
-                        </ClaimedRewardImageWrap>
-                        <ClaimedRewardInfo>
-                          <ClaimedRewardName>{claimed.name}</ClaimedRewardName>
-                          {(claimed.brand || claimed.enterprise) && (
-                            <RewardChips>
-                              {claimed.brand && (
-                                <RewardChip>{claimed.brand}</RewardChip>
-                              )}
-                              {claimed.enterprise && (
-                                <RewardChip>{claimed.enterprise}</RewardChip>
-                              )}
-                            </RewardChips>
-                          )}
-                          <ClaimedRewardMeta>
-                            <ClaimedRewardMetaItem>
-                              <RenderIcon name="FaBox" size={9} />
-                              {claimed.quantity} ud.
-                            </ClaimedRewardMetaItem>
-                            <ClaimedRewardMetaItem>
-                              <RenderIcon name="FaCoins" size={9} />
-                              {claimed.points.toLocaleString()} pts
-                            </ClaimedRewardMetaItem>
-                            <ClaimedRewardMetaItem>
-                              <RenderIcon name="FaCalendar" size={9} />
-                              {new Date(claimed.claimedAt).toLocaleDateString(
-                                "es-ES",
-                                { day: "numeric", month: "short", year: "2-digit" }
-                              )}
-                            </ClaimedRewardMetaItem>
-                          </ClaimedRewardMeta>
-                        </ClaimedRewardInfo>
-                        <ClaimedRewardFooter>
-                          <ClaimedRedeemButton
-                            text={redeemAgainText}
-                            variant={canRedeemAgain ? "solid" : "outline"}
-                            disabled={!canRedeemAgain}
-                            onClick={() =>
-                              canRedeemAgain &&
-                              rewardInCatalog &&
-                              handleClaimReward(rewardInCatalog)
-                            }
-                            backgroundColor={
-                              canRedeemAgain ? theme.colors.primary : undefined
-                            }
-                            leftIconName={canRedeemAgain ? "FaGift" : undefined}
-                          />
-                        </ClaimedRewardFooter>
-                      </ClaimedRewardCard>
-                    );
-                  })
-                )}
+                      : !hasStock
+                        ? "Sin stock"
+                        : !canAffordAgain
+                          ? "Puntos insuficientes"
+                          : "Canjear otra vez";
+                  return (
+                    <ClaimedRewardCard key={claimed.id}>
+                      <ClaimedRewardImageWrap>
+                        <RewardImageWithFallback
+                          src={claimed.image}
+                          alt={claimed.name}
+                          iconSize={28}
+                        />
+                      </ClaimedRewardImageWrap>
+                      <ClaimedRewardInfo>
+                        <ClaimedRewardName>{claimed.name}</ClaimedRewardName>
+                        {(claimed.brand || claimed.enterprise) && (
+                          <RewardChips>
+                            {claimed.brand && (
+                              <RewardChip>{claimed.brand}</RewardChip>
+                            )}
+                            {claimed.enterprise && (
+                              <RewardChip>{claimed.enterprise}</RewardChip>
+                            )}
+                          </RewardChips>
+                        )}
+                        <ClaimedRewardMeta>
+                          <ClaimedRewardMetaItem>
+                            <RenderIcon name="FaBox" size={9} />
+                            {claimed.quantity} ud.
+                          </ClaimedRewardMetaItem>
+                          <ClaimedRewardMetaItem>
+                            <RenderIcon name="FaCoins" size={9} />
+                            {claimed.points.toLocaleString()} pts
+                          </ClaimedRewardMetaItem>
+                        </ClaimedRewardMeta>
+
+                        {/* Historial de estados */}
+                        <HistorialLista>
+                          {(claimed.history || []).map((h, i) => {
+                            const colores = getColorEstado(h.statusName);
+                            return (
+                              <React.Fragment key={h.id || i}>
+                                {i > 0 && (
+                                  <HistorialFlecha theme={theme}>
+                                    <RenderIcon name="FaChevronRight" size={8} />
+                                  </HistorialFlecha>
+                                )}
+                                <HistorialItem
+                                  theme={theme}
+                                  $colorBg={colores.bg}
+                                  $colorText={colores.text}
+                                  title={h.statusName}
+                                >
+                                  <span className="historial-status">
+                                    {h.statusName}
+                                  </span>
+                                  <span className="historial-date">
+                                    {new Date(h.createdAt).toLocaleDateString(
+                                      "es-ES",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                      }
+                                    )}
+                                  </span>
+                                </HistorialItem>
+                              </React.Fragment>
+                            );
+                          })}
+                        </HistorialLista>
+                      </ClaimedRewardInfo>
+                      <ClaimedRewardFooter>
+                        <ClaimedRedeemButton
+                          text={redeemAgainText}
+                          variant={canRedeemAgain ? "solid" : "outline"}
+                          disabled={!canRedeemAgain}
+                          onClick={() =>
+                            canRedeemAgain &&
+                            rewardInCatalog &&
+                            handleClaimReward(rewardInCatalog)
+                          }
+                          backgroundColor={
+                            canRedeemAgain ? theme.colors.primary : undefined
+                          }
+                          leftIconName={canRedeemAgain ? "FaGift" : undefined}
+                        />
+                      </ClaimedRewardFooter>
+                    </ClaimedRewardCard>
+                  );
+                })}
               </ClaimedRewardsGrid>
             )}
           </MainContainer>
@@ -1521,11 +1651,10 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                   justifyContent: "center",
                   marginBottom: "24px",
                   overflow: "hidden",
-                  border: `1px solid ${
-                    theme.mode === "dark"
+                  border: `1px solid ${theme.mode === "dark"
                       ? `${theme.colors.border}40`
                       : `${theme.colors.border}30`
-                  }`,
+                    }`,
                 }}
               >
                 <RewardImageWithFallback
@@ -1583,11 +1712,10 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                       ? `${theme.colors.background}80`
                       : `${theme.colors.background}`,
                   borderRadius: "12px",
-                  border: `1px solid ${
-                    theme.mode === "dark"
+                  border: `1px solid ${theme.mode === "dark"
                       ? `${theme.colors.border}40`
                       : `${theme.colors.border}30`
-                  }`,
+                    }`,
                 }}
               >
                 <div
@@ -1683,11 +1811,10 @@ Al aceptar estas políticas, confirmas que has leído y comprendido todos los t�
                       ? `${theme.colors.background}80`
                       : `${theme.colors.background}`,
                   borderRadius: "12px",
-                  border: `1px solid ${
-                    theme.mode === "dark"
+                  border: `1px solid ${theme.mode === "dark"
                       ? `${theme.colors.border}40`
                       : `${theme.colors.border}30`
-                  }`,
+                    }`,
                 }}
               >
                 <div>

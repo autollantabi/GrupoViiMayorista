@@ -27,7 +27,11 @@ export function AuthProvider({ children }) {
   const [isClient, setIsClient] = useState(false);
   const [isVisualizacion, setIsVisualizacion] = useState(false);
   const [isReencaucheUser, setIsReencaucheUser] = useState(false);
+  const [isSeller, setIsSeller] = useState(false);
+  const [isB2CSeller, setIsB2CSeller] = useState(false);
+  const [isB2BSeller, setIsB2BSeller] = useState(false);
   const navigate = useNavigate();
+
 
   // Función auxiliar para enmascarar el email
   const maskEmail = (email) => {
@@ -99,6 +103,60 @@ export function AuthProvider({ children }) {
     navigate(homeRoute);
   };
 
+  const normalizeUser = (userData) => {
+    if (!userData) return null;
+    const normalized = { ...userData };
+
+    if (
+      normalized.ROLE_NAME === ROLES.VENDEDOR_B2B || normalized.ROLE_NAME === ROLES.VENDEDOR_B2C
+    ) {
+      if (normalized.BUSINESS_LINES && !normalized.LINEAS) {
+        normalized.LINEAS = normalized.BUSINESS_LINES;
+      }
+      if (normalized.ENTERPRISES && !normalized.EMPRESAS) {
+        normalized.EMPRESAS = normalized.ENTERPRISES;
+      }
+    }
+
+    // Asegurar que LINEAS y EMPRESAS sean arrays
+    if (normalized.LINEAS && typeof normalized.LINEAS === "string") {
+      normalized.LINEAS = normalized.LINEAS.split(",").map((s) =>
+        s.trim().toUpperCase()
+      );
+    } else if (normalized.LINEAS && Array.isArray(normalized.LINEAS)) {
+      normalized.LINEAS = normalized.LINEAS.map((s) =>
+        s.toString().toUpperCase()
+      );
+    } else if (!normalized.LINEAS) {
+      normalized.LINEAS = [];
+    }
+
+    if (normalized.EMPRESAS && typeof normalized.EMPRESAS === "string") {
+      normalized.EMPRESAS = normalized.EMPRESAS.split(",").map((s) =>
+        s.trim().toUpperCase()
+      );
+    } else if (normalized.EMPRESAS && Array.isArray(normalized.EMPRESAS)) {
+      normalized.EMPRESAS = normalized.EMPRESAS.map((s) =>
+        s.toString().toUpperCase()
+      );
+    }
+    
+    // Normalizar coordenadas en las direcciones
+    if (normalized.DIRECCIONES) {
+      Object.keys(normalized.DIRECCIONES).forEach((company) => {
+        normalized.DIRECCIONES[company] = normalized.DIRECCIONES[company].map(
+          (addr) => ({
+            ...addr,
+            LATITUDE: addr.LATITUDE || addr.latitude || null,
+            LONGITUDE: addr.LONGITUDE || addr.longitude || null,
+          })
+        );
+      });
+    }
+
+    return normalized;
+  };
+
   // ========== FUNCIONES DE AUTENTICACIÓN ==========
 
   const login = async (email, password) => {
@@ -120,12 +178,20 @@ export function AuthProvider({ children }) {
         guardarSessionID(idSession);
         localStorage.setItem("auth", "true");
 
-        // Actualizar el estado
-        setUser(userData);
+        // Actualizar el estado con datos normalizados
+        const normalizedUser = normalizeUser(userData);
+        setUser(normalizedUser);
         setIsAuthenticated(true);
-        setIsClient(userData.ROLE_NAME === ROLES.CLIENTE);
-        setIsVisualizacion(userData.ROLE_NAME === ROLES.VISUALIZACION);
-        setIsReencaucheUser(userData.ROLE_NAME === ROLES.REENCAUCHE_USER);
+        setIsClient(normalizedUser.ROLE_NAME === ROLES.CLIENTE);
+        setIsVisualizacion(normalizedUser.ROLE_NAME === ROLES.VISUALIZACION);
+        setIsReencaucheUser(normalizedUser.ROLE_NAME === ROLES.REENCAUCHE_USER);
+        setIsSeller(
+          normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2C ||
+          normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2B
+        );
+        setIsB2CSeller(normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2C);
+        setIsB2BSeller(normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2B);
+
 
         // Redireccionar según el rol del usuario
         let redirectPath = getHomeRouteByRole(userData);
@@ -163,6 +229,10 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
     setIsClient(false);
     setIsVisualizacion(false);
+    setIsSeller(false);
+    setIsB2CSeller(false);
+    setIsB2BSeller(false);
+
     // Redireccionar a login
     navigate(ROUTES.AUTH.LOGIN);
   };
@@ -389,13 +459,21 @@ export function AuthProvider({ children }) {
         // El backend maneja la sesión y los tokens, solo validamos la sesión
         const response = await api_auth_me();
         if (response && response.user) {
-          setUser(response.user);
-          setIsClient(response.user.ROLE_NAME === ROLES.CLIENTE);
-          setIsVisualizacion(response.user.ROLE_NAME === ROLES.VISUALIZACION);
+          const normalizedUser = normalizeUser(response.user);
+          setUser(normalizedUser);
+          setIsClient(normalizedUser.ROLE_NAME === ROLES.CLIENTE);
+          setIsVisualizacion(normalizedUser.ROLE_NAME === ROLES.VISUALIZACION);
           setIsReencaucheUser(
-            response.user.ROLE_NAME === ROLES.REENCAUCHE_USER
+            normalizedUser.ROLE_NAME === ROLES.REENCAUCHE_USER
           );
+          setIsSeller(
+            normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2C ||
+            normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2B
+          );
+          setIsB2CSeller(normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2C);
+          setIsB2BSeller(normalizedUser.ROLE_NAME === ROLES.VENDEDOR_B2B);
           setIsAuthenticated(true);
+
           localStorage.setItem("auth", "true");
         } else {
           // Si la sesión no es válida, limpiar estado
@@ -430,6 +508,10 @@ export function AuthProvider({ children }) {
         isClient,
         isVisualizacion,
         isReencaucheUser,
+        isSeller,
+        isB2CSeller,
+        isB2BSeller,
+
         // Registro
         verifyIdentification,
         registerUser,

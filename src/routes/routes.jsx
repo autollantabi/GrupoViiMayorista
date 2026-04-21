@@ -11,6 +11,7 @@ import DetallePedido from "../pages/compras/DetallePedido";
 import Perfil from "../pages/usuario/Perfil";
 import SearchResults from "../pages/busqueda/SearchResults";
 import Contacto from "../pages/contacto/Contacto";
+import SeleccionEmpresa from "../pages/compras/SeleccionEmpresa";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import DetallePedidoCoordinador from "../pages/coordinadora/DetallePedidoCoordinador";
@@ -30,6 +31,8 @@ import ActivacionBonos from "../pages/reencauche/ActivacionBonos";
 import VerificarBono from "../pages/reencauche/VerificarBono";
 // Importaciones de páginas de XCoin
 import XCoinHome from "../pages/xcoin/XCoinHome";
+import CatalogVendedor from "../pages/catalogo/CatalogVendedor";
+import OfertaVendedor from "../pages/vendedores/OfertaVendedor";
 
 // Rutas de E-commerce (accesibles para todos los usuarios autenticados)
 export const ecommerceRoutes = [
@@ -42,6 +45,8 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2C,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -52,6 +57,8 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2C,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -62,22 +69,24 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2C,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
     path: ROUTES.ECOMMERCE.CARRITO,
     element: <Carrito />,
-    allowedRoles: [ROLES.CLIENTE],
+    allowedRoles: [ROLES.CLIENTE, ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
   },
   {
     path: ROUTES.ECOMMERCE.MIS_PEDIDOS,
     element: <MisPedidos />,
-    allowedRoles: [ROLES.CLIENTE],
+    allowedRoles: [ROLES.CLIENTE, ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
   },
   {
     path: ROUTES.ECOMMERCE.DETALLE_PEDIDO,
     element: <DetallePedido />,
-    allowedRoles: [ROLES.CLIENTE],
+    allowedRoles: [ROLES.CLIENTE, ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
   },
   {
     path: ROUTES.ECOMMERCE.PERFIL,
@@ -87,7 +96,14 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2C,
+      ROLES.VENDEDOR_B2B
     ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.SELECCION_EMPRESA,
+    element: <SeleccionEmpresa />,
+    allowedRoles: [ROLES.CLIENTE, ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
   },
   {
     path: ROUTES.ECOMMERCE.SEARCH,
@@ -97,6 +113,7 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -107,6 +124,7 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -117,6 +135,7 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -127,6 +146,7 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -137,6 +157,8 @@ export const ecommerceRoutes = [
       ROLES.ADMIN,
       ROLES.COORDINADOR,
       ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2C,
+      ROLES.VENDEDOR_B2B
     ],
   },
   {
@@ -209,6 +231,22 @@ export const reencaucheRoutes = [
     allowedRoles: [ROLES.CLIENTE, ROLES.REENCAUCHE_USER],
   },
 ];
+
+// Rutas para vendedores
+export const vendedorRoutes = [
+  {
+    path: ROUTES.VENDEDOR.CATALOGO,
+    element: <CatalogVendedor />,
+    allowedRoles: [ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
+    exact: true
+  },
+  {
+    path: ROUTES.VENDEDOR.OFERTA,
+    element: <OfertaVendedor />,
+    allowedRoles: [ROLES.VENDEDOR_B2C, ROLES.VENDEDOR_B2B],
+  }
+];
+
 
 // Rutas públicas (no requieren autenticación)
 export const publicRoutes = [

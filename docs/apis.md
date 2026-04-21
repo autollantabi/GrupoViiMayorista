@@ -9,6 +9,7 @@ El proyecto consume APIs REST externas. En este documento se describen los clien
 Hay **un único cliente axios** en el frontend:
 
 1. **API principal del portal** — `src/constants/api.js` (exportado como `api`). Usado por todos los módulos en `src/api/` (auth, users, cart, order, products, bonos, profile, email, access, accessSections, optionsCatalog, xcoin, **shell**). Las llamadas a App Shell (Lider Shell) se hacen a rutas del mismo backend (ej. `/club-shell-maxx/...`), que actúa como proxy y añade la cabecera `X-Portal-API-Key` al reenviar a la API App Shell.
+2. **Mapbox GL JS** — API externa para mapas, geocodificación e interactividad. Se consume directamente desde el cliente usando la librería `mapbox-gl`.
 
 ---
 
@@ -40,6 +41,7 @@ Hay **un único cliente axios** en el frontend:
 | Access | apiAccessRequest.js | Solicitud de acceso |
 | AccessSections | apiAccessSections.js | Permisos por sección (usuarios permitidos) |
 | OptionsCatalog | apiOptionsCatalog.js | Estados de pedido para catálogo |
+| Vendedores | apiVendedores.js | Clientes asignados, productos por catálogo de vendedor, direcciones de cliente |
 | XCoin | apiXcoin.js | Balance, productos, historial de canjes, crear canje |
 
 ### Endpoints representativos
@@ -77,6 +79,16 @@ Los paths son relativos a `VITE_API_URL`. Formato típico de respuesta del backe
 | XCoin | GET | x-coin/balance/:accountUser | Balance de puntos |
 | XCoin | GET | x-coin/products | Catálogo canje |
 | XCoin | POST | x-coin/create-redemption | Crear canje |
+| **XCoin (External)** | **GET** | **https://pub-56169cdc291748da8c4a8ad361387f22.r2.dev/...** | Imágenes de recompensas (requiere CSP en `img-src`) |
+| **XCoin (External)** | **GET** | **https://pub-1e1c8241c1104bde88eaab1eb52e8c32.r2.dev/...** | Imágenes de recompensas adicionales |
+| **Development** | **GET** | **https://placehold.co/...** | Imágenes de marcador de posición (placeholders) |
+| Vendedores | GET | /vendedores/clientes | Clientes asignados al vendedor |
+| Vendedores | GET | /vendedores/productos/:ordenamiento? | Catálogo unificado del vendedor |
+| Vendedores | GET | /vendedores/direcciones/:account/:empresa | Direcciones de un cliente |
+
+### Geocodificación y Mapas (Mapbox)
+
+- **Mapbox Places API:** Se usa para geocodificación inversa (coordenadas → dirección/ciudad/provincia) en `MapSelector.jsx`. Utiliza el token `VITE_API_MAPBOX`.
 
 La lista no es exhaustiva; para el listado completo de endpoints hay que revisar cada archivo en `src/api/`.
 

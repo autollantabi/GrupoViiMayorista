@@ -706,8 +706,10 @@ const ClientesReencauche = () => {
   );
 
   const getInitials = (nombre, apellido) => {
-    if (!nombre || !apellido) return "??";
-    return (nombre[0] + apellido[0]).toUpperCase();
+    const first = String(nombre || "").trim().charAt(0);
+    const last = String(apellido || "").trim().charAt(0);
+    if (!first && !last) return "??";
+    return (first + last).toUpperCase();
   };
 
   const formatDate = (dateString) => {
@@ -833,11 +835,9 @@ const ClientesReencauche = () => {
         const encryptedCode = response.data.qrCode;
 
         // Abrir en nueva pestaña
-        const preUrl =
-          import.meta.env.VITE_NODE_ENV === "production"
-            ? import.meta.env.VITE_PRODUCTION_URL
-            : import.meta.env.VITE_DEVELOPMENT_URL;
-        const verifyUrl = `${preUrl}${
+        // Usar window.location.origin asegura que usemos el mismo dominio/protocolo actual, 
+        // evitando problemas con variables de entorno mal configuradas en producción.
+        const verifyUrl = `${window.location.origin}${
           ROUTES.REENCAUCHE.VERIFICAR
         }?code=${encodeURIComponent(encryptedCode)}`;
         window.open(verifyUrl, "_blank");

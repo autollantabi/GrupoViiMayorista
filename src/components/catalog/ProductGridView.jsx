@@ -268,7 +268,7 @@ const PaginationButton = styled.button`
 
   &:hover {
     background: ${({ $isActive, theme }) =>
-      $isActive ? theme.colors.primary : theme.colors.border};
+    $isActive ? theme.colors.primary : theme.colors.border};
   }
 
   &:disabled {
@@ -413,6 +413,8 @@ const ProductGridView = ({
   loading = false,
   empresaName = null,
   onReloadProducts = null,
+  serverTotal = null,
+  onServerPageChange = null,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -424,13 +426,11 @@ const ProductGridView = ({
   // Leer valores iniciales desde la URL
   const urlSort = searchParams.get("sort") || initialSort || "default";
   const urlPage = parseInt(searchParams.get("page") || "1", 10);
-  const urlLimit = parseInt(searchParams.get("limit") || "144", 10);
+  const urlLimit = parseInt(searchParams.get("limit") || "24", 10);
   const urlStockFilter = searchParams.get("stock") || "all";
 
   const [sortBy, setSortBy] = useState(urlSort);
-  // Validar que el límite inicial sea mínimo 144
-  const validInitialLimit = urlLimit < 144 ? 144 : urlLimit;
-  const [itemsPerPage, setItemsPerPage] = useState(validInitialLimit);
+  const [itemsPerPage, setItemsPerPage] = useState(urlLimit > 0 ? urlLimit : 24);
   const [currentPage, setCurrentPage] = useState(urlPage);
   const [pageInput, setPageInput] = useState(urlPage.toString());
   const [stockFilter, setStockFilter] = useState(urlStockFilter);
@@ -457,7 +457,7 @@ const ProductGridView = ({
   const lastSyncedState = React.useRef({
     sortBy: urlSort,
     currentPage: urlPage,
-    itemsPerPage: validInitialLimit,
+    itemsPerPage: urlLimit > 0 ? urlLimit : 24,
     stockFilter: urlStockFilter,
   });
 
@@ -624,8 +624,8 @@ const ProductGridView = ({
         setCurrentPage(urlPageValue);
         setPageInput(urlPageValue.toString());
       }
-      // Validar que el valor de la URL sea mínimo 144
-      const validUrlLimit = urlLimitValue < 144 ? 144 : urlLimitValue;
+      // Validar que el valor de la URL sea positivo
+      const validUrlLimit = urlLimitValue > 0 ? urlLimitValue : 24;
       if (validUrlLimit !== itemsPerPage) {
         setItemsPerPage(validUrlLimit);
       }
@@ -690,7 +690,7 @@ const ProductGridView = ({
         needsInit = true;
       }
       if (!params.has("limit")) {
-        const validLimit = itemsPerPage < 144 ? 144 : itemsPerPage;
+        const validLimit = itemsPerPage > 0 ? itemsPerPage : 24;
         params.set("limit", validLimit.toString());
         if (itemsPerPage !== validLimit) {
           setItemsPerPage(validLimit);
@@ -735,8 +735,7 @@ const ProductGridView = ({
     }
 
     // SIEMPRE asegurar que limit esté presente en URL
-    // Validar que sea mínimo 144
-    const validLimit = itemsPerPage < 144 ? 144 : itemsPerPage;
+    const validLimit = itemsPerPage > 0 ? itemsPerPage : 24;
     if (!params.has("limit") || params.get("limit") !== validLimit.toString()) {
       params.set("limit", validLimit.toString());
       if (itemsPerPage !== validLimit) {
@@ -801,7 +800,15 @@ const ProductGridView = ({
     // Si es ordenamiento de API (default o clasificacion_indice o recurrencia),
     // los productos ya vienen ordenados desde el backend, no los reordenamos
 
-    // Calcular paginación
+    // Paginación server-side: no hacer slice, usar serverTotal para cálculos
+    if (serverTotal != null && onServerPageChange) {
+      const totalItems = serverTotal;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      // Mostrar TODOS los productos recibidos (ya son la página actual)
+      return { items: filtered, totalItems, totalPages };
+    }
+
+    // Paginación client-side (modo normal)
     const totalItems = filtered.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -809,7 +816,7 @@ const ProductGridView = ({
     const items = filtered.slice(startIndex, endIndex);
 
     return { items, totalItems, totalPages };
-  }, [products, sortBy, itemsPerPage, currentPage, stockFilter]);
+  }, [products, sortBy, itemsPerPage, currentPage, stockFilter, serverTotal, onServerPageChange]);
 
   // Buscar y hacer scroll al producto guardado cuando se monta o cambian los productos
   React.useEffect(() => {
@@ -995,8 +1002,15 @@ const ProductGridView = ({
   };
 
   const handleItemsPerPageChange = (e) => {
-    const value = e.target.value;
-    setItemsPerPage(parseInt(value));
+    const value = parseInt(e.target.value);
+    setItemsPerPage(value);
+    // Resetear a página 1 al cambiar items por página
+    setCurrentPage(1);
+    setPageInput("1");
+    // Server-side: recargar con nuevo limit
+    if (onServerPageChange) {
+      onServerPageChange(1, value);
+    }
   };
 
   const handleStockFilterChange = (e) => {
@@ -1005,11 +1019,19 @@ const ProductGridView = ({
     // Resetear a página 1 cuando cambia el filtro de stock
     setCurrentPage(1);
     setPageInput("1");
+    // Server-side: recargar página 1
+    if (onServerPageChange) {
+      onServerPageChange(1, itemsPerPage);
+    }
   };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     setPageInput(page.toString());
+    // Server-side: cargar la nueva página desde el servidor
+    if (onServerPageChange) {
+      onServerPageChange(page, itemsPerPage);
+    }
   };
 
   // Manejar cambio de página por input
@@ -1025,6 +1047,9 @@ const ProductGridView = ({
       pageNum <= processedProducts.totalPages
     ) {
       setCurrentPage(pageNum);
+      if (onServerPageChange) {
+        onServerPageChange(pageNum, itemsPerPage);
+      }
     }
   };
 
@@ -1040,11 +1065,14 @@ const ProductGridView = ({
     if (pageNum < 1) {
       setPageInput("1");
       setCurrentPage(1);
+      if (onServerPageChange) onServerPageChange(1, itemsPerPage);
     } else if (pageNum > processedProducts.totalPages) {
       setPageInput(processedProducts.totalPages.toString());
       setCurrentPage(processedProducts.totalPages);
+      if (onServerPageChange) onServerPageChange(processedProducts.totalPages, itemsPerPage);
     } else {
       setCurrentPage(pageNum);
+      if (onServerPageChange) onServerPageChange(pageNum, itemsPerPage);
     }
   };
 
@@ -1106,15 +1134,16 @@ const ProductGridView = ({
 
               <Select
                 options={[
+                  { value: 24, label: "24" },
+                  { value: 48, label: "48" },
+                  { value: 96, label: "96" },
                   { value: 144, label: "144" },
                   { value: 288, label: "288" },
-                  { value: 432, label: "432" },
-                  { value: 576, label: "576" },
                 ]}
                 value={itemsPerPage}
                 onChange={handleItemsPerPageChange}
                 preValue="Ver:"
-                postValue=" productos"
+                postValue=" por pág."
                 placeholder="Mostrar items"
                 width="auto"
               />

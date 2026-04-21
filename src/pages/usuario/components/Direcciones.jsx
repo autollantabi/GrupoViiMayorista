@@ -12,7 +12,10 @@ import {
   api_addresses_updateAddress,
 } from "../../../api/users/apiAddresses";
 import { api_auth_me } from "../../../api/auth/apiAuth";
+import { api_vendedores_getDirecciones } from "../../../api/vendedores/apiVendedores";
 import { useLocation } from "react-router-dom";
+import MapSelector from "../../../components/ui/MapSelector";
+import { reverseGeocode } from "../../../utils/reverseGeocoding";
 
 const Card = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
@@ -32,9 +35,9 @@ const Card = styled.div`
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
-        : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
+    theme.mode === "dark"
+      ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
+      : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
   }
 
   @media (max-width: 768px) {
@@ -117,9 +120,9 @@ const AddressCard = styled.div`
     transform: translateY(-2px);
     border-color: ${({ theme }) => `${theme.colors.primary}50`};
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 4px 16px rgba(0, 0, 0, 0.15)"
-        : "0 4px 16px rgba(0, 0, 0, 0.08)"};
+    theme.mode === "dark"
+      ? "0 4px 16px rgba(0, 0, 0, 0.15)"
+      : "0 4px 16px rgba(0, 0, 0, 0.08)"};
   }
 
   @media (max-width: 768px) {
@@ -179,7 +182,7 @@ const ActionButton = styled(Button)`
     $variant === "primary" ? theme.colors.primary : "transparent"};
   border: 1px solid
     ${({ theme, $variant }) =>
-      $variant === "primary" ? theme.colors.primary : theme.colors.primary};
+    $variant === "primary" ? theme.colors.primary : theme.colors.primary};
   color: ${({ theme, $variant }) =>
     $variant === "primary" ? "#fff" : theme.colors.primary};
   cursor: pointer;
@@ -192,9 +195,9 @@ const ActionButton = styled(Button)`
 
   &:hover {
     background: ${({ theme, $variant }) =>
-      $variant === "primary"
-        ? theme.colors.primaryDark || theme.colors.primary
-        : `${theme.colors.primary}15`};
+    $variant === "primary"
+      ? theme.colors.primaryDark || theme.colors.primary
+      : `${theme.colors.primary}15`};
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
@@ -323,7 +326,7 @@ const TypeFilterButton = styled(Button)`
     $active ? `${theme.colors.primary}15` : "transparent"};
   border: 1px solid
     ${({ theme, $active }) =>
-      $active ? theme.colors.primary : theme.colors.border};
+    $active ? theme.colors.primary : theme.colors.border};
   color: ${({ theme, $active }) =>
     $active ? theme.colors.primary : theme.colors.textLight};
   padding: 4px 12px;
@@ -335,7 +338,7 @@ const TypeFilterButton = styled(Button)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background: ${({ theme, $active }) =>
-      !$active ? "rgba(33, 150, 243, 0.05)" : `${theme.colors.primary}15`};
+    !$active ? "rgba(33, 150, 243, 0.05)" : `${theme.colors.primary}15`};
   }
 
   @media (max-width: 768px) {
@@ -441,8 +444,59 @@ const ButtonGroup = styled.div`
   }
 `;
 
+const ResolvedAddress = ({ address }) => {
+  const [resolvedText, setResolvedText] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const resolve = async () => {
+      // Priorizar coordenadas si existen y son válidas
+      const hasCoords = address.LATITUDE && address.LONGITUDE &&
+        address.LATITUDE !== "" && address.LONGITUDE !== "";
+
+      if (hasCoords) {
+        setLoading(true);
+        try {
+          const result = await reverseGeocode(address.LONGITUDE, address.LATITUDE);
+          if (result && result.address) {
+            setResolvedText(result.address);
+          }
+        } catch (error) {
+          console.error("Error resolving address:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    resolve();
+  }, [address.LATITUDE, address.LONGITUDE]);
+
+  if (loading) return <span>Cargando ubicación desde mapa...</span>;
+
+  if (resolvedText) {
+    return (
+      <>
+        <div style={{ fontWeight: '500', color: '#2196f3', fontSize: '0.8rem', marginBottom: '4px' }}>
+          <RenderIcon name="FaMapMarkerAlt" size={10} style={{ marginRight: '4px' }} />
+          Ubicación seleccionada por mapa
+        </div>
+        {resolvedText}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {address.STREET}
+      <br />
+      {address.CITY}, {address.STATE}
+      {address.COUNTRY !== "EC" && <>, {address.COUNTRY}</>}
+    </>
+  );
+};
+
 const Direcciones = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, isSeller } = useAuth();
   const { theme } = useAppTheme();
   const location = useLocation();
 
@@ -468,6 +522,7 @@ const Direcciones = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressErrors, setAddressErrors] = useState({});
   const [addressTypeFilter, setAddressTypeFilter] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   // Obtener la lista de empresas disponibles
   const empresasDisponibles = useMemo(() => {
@@ -505,11 +560,65 @@ const Direcciones = () => {
       if (!a.PREDETERMINED && b.PREDETERMINED) return 1;
       if (a.ORIGIN === "USER" && b.ORIGIN === "SAP") return -1;
       if (a.ORIGIN === "SAP" && b.ORIGIN === "USER") return 1;
-      return a.CLASIFICATION.localeCompare(b.CLASIFICATION);
+      return (a.CLASIFICATION || "").localeCompare(b.CLASIFICATION || "");
     });
   };
 
-  const filteredAddresses = getAddressesByCompany();
+  const [addresses, setAddresses] = useState([]);
+
+  // Cargar direcciones (propias o del cliente si es vendedor)
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!user) return;
+
+      if (isSeller) {
+        try {
+          const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
+          const clientAccounts = stored.clientAccounts || {};
+          const account = clientAccounts[selectedEmpresa];
+
+          if (account) {
+            const response = await api_vendedores_getDirecciones(account, selectedEmpresa);
+            if (response.success && Array.isArray(response.data)) {
+              const mapped = response.data.map((addr) => ({
+                ...addr,
+                // Mapear para que coincida con el formato esperado por el componente (S/B)
+                TYPE: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
+              }));
+              setAddresses(mapped);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error al cargar direcciones de cliente para vendedor:", error);
+        }
+        setAddresses([]);
+      } else {
+        // Usuario normal usa las direcciones de su objeto user
+        const companyAddresses = user?.DIRECCIONES?.[selectedEmpresa] || [];
+        setAddresses(companyAddresses);
+      }
+    };
+
+    loadAddresses();
+  }, [user, isSeller, selectedEmpresa]);
+
+  const getAddressesToDisplay = () => {
+    const filteredByType =
+      addressTypeFilter === "all"
+        ? addresses
+        : addresses.filter((addr) => addr.TYPE.trim() === addressTypeFilter);
+
+    return [...filteredByType].sort((a, b) => {
+      if (a.PREDETERMINED && !b.PREDETERMINED) return -1;
+      if (!a.PREDETERMINED && b.PREDETERMINED) return 1;
+      if (a.ORIGIN === "USER" && b.ORIGIN === "SAP") return -1;
+      if (a.ORIGIN === "SAP" && b.ORIGIN === "USER") return 1;
+      return (a.CLASIFICATION || "").localeCompare(b.CLASIFICATION || "");
+    });
+  };
+
+  const filteredAddresses = getAddressesToDisplay();
 
   // Manejadores de eventos
   const handleAddressFormChange = (e) => {
@@ -542,6 +651,7 @@ const Direcciones = () => {
       ORIGIN: "USER",
     });
     setAddressErrors({});
+    setSelectedLocation(null);
     setShowAddressForm(true);
   };
 
@@ -577,6 +687,12 @@ const Direcciones = () => {
       }
     }
 
+    // Validación obligatoria de mapa para envío
+    if (addressForm.TYPE === "S" && !selectedLocation) {
+      toast.warning("Por favor selecciona una ubicación en el mapa");
+      return;
+    }
+
     if (!validateAddressForm()) return;
 
     const toastId = toast.loading("Creando dirección...");
@@ -593,6 +709,8 @@ const Direcciones = () => {
         PREDETERMINED: addressForm.PREDETERMINED,
         ORIGIN: "USER",
         EMPRESA: selectedEmpresa,
+        LATITUDE: selectedLocation?.lat || null,
+        LONGITUDE: selectedLocation?.lng || null,
       };
 
       let result = await api_addresses_createAddress(addressData);
@@ -603,6 +721,7 @@ const Direcciones = () => {
           const resultAuthMe = await api_auth_me();
           if (resultAuthMe && resultAuthMe.user) {
             setUser(resultAuthMe.user);
+            setSelectedLocation(null);
             toast.update(toastId, {
               render: "Dirección creada correctamente",
               type: "success",
@@ -644,6 +763,7 @@ const Direcciones = () => {
   };
 
   const handleCancelAddressForm = () => {
+    setSelectedLocation(null);
     setShowAddressForm(false);
   };
 
@@ -667,6 +787,8 @@ const Direcciones = () => {
       const addressData = {
         ...addressToUpdate,
         PREDETERMINED: true,
+        LATITUDE: addressToUpdate.LATITUDE || null,
+        LONGITUDE: addressToUpdate.LONGITUDE || null,
       };
 
       const otherAddressesOfSameType = filteredAddresses.filter(
@@ -693,6 +815,23 @@ const Direcciones = () => {
           const resultAuthMe = await api_auth_me();
           if (resultAuthMe && resultAuthMe.user) {
             setUser(resultAuthMe.user);
+
+            // Si es vendedor, forzar la recarga de direcciones del cliente
+            if (isSeller) {
+              const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
+              const clientAccounts = stored.clientAccounts || {};
+              const account = clientAccounts[selectedEmpresa];
+              if (account) {
+                const response = await api_vendedores_getDirecciones(account, selectedEmpresa);
+                if (response.success && Array.isArray(response.data)) {
+                  setAddresses(response.data.map(addr => ({
+                    ...addr,
+                    TYPE: addr.CLASIFICATION === "ENVIO" ? "S" : "B"
+                  })));
+                }
+              }
+            }
+
             toast.update(toastId, {
               render: `Dirección establecida como predeterminada para ${formatAddressType(
                 addressType
@@ -868,6 +1007,31 @@ const Direcciones = () => {
                     </FormField>
                   </FormGroup>
 
+                  {addressForm.TYPE === "S" && (
+                    <div style={{ marginTop: "1rem" }}>
+                      <span style={{ fontSize: "0.9rem", color: theme.colors.text, fontWeight: "500" }}>Ubicación en el mapa *</span>
+                      <MapSelector
+                        onLocationSelect={(loc) => {
+                          setSelectedLocation(loc);
+                          if (loc.province || loc.city || loc.address) {
+                            setAddressForm(prev => ({
+                              ...prev,
+                              STATE: (loc.province || prev.STATE).toUpperCase(),
+                              CITY: (loc.city || prev.CITY).toUpperCase(),
+                              STREET: (loc.address || prev.STREET).toUpperCase()
+                            }));
+                          }
+                        }}
+                        initialLocation={selectedLocation}
+                      />
+                      {!selectedLocation && (
+                        <p style={{ color: "orange", fontSize: "0.8rem", marginTop: "0.5rem" }}>
+                          * Debes marcar el punto de entrega en el mapa
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <FormActions>
                     <Button
                       text="Cancelar"
@@ -982,10 +1146,7 @@ const Direcciones = () => {
               </AddressCardHeader>
 
               <AddressDetails>
-                {address.STREET}
-                <br />
-                {address.CITY}, {address.STATE}
-                {address.COUNTRY !== "EC" && <>, {address.COUNTRY}</>}
+                <ResolvedAddress address={address} />
               </AddressDetails>
             </AddressCard>
           ))

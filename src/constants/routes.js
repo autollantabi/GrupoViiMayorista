@@ -25,6 +25,7 @@ export const ROUTES = {
     MIS_PEDIDOS: "/mis-pedidos",
     DETALLE_PEDIDO: "/mis-pedidos/:orderId",
     PERFIL: "/perfil",
+    SELECCION_EMPRESA: "/seleccion-empresa",
     SEARCH: "/busqueda",
     REENCAUCHE: "/reencauche",
     APP_SHELL: "/app-shell",
@@ -40,4 +41,8 @@ export const ROUTES = {
   PUBLIC: {
     NOT_FOUND: "/404",
   },
+  VENDEDOR: {
+    CATALOGO: "/vendedor/:lineaID?",
+    OFERTA: "/vendedor/oferta"
+  }
 };

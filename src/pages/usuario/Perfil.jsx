@@ -74,9 +74,9 @@ const TabsContainer = styled.div`
     left: 0;
     height: 2px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `linear-gradient(90deg, ${theme.colors.primary}40, transparent)`
-        : `linear-gradient(90deg, ${theme.colors.primary}30, transparent)`};
+    theme.mode === "dark"
+      ? `linear-gradient(90deg, ${theme.colors.primary}40, transparent)`
+      : `linear-gradient(90deg, ${theme.colors.primary}30, transparent)`};
     width: 100%;
     pointer-events: none;
   }
@@ -124,11 +124,11 @@ const TabButton = styled.button`
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
     background: ${({ theme, $active }) =>
-      !$active
-        ? theme.mode === "dark"
-          ? `${theme.colors.primary}08`
-          : `${theme.colors.primary}05`
-        : theme.mode === "dark"
+    !$active
+      ? theme.mode === "dark"
+        ? `${theme.colors.primary}08`
+        : `${theme.colors.primary}05`
+      : theme.mode === "dark"
         ? `${theme.colors.primary}15`
         : `${theme.colors.primary}12`};
   }
@@ -158,7 +158,7 @@ const TabContent = styled.div`
 
 // Componente Principal
 const Perfil = () => {
-  const { isClient } = useAuth();
+  const { isClient, isSeller } = useAuth();
   const [activeTab, setActiveTab] = useState("personal");
 
   return (
@@ -213,14 +213,18 @@ const Perfil = () => {
       </TabContent>
 
       {/* Tab: Direcciones */}
-      <TabContent $active={activeTab === "addresses"}>
-        <Direcciones />
-      </TabContent>
+      {isClient && (
+        <TabContent $active={activeTab === "addresses"}>
+          <Direcciones />
+        </TabContent>
+      )}
 
       {/* Tab: Teléfonos */}
-      <TabContent $active={activeTab === "telefonos"}>
-        <Telefonos />
-      </TabContent>
+      {isClient && (
+        <TabContent $active={activeTab === "telefonos"}>
+          <Telefonos />
+        </TabContent>
+      )}
 
       {/* Tab: Preferencias */}
       <TabContent $active={activeTab === "preferences"}>

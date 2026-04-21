@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useAppTheme } from "../../context/AppThemeContext";
 import Button from "../../components/ui/Button";
 import { api_order_getOrderById } from "../../api/order/apiOrder";
+import { api_users_getByAccount } from "../../api/users/apiUsers";
 import RenderIcon from "../../components/ui/RenderIcon";
 import { baseLinkImages } from "../../constants/links";
 import ContactModal from "../../components/ui/ContactModal";
@@ -19,27 +20,27 @@ import RenderLoader from "../../components/ui/RenderLoader";
 
 // Función para mapear la línea de producto a la clave de descuento
 const mapLineaToDiscountKey = (lineaNegocio) => {
-  if (!lineaNegocio) return null;
+    if (!lineaNegocio) return null;
 
-  const lineaUpper = lineaNegocio.toUpperCase().trim();
+    const lineaUpper = lineaNegocio.toUpperCase().trim();
 
-  // LLANTAS y LLANTAS MOTO mapean a LLANTAS
-  if (lineaUpper === "LLANTAS" || lineaUpper === "LLANTAS MOTO") {
-    return "LLANTAS";
-  }
+    // LLANTAS y LLANTAS MOTO mapean a LLANTAS
+    if (lineaUpper === "LLANTAS" || lineaUpper === "LLANTAS MOTO") {
+        return "LLANTAS";
+    }
 
-  // HERRAMIENTAS mapea a HERRAMIENTAS
-  if (lineaUpper === "HERRAMIENTAS") {
-    return "HERRAMIENTAS";
-  }
+    // HERRAMIENTAS mapea a HERRAMIENTAS
+    if (lineaUpper === "HERRAMIENTAS") {
+        return "HERRAMIENTAS";
+    }
 
-  // LUBRICANTES mapea a LUBRICANTES
-  if (lineaUpper === "LUBRICANTES") {
-    return "LUBRICANTES";
-  }
+    // LUBRICANTES mapea a LUBRICANTES
+    if (lineaUpper === "LUBRICANTES") {
+        return "LUBRICANTES";
+    }
 
-  // Para otras líneas, usar el nombre tal cual
-  return lineaUpper;
+    // Para otras líneas, usar el nombre tal cual
+    return lineaUpper;
 };
 
 const PageHeader = styled.div`
@@ -107,37 +108,37 @@ const StatusBadge = styled.span`
     padding: 3px 10px;
   }
   background-color: ${({ theme, $status }) => {
-    switch ($status) {
-      case "PENDIENTE":
-        return theme.colors.warning + "33";
-      case "PENDIENTE CARTERA":
-        return theme.colors.info + "33";
-      case "CONFIRMADO":
-        return theme.colors.info + "33";
-      case "ENTREGADO":
-        return theme.colors.success + "33";
-      case "CANCELADO":
-        return theme.colors.error + "33";
-      default:
-        return theme.colors.border;
-    }
-  }};
+        switch ($status) {
+            case "PENDIENTE":
+                return theme.colors.warning + "33";
+            case "PENDIENTE CARTERA":
+                return theme.colors.info + "33";
+            case "CONFIRMADO":
+                return theme.colors.info + "33";
+            case "ENTREGADO":
+                return theme.colors.success + "33";
+            case "CANCELADO":
+                return theme.colors.error + "33";
+            default:
+                return theme.colors.border;
+        }
+    }};
   color: ${({ theme, $status }) => {
-    switch ($status) {
-      case "PENDIENTE":
-        return theme.colors.warning;
-      case "PENDIENTE CARTERA":
-        return theme.colors.info;
-      case "CONFIRMADO":
-        return theme.colors.info;
-      case "ENTREGADO":
-        return theme.colors.success;
-      case "CANCELADO":
-        return theme.colors.error;
-      default:
-        return theme.colors.textLight;
-    }
-  }};
+        switch ($status) {
+            case "PENDIENTE":
+                return theme.colors.warning;
+            case "PENDIENTE CARTERA":
+                return theme.colors.info;
+            case "CONFIRMADO":
+                return theme.colors.info;
+            case "ENTREGADO":
+                return theme.colors.success;
+            case "CANCELADO":
+                return theme.colors.error;
+            default:
+                return theme.colors.textLight;
+        }
+    }};
 `;
 
 const Section = styled.section`
@@ -374,13 +375,24 @@ const SummaryValue = styled.span`
   text-align: right;
   flex-shrink: 0;
   ${({ $operacion, theme }) =>
-    $operacion &&
-    `border-bottom: solid 1px ${theme.colors.border}; padding-bottom: 4px;`}
+        $operacion &&
+        `border-bottom: solid 1px ${theme.colors.border}; padding-bottom: 4px;`}
 
   @media (max-width: 768px) {
     font-size: 0.85rem;
   }
 `;
+
+const TotalValue = styled(SummaryValue)`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: bold;
+  font-size: 1.1rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
 
 const TrackingSteps = styled.div`
   display: flex;
@@ -438,15 +450,15 @@ const StepIconContainer = styled.div`
   height: 32px;
   border-radius: 50%;
   background-color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.primary : theme.colors.surface};
+        $completed ? theme.colors.primary : theme.colors.surface};
   border: 2px solid
     ${({ theme, $completed }) =>
-      $completed ? theme.colors.primary : theme.colors.border};
+        $completed ? theme.colors.primary : theme.colors.border};
   display: flex;
   align-items: center;
   justify-content: center;
   color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.white : theme.colors.textLight};
+        $completed ? theme.colors.white : theme.colors.textLight};
   margin-bottom: 12px;
   z-index: 1; // Para que aparezca por encima de la línea
 
@@ -517,797 +529,848 @@ const ProductCardImage = styled.img`
 `;
 
 const DetallePedido = () => {
-  const { orderId } = useParams();
-  const { theme } = useAppTheme();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [orderDetails, setOrderDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [statusOptionsApi, setStatusOptionsApi] = useState([]);
-  const [showCancelModal, setShowCancelModal] = useState(false);
+    const { orderId } = useParams();
+    const { theme } = useAppTheme();
+    const { user, isSeller } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [orderDetails, setOrderDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [showContactModal, setShowContactModal] = useState(false);
+    const [statusOptionsApi, setStatusOptionsApi] = useState([]);
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const handleProductClick = (productId) => {
-    // Buscar el producto en los detalles del pedido
-    const product = orderDetails?.detalle?.find(
-      (item) => item.PRODUCT_ID === productId
-    );
-    const empresaId = orderDetails?.empresaInfo?.id || "";
+    const handleProductClick = (productId) => {
+        // Buscar el producto en los detalles del pedido ya mapeados
+        const product = orderDetails?.items?.find((item) => item.id === productId);
+        const empresaId = orderDetails?.empresaInfo?.id || "";
 
-    navigate(`/productos/${encodeURIComponent(empresaId)}/${productId}`, {
-      state: {
-        product: product
-          ? {
-              id: product.PRODUCT_ID,
-              name: product.PRODUCT_NAME,
-              brand: product.BRAND,
-              empresaId: orderDetails?.empresaInfo?.id,
-              image: product.IMAGE_URL || product.IMAGE,
-              description: product.DESCRIPTION,
-              price: product.PRICE,
-              stock: product.QUANTITY,
-              lineaNegocio: product.LINEA_NEGOCIO || "DEFAULT",
-            }
-          : null,
-        empresaId: orderDetails?.empresaInfo?.id,
-        prevUrl: `/mis-pedidos/${orderId}`, // URL del detalle del pedido para el botón de regreso
-      },
-    });
-  };
-
-  const estadosTracking = [
-    { key: "PENDIENTE", label: "Pedido recibido" },
-    { key: "PENDIENTE CARTERA", label: "Revisión" },
-    { key: "CONFIRMADO", label: "Pedido confirmado" },
-    { key: "ENTREGADO", label: "Entregado" },
-    { key: "CANCELADO", label: "Pedido cancelado" },
-  ];
-
-  useEffect(() => {
-    const fetchOrderDetails = async () => {
-      setLoading(true);
-      try {
-        const response = await api_order_getOrderById(orderId);
-
-        if (response.success && response.data && response.data.length > 0) {
-          const statusOptionsResponse = await api_optionsCatalog_getStates();
-          let mapStatusOptions = [];
-          if (statusOptionsResponse.success) {
-            mapStatusOptions = statusOptionsResponse.data.map((item) => ({
-              value: item.VALUE_CATALOG,
-              label: item.LABEL_CATALOG,
-              id: item.ID_CATALOG,
-            }));
-            setStatusOptionsApi(mapStatusOptions);
-          }
-
-          const apiOrder = response.data[0];
-          const cabecera = apiOrder.CABECERA;
-          const detalle = apiOrder.DETALLE || [];
-
-          const statusHistory = Array.isArray(cabecera.STATUS_HISTORY)
-            ? cabecera.STATUS_HISTORY
-            : [];
-          const currentStatus = mapStatusOptions.find(
-            (opt) => opt.id === cabecera.STATUS
-          )?.value;
-
-          // Calcular el subtotal con IVA incluido
-          const ivaPercentage =
-            cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
-
-          const subtotal = detalle.reduce((sum, item) => {
-            const priceWithIVA = calculatePriceWithIVA(
-              item.PRICE,
-              ivaPercentage
-            );
-            return sum + priceWithIVA * item.QUANTITY;
-          }, 0); // Crear un objeto con la estructura que espera nuestro componente
-
-          // Obtener la línea de negocio de la cabecera y mapearla a la clave de descuento
-          const businessLine = cabecera.BUSINESS_LINE || "";
-          const discountKey =
-            mapLineaToDiscountKey(businessLine) || businessLine;
-          const userDiscount =
-            user?.DESCUENTOS?.[cabecera.ENTERPRISE]?.[discountKey] || 0;
-
-          // Crear tracking steps considerando que PENDIENTE y PENDIENTE CARTERA son estados alternativos en la misma posición
-          const tracking = estadosTracking
-            .map((estado) => {
-              const found = statusHistory.find(
-                (s) => s.VALUE_CATALOG === estado.key
-              );
-              return {
-                step: estado.label,
-                date: found ? new Date(found.createdAt) : null,
-                completed: !!found,
-                key: estado.key,
-              };
-            })
-            // Filtrar para mostrar solo el estado inicial activo (PENDIENTE o PENDIENTE CARTERA)
-            .filter((step) => {
-              // Si el pedido está cancelado, mostrar solo PENDIENTE y CANCELADO
-              if (currentStatus === "CANCELADO") {
-                return step.key === "PENDIENTE" || step.key === "CANCELADO";
-              }
-
-              // Para estados iniciales, mostrar solo el que está activo
-              if (
-                step.key === "PENDIENTE" ||
-                step.key === "PENDIENTE CARTERA"
-              ) {
-                return step.key === currentStatus;
-              }
-
-              // Para otros estados, mostrar normalmente
-              return step.key !== "CANCELADO";
-            });
-
-          const formattedOrder = {
-            id: cabecera.ID_CART_HEADER,
-            date: new Date(cabecera.createdAt),
-            status: currentStatus,
-            aditionalDiscount: cabecera.ADITIONAL_DISCOUNT || 0,
-            discount: userDiscount,
-            iva: cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE,
-            customer: {
-              name: cabecera.USER.NAME_USER,
-              email: cabecera.USER.EMAIL,
-              phone: cabecera?.PHONE[0]?.PHONE_NUMBER || "No dispone",
+        navigate(`/productos/${encodeURIComponent(empresaId)}/${productId}`, {
+            state: {
+                product: product
+                    ? {
+                        id: product.id,
+                        name: product.name,
+                        brand: product.brand,
+                        empresaId: orderDetails?.empresaInfo?.id,
+                        image: product.image,
+                        description: product.description,
+                        price: product.basePrice,
+                        stock: product.quantity,
+                        lineaNegocio: product.lineaNegocio || "DEFAULT",
+                    }
+                    : null,
+                empresaId: orderDetails?.empresaInfo?.id,
+                prevUrl: `/mis-pedidos/${orderId}`,
             },
-            shipping: {
-              address: cabecera.SHIPPING_ADDRESS.STREET,
-              city: cabecera.SHIPPING_ADDRESS.CITY,
-              state: cabecera.SHIPPING_ADDRESS.STATE,
-            },
-            billing: {
-              address: cabecera.BILLING_ADDRESS.STREET,
-              city: cabecera.BILLING_ADDRESS.CITY,
-              state: cabecera.BILLING_ADDRESS.STATE,
-            },
-            payment: {
-              method: "Transferencia bancaria", // Este dato no viene en la API
-              status: "Pendiente",
-              reference: "No disponible", // Este dato no viene en la API
-              date: new Date(cabecera.createdAt),
-            },
-            items: detalle.map((item) => {
-              const basePrice = item.PRICE;
-              const ivaPercentage =
-                cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
-              const priceWithIVA = calculatePriceWithIVA(
-                basePrice,
-                ivaPercentage
-              );
-              const totalWithIVA = priceWithIVA * item.QUANTITY;
-
-              return {
-                id: item.PRODUCT_CODE,
-                name: item.MAESTRO?.DMA_NOMBREITEM || "Producto",
-                sku: item.PRODUCT_CODE,
-                price: priceWithIVA, // Precio con IVA incluido
-                basePrice: basePrice, // Precio base sin IVA (para cálculos internos)
-                quantity: item.QUANTITY,
-                promotionalDiscount: item.PROMOTIONAL_DISCOUNT || 0,
-                total: totalWithIVA, // Total con IVA incluido
-                image: item.MAESTRO?.DMA_RUTAIMAGEN
-                  ? `${baseLinkImages}${item.MAESTRO.DMA_RUTAIMAGEN}`
-                  : "https://placehold.co/50x50/png",
-              };
-            }),
-            subtotal: subtotal,
-            total: cabecera.TOTAL || subtotal, // Si no hay total, usar subtotal
-            tracking,
-            empresaInfo: {
-              id: cabecera.ENTERPRISE,
-              name: cabecera.ENTERPRISE,
-            },
-          };
-          setOrderDetails(formattedOrder);
-          setError(null);
-        } else {
-          setError("No se encontraron detalles del pedido");
-        }
-      } catch (error) {
-        console.error("Error al cargar detalles del pedido:", error);
-        setError(`Error al cargar detalles: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
+        });
     };
 
-    fetchOrderDetails();
-  }, [orderId]);
+    const estadosTracking = [
+        { key: "PENDIENTE", label: "Pedido recibido" },
+        { key: "PENDIENTE CARTERA", label: "Revisión" },
+        { key: "CONFIRMADO", label: "Pedido confirmado" },
+        { key: "ENTREGADO", label: "Entregado" },
+        { key: "CANCELADO", label: "Pedido cancelado" },
+    ];
 
-  const handleCancelOrder = () => {
-    const canCancel =
-      orderDetails.status === "PENDIENTE" ||
-      orderDetails.status === "PENDIENTE CARTERA";
-    if (canCancel) {
-      setShowCancelModal(true);
-    } else {
-      // Mostrar mensaje de error
-      alert(
-        "Lo sentimos, no es posible cancelar este pedido ya que ha sido confirmado para su procesamiento."
-      );
-    }
-  };
+    const isFetching = useRef(false);
 
-  const handleConfirmCancel = () => {
-    // Implementar la lógica de cancelación
-    alert("Pedido cancelado correctamente");
-    setShowCancelModal(false);
-  };
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            if (isFetching.current) return;
+            isFetching.current = true;
 
-  const handleCancelModalClose = () => {
-    setShowCancelModal(false);
-  };
+            setLoading(true);
+            try {
+                let apiOrder = null;
+                let mapStatusOptions = [];
 
-  const handleContactSupport = () => {
-    setShowContactModal(true);
-  };
+                // Siempre consultamos por ID para obtener el detalle completo (incluyendo joins de MAESTRO para nombres/imágenes)
+                // La data del state de la lista de pedidos suele ser parcial (especialmente para vendedores).
+                const response = await api_order_getOrderById(orderId);
 
-  if (loading) {
-    return (
-      <PageContainer
-        backButtonText="Regresar"
-        backButtonOnClick={() => navigate("/mis-pedidos")}
-      >
-        <RenderLoader
-          text="Cargando detalles del pedido..."
-          size="32px"
-          card={true}
-          showDots={false}
-        />
-      </PageContainer>
-    );
-  }
+                if (response.success && response.data) {
+                    // Manejar si la API devuelve un objeto directo o un array de pedidos
+                    apiOrder = Array.isArray(response.data)
+                        ? response.data.length > 0 ? response.data[0] : null
+                        : response.data;
+                }
 
-  if (error || !orderDetails) {
-    return (
-      <PageContainer
-        backButtonText="Regresar"
-        backButtonOnClick={() => navigate("/mis-pedidos")}
-      >
-        <EmptyState>
-          <h2>Pedido no encontrado</h2>
-          <p>
-            {error ||
-              "No pudimos encontrar la información del pedido solicitado."}
-          </p>
-          <Button
-            text="Volver a mis pedidos"
-            variant="solid"
-            onClick={() => navigate("/mis-pedidos")}
-          />
-        </EmptyState>
-      </PageContainer>
-    );
-  }
+                if (apiOrder) {
+                    const statusOptionsResponse = await api_optionsCatalog_getStates();
+                    if (statusOptionsResponse.success) {
+                        mapStatusOptions = statusOptionsResponse.data.map((item) => ({
+                            value: item.VALUE_CATALOG,
+                            label: item.LABEL_CATALOG,
+                            id: item.ID_CATALOG,
+                        }));
+                        setStatusOptionsApi(mapStatusOptions);
+                    }
+                    const cabecera = apiOrder.CABECERA;
+                    const detalle = apiOrder.DETALLE || [];
 
-  const canCancel =
-    orderDetails.status === "PENDIENTE" ||
-    orderDetails.status === "PENDIENTE CARTERA";
+                    // Obtener información adicional del cliente mediante ACCOUNT_USER si está disponible
+                    let userData = null;
+                    try {
+                        if (cabecera.ACCOUNT_USER) {
+                            const userResponse = await api_users_getByAccount(cabecera.ACCOUNT_USER);
+                            if (userResponse.success && userResponse.data && userResponse.data.length > 0) {
+                                userData = userResponse.data[0];
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error al obtener info del socio:", error);
+                    }
 
-  // 1. Subtotal sin descuentos
-  const rawSubtotal = orderDetails.subtotal;
+                    const statusHistory = Array.isArray(cabecera.STATUS_HISTORY)
+                        ? cabecera.STATUS_HISTORY
+                        : [];
+                    const currentStatus = mapStatusOptions.find(
+                        (opt) => opt.id === cabecera.STATUS
+                    )?.value || cabecera.STATUS;
 
-  // 2. Total de descuentos promocionales (por producto)
-  const totalPromotionalDiscount = orderDetails.items.reduce(
-    (acc, item) =>
-      acc +
-      item.price *
-        item.quantity *
-        ((Number(item.promotionalDiscount) || 0) / 100),
-    0
-  );
+                    // Calcular el subtotal con IVA incluido
+                    const ivaPercentage =
+                        cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
 
-  // 3. Subtotal después de descuentos promocionales
-  const subtotalAfterPromo = rawSubtotal - totalPromotionalDiscount;
+                    const subtotal = detalle.reduce((sum, item) => {
+                        const priceWithIVA = calculatePriceWithIVA(
+                            item.PRICE,
+                            ivaPercentage
+                        );
+                        return sum + priceWithIVA * item.QUANTITY;
+                    }, 0); // Crear un objeto con la estructura que espera nuestro componente
 
-  // 4. Descuento general (cliente) sobre el subtotal con promo
-  const generalDiscount =
-    subtotalAfterPromo * (Number(orderDetails.discount) / 100);
+                    // Obtener la línea de negocio de la cabecera y mapearla a la clave de descuento
+                    const businessLine = cabecera.BUSINESS_LINE || "";
+                    const discountKey = mapLineaToDiscountKey(businessLine) || "DEFAULT";
+                    const enterpriseDiscount = user?.DESCUENTOS?.[cabecera.ENTERPRISE];
+                    const userDiscount =
+                        enterpriseDiscount?.[discountKey] ??
+                        (typeof enterpriseDiscount === "number" ? enterpriseDiscount : 0);
 
-  // 5. Subtotal después de descuento general
-  const subtotalAfterGeneral = subtotalAfterPromo - generalDiscount;
+                    // Crear tracking steps considerando que PENDIENTE y PENDIENTE CARTERA son estados alternativos en la misma posición
+                    const tracking = estadosTracking
+                        .map((estado) => {
+                            const found = statusHistory.find(
+                                (s) => s.VALUE_CATALOG === estado.key
+                            );
+                            return {
+                                step: estado.label,
+                                date: found ? new Date(found.createdAt) : null,
+                                completed: !!found,
+                                key: estado.key,
+                            };
+                        })
+                        // Filtrar para mostrar solo el estado inicial activo (PENDIENTE o PENDIENTE CARTERA)
+                        .filter((step) => {
+                            // Si el pedido está cancelado, mostrar solo PENDIENTE y CANCELADO
+                            if (currentStatus === "CANCELADO") {
+                                return step.key === "PENDIENTE" || step.key === "CANCELADO";
+                            }
 
-  // 6. Descuento adicional (coordinadora) sobre el subtotal con promo y general
-  const aditionalDiscount =
-    subtotalAfterGeneral * (Number(orderDetails.aditionalDiscount) / 100);
+                            // Para estados iniciales, mostrar solo el que está activo
+                            if (
+                                step.key === "PENDIENTE" ||
+                                step.key === "PENDIENTE CARTERA"
+                            ) {
+                                return step.key === currentStatus;
+                            }
 
-  // 7. Total final antes de IVA
-  const totalFinal = subtotalAfterGeneral - aditionalDiscount;
+                            // Para otros estados, mostrar normalmente
+                            return step.key !== "CANCELADO";
+                        });
 
-  // IVA ya está incluido en todos los precios
+                    const formattedOrder = {
+                        id: cabecera.ID_CART_HEADER,
+                        date: new Date(cabecera.createdAt),
+                        status: currentStatus,
+                        aditionalDiscount: cabecera.ADITIONAL_DISCOUNT || 0,
+                        discount: cabecera.DISCOUNT || userDiscount,
+                        iva: cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE,
+                        customer: {
+                            name: userData?.NOMBRE_SOCIO || cabecera.USER?.NAME_USER || cabecera.USER?.NOMBRE_SOCIO || "N/A",
+                            email: (userData?.CORREOS && userData.CORREOS[0]) || cabecera.USER?.EMAIL || cabecera.USER?.CORREO || "No dispone",
+                            phone: cabecera.USER?.PHONE || cabecera.USER?.TELEFONO || (Array.isArray(cabecera.PHONE) && cabecera.PHONE[0]?.PHONE_NUMBER) || "No dispone",
+                        },
+                        sellerName: isSeller ? (user?.NAME_USER || "N/A") : null,
+                        shipping: {
+                            address: cabecera.SHIPPING_ADDRESS?.STREET || "No especificada",
+                            city: cabecera.SHIPPING_ADDRESS?.CITY || "",
+                            state: cabecera.SHIPPING_ADDRESS?.STATE || "",
+                        },
+                        billing: {
+                            address: cabecera.BILLING_ADDRESS?.STREET || "No especificada",
+                            city: cabecera.BILLING_ADDRESS?.CITY || "",
+                            state: cabecera.BILLING_ADDRESS?.STATE || "",
+                        },
+                        payment: {
+                            method: "Transferencia bancaria", // Este dato no viene en la API
+                            status: "Pendiente",
+                            reference: "No disponible", // Este dato no viene en la API
+                            date: new Date(cabecera.createdAt),
+                        },
+                        items: detalle.map((item) => {
+                            const basePrice = item.PRICE;
+                            const ivaPercentage =
+                                cabecera.IVA_DETAIL?.IVA_PERCENTAGE || TAXES.IVA_PERCENTAGE;
+                            const priceWithIVA = calculatePriceWithIVA(
+                                basePrice,
+                                ivaPercentage
+                            );
+                            const totalWithIVA = priceWithIVA * item.QUANTITY;
 
-  return (
-    <PageContainer
-      backButtonText="Regresar"
-      backButtonOnClick={() => navigate("/mis-pedidos")}
-      style={{ padding: "16px" }}
-    >
-      <PageHeader>
-        <OrderTitle>
-          <OrderNumber>
-            Pedido #
-            {(() => {
-              const idString = String(orderDetails.id || "");
-              return idString.length > 12
-                ? idString.substring(0, 12) + "..."
-                : idString;
-            })()}
-            <RenderIcon
-              name="FaCopy"
-              size={16}
-              style={{ marginLeft: "8px", cursor: "pointer" }}
-              onClick={() => copyToClipboard(String(orderDetails.id || ""))}
-            />
-          </OrderNumber>
-          <OrderDate>
-            Realizado el{" "}
-            {format(orderDetails.date, "d 'de' MMMM, yyyy", { locale: es })}
-          </OrderDate>
-        </OrderTitle>
+                            // Búsqueda robusta del nombre del producto
+                            const name =
+                                item.MAESTRO?.DMA_NOMBREITEM ||
+                                item.PRODUCT_NAME ||
+                                item.NAME ||
+                                item.nombre ||
+                                item.ItemName ||
+                                item.PRODUCT_CODE ||
+                                "Producto";
 
-        <OrderActions>
-          {canCancel ? (
-            <Button
-              text="Cancelar pedido"
-              variant="outlined"
-              leftIconName="FaTimesCircle"
-              onClick={handleCancelOrder}
-            />
-          ) : (
-            <Button
-              text="No se puede cancelar"
-              variant="outlined"
-              leftIconName="FaCircleXmark"
-              onClick={() =>
-                alert(
-                  "Lo sentimos, no es posible cancelar este pedido ya que ha sido confirmado para su procesamiento."
-                )
-              }
-              disabled={true}
-            />
-          )}
-          <Button
-            text="Soporte"
-            variant="solid"
-            backgroundColor={theme.colors.primary}
-            leftIconName="FaHeadset"
-            onClick={handleContactSupport}
-            disabled={orderDetails.status === "CANCELADO"}
-          />
-        </OrderActions>
-      </PageHeader>
+                            // Búsqueda robusta de la imagen
+                            const imagePath =
+                                item.MAESTRO?.DMA_RUTAIMAGEN ||
+                                item.IMAGE_URL ||
+                                item.IMAGE ||
+                                item.ruta_imagen ||
+                                item.imagen;
 
-      <Section>
-        <SectionTitle>
-          Estado del pedido:
-          <StatusBadge $status={orderDetails.status}>
-            {
-              statusOptionsApi.find((opt) => opt.value === orderDetails.status)
-                ?.label
+                            const imageUrl = imagePath
+                                ? (imagePath.startsWith("http")
+                                    ? imagePath
+                                    : `${baseLinkImages}${imagePath}`)
+                                : "https://placehold.co/50x50/png";
+
+                            return {
+                                id: item.PRODUCT_CODE,
+                                name: name,
+                                sku: item.PRODUCT_CODE,
+                                price: priceWithIVA,
+                                basePrice: basePrice,
+                                quantity: item.QUANTITY,
+                                promotionalDiscount: item.EXTRA_DISCOUNT || item.PROMOTIONAL_DISCOUNT || 0,
+                                total: totalWithIVA,
+                                image: imageUrl,
+                                brand: item.MAESTRO?.DMA_MARCA || item.BRAND || "",
+                            };
+                        }),
+                        subtotal: subtotal,
+                        total: cabecera.TOTAL || subtotal, // Si no hay total, usar subtotal
+                        tracking,
+                        empresaInfo: {
+                            id: cabecera.ENTERPRISE,
+                            name: cabecera.ENTERPRISE,
+                        },
+                    };
+                    setOrderDetails(formattedOrder);
+                    setError(null);
+                } else {
+                    setError("No se encontraron detalles del pedido");
+                }
+            } catch (error) {
+                console.error("Error al cargar detalles del pedido:", error);
+                setError(`Error al cargar detalles: ${error.message}`);
+            } finally {
+                setLoading(false);
+                isFetching.current = false;
             }
-          </StatusBadge>
-        </SectionTitle>
-      </Section>
+        };
 
-      <TwoColumns>
-        <Section>
-          <SectionTitle>
-            <RenderIcon name="FaCircleInfo" size={18} /> Información Adicional
-          </SectionTitle>
+        fetchOrderDetails();
+    }, [orderId]);
 
-          <InfoItem>
-            <Label>N° Pedido:</Label>
-            <Value>{orderDetails.id}</Value>
-          </InfoItem>
-          <InfoItem>
-            <Label>Empresa:</Label>
-            <Value>{orderDetails.empresaInfo.name}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Fecha de pedido:</Label>
-            <Value>
-              {format(orderDetails.date, "d 'de' MMMM, yyyy", {
-                locale: es,
-              })}
-            </Value>
-          </InfoItem>
-        </Section>
-        <Section>
-          <SectionTitle>
-            <RenderIcon name="FaUser" size={18} /> Datos del cliente
-          </SectionTitle>
-
-          <InfoItem>
-            <Label>Nombre:</Label>
-            <Value>{orderDetails.customer.name}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Email:</Label>
-            <Value>{orderDetails.customer.email}</Value>
-          </InfoItem>
-          <InfoItem>
-            <Label>Contacto Principal:</Label>
-            <Value>{orderDetails.customer.phone}</Value>
-          </InfoItem>
-        </Section>
-      </TwoColumns>
-
-      <TwoColumns>
-        <Section>
-          <SectionTitle>
-            <RenderIcon name="FaMapPin" size={18} /> Información de envío
-          </SectionTitle>
-
-          <InfoItem>
-            <Label>Dirección:</Label>
-            <Value>{orderDetails.shipping.address}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Ciudad:</Label>
-            <Value>{orderDetails.shipping.city}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Estado/Provincia:</Label>
-            <Value>{orderDetails.shipping.state}</Value>
-          </InfoItem>
-        </Section>
-        <Section>
-          <SectionTitle>
-            <RenderIcon name="FaFileInvoiceDollar" size={18} /> Información de
-            Facturación
-          </SectionTitle>
-          <InfoItem>
-            <Label>Dirección:</Label>
-            <Value>{orderDetails.billing.address}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Ciudad:</Label>
-            <Value>{orderDetails.billing.city}</Value>
-          </InfoItem>
-
-          <InfoItem>
-            <Label>Estado/Provincia:</Label>
-            <Value>{orderDetails.billing.state}</Value>
-          </InfoItem>
-        </Section>
-      </TwoColumns>
-
-      <Section>
-        <SectionTitle>
-          <RenderIcon name="FaBoxOpen" size={18} /> Productos
-        </SectionTitle>
-
-        {/* Mostrar descuentos si existen */}
-        {(orderDetails.aditionalDiscount > 0 || orderDetails.discount > 0) && (
-          <div style={{ marginBottom: 16 }}>
-            {orderDetails.discount > 0 && (
-              <div
-                style={{
-                  background: theme.colors.info + "22",
-                  border: `1px solid ${theme.colors.info}`,
-                  color: theme.colors.info,
-                  borderRadius: 6,
-                  padding: "8px 12px",
-                  marginBottom: 6,
-                  fontWeight: 500,
-                  fontSize: "0.95rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <RenderIcon name="FaTag" size={16} style={{ marginRight: 6 }} />
-                Descuento general de cliente aplicado: {orderDetails.discount}%
-              </div>
-            )}
-            {orderDetails.aditionalDiscount > 0 && (
-              <div
-                style={{
-                  background: theme.colors.success + "22",
-                  border: `1px solid ${theme.colors.success}`,
-                  color: theme.colors.success,
-                  borderRadius: 6,
-                  padding: "8px 12px",
-                  fontWeight: 500,
-                  fontSize: "0.95rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <RenderIcon name="FaTag" size={16} style={{ marginRight: 6 }} />
-                Descuento especial aplicado por coordinadora:{" "}
-                {orderDetails.aditionalDiscount}%
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Información sobre IVA */}
-        <div
-          style={{
-            background: theme.colors.primary + "15",
-            border: `1px solid ${theme.colors.primary}30`,
-            borderRadius: 6,
-            padding: "8px 12px",
-            marginBottom: 16,
-            fontWeight: 500,
-            fontSize: "0.9rem",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            color: theme.colors.primary,
-          }}
-        >
-          <RenderIcon name="FaCircleInfo" size={14} />
-          <span>
-            IVA incluido. Todos los precios mostrados incluyen impuestos.
-          </span>
-        </div>
-
-        <ProductsList>
-          {orderDetails.items.map((item) => {
-            const promoPct = Number(item.promotionalDiscount) || 0;
-            const price = item.price; // Ya incluye IVA
-            const qty = Number(item.quantity);
-            const promoDiscount = price * qty * (promoPct / 100);
-            const subtotal = price * qty; // Subtotal con IVA incluido
-            const total = subtotal - promoDiscount; // Total con IVA incluido
-
-            return (
-              <ProductCard key={item.id}>
-                <ProductCardImage
-                  src={item.image}
-                  alt={item.name}
-                  loading="lazy"
-                />
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    justifyContent: "center",
-                  }}
-                >
-                  <ProductInfoContainer>
-                    <ProductNameContainer>
-                      <ProductName
-                        style={{ fontSize: "1.08rem" }}
-                        onClick={() => handleProductClick(item.id)}
-                      >
-                        {item.name}
-                      </ProductName>
-                      <ProductSKU>SKU: {item.sku}</ProductSKU>
-                    </ProductNameContainer>
-                    <ProductPriceContainer>
-                      <ProductPrice>${total.toFixed(2)}</ProductPrice>
-                      <ProductPriceLabel>Total (IVA incl.)</ProductPriceLabel>
-                    </ProductPriceContainer>
-                  </ProductInfoContainer>
-                  <ProductDetailsRow>
-                    <ProductDetailsText>
-                      x{qty} · ${price.toFixed(2)} c/u (IVA incl.) ={" "}
-                      <b>${subtotal.toFixed(2)}</b>
-                    </ProductDetailsText>
-                    {promoPct > 0 && (
-                      <ProductDiscount>
-                        -{promoPct}% (${promoDiscount.toFixed(2)})
-                      </ProductDiscount>
-                    )}
-                  </ProductDetailsRow>
-                </div>
-              </ProductCard>
+    const handleCancelOrder = () => {
+        const canCancel =
+            orderDetails.status === "PENDIENTE" ||
+            orderDetails.status === "PENDIENTE CARTERA";
+        if (canCancel) {
+            setShowCancelModal(true);
+        } else {
+            // Mostrar mensaje de error
+            alert(
+                "Lo sentimos, no es posible cancelar este pedido ya que ha sido confirmado para su procesamiento."
             );
-          })}
-        </ProductsList>
+        }
+    };
 
-        <OrderSummary>
-          <SummaryRow>
-            <SummaryLabel>Subtotal (con iva):</SummaryLabel>
-            <SummaryValue>${orderDetails.subtotal.toFixed(2)}</SummaryValue>
-          </SummaryRow>
-          {totalPromotionalDiscount > 0 && (
-            <>
-              <SummaryRow>
-                <SummaryLabel>Descuentos promocionales:</SummaryLabel>
-                <SummaryValue $operacion={true}>
-                  -${totalPromotionalDiscount.toFixed(2)}
-                </SummaryValue>
-              </SummaryRow>
-              <SummaryRow>
-                <SummaryLabel></SummaryLabel>
-                <SummaryValue>${subtotalAfterPromo.toFixed(2)}</SummaryValue>
-              </SummaryRow>
-            </>
-          )}
-          {orderDetails.discount > 0 && (
-            <>
-              <SummaryRow>
-                <SummaryLabel>Descuento general:</SummaryLabel>
-                <SummaryValue $operacion={true}>
-                  -${generalDiscount.toFixed(2)}
-                </SummaryValue>
-              </SummaryRow>
-              <SummaryRow>
-                <SummaryLabel></SummaryLabel>
-                <SummaryValue>${subtotalAfterGeneral.toFixed(2)}</SummaryValue>
-              </SummaryRow>
-            </>
-          )}
-          {orderDetails.aditionalDiscount > 0 && (
-            <>
-              <SummaryRow>
-                <SummaryLabel>Descuento especial:</SummaryLabel>
-                <SummaryValue $operacion>
-                  -${aditionalDiscount.toFixed(2)}
-                </SummaryValue>
-              </SummaryRow>
-              <SummaryRow>
-                <SummaryLabel>Subtotal tras descuento especial:</SummaryLabel>
-                <SummaryValue>
-                  ${(totalFinal < 0 ? 0 : totalFinal).toFixed(2)}
-                </SummaryValue>
-              </SummaryRow>
-            </>
-          )}
+    const handleConfirmCancel = () => {
+        // Implementar la lógica de cancelación
+        alert("Pedido cancelado correctamente");
+        setShowCancelModal(false);
+    };
 
-          <SummaryRow>
-            <SummaryLabel>Total:</SummaryLabel>
-            <SummaryValue
-              style={{
-                fontWeight: "bold",
-                fontSize: "1.1rem",
-                color: theme.colors.primary,
-                "@media (max-width: 768px)": {
-                  fontSize: "1rem",
-                },
-              }}
+    const handleCancelModalClose = () => {
+        setShowCancelModal(false);
+    };
+
+    const handleContactSupport = () => {
+        setShowContactModal(true);
+    };
+
+    if (loading) {
+        return (
+            <PageContainer
+                backButtonText="Regresar"
+                backButtonOnClick={() => navigate("/mis-pedidos")}
             >
-              ${orderDetails.total.toFixed(2)}
-            </SummaryValue>
-          </SummaryRow>
-        </OrderSummary>
-      </Section>
+                <RenderLoader
+                    text="Cargando detalles del pedido..."
+                    size="32px"
+                    card={true}
+                    showDots={false}
+                />
+            </PageContainer>
+        );
+    }
 
-      <ContactModal
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-        selectedCompany={orderDetails?.empresaInfo?.id} // Filtrar por la empresa del pedido actual
-        selectedOrderId={orderDetails?.id}
-      />
+    if (error || !orderDetails) {
+        return (
+            <PageContainer
+                backButtonText="Regresar"
+                backButtonOnClick={() => navigate("/mis-pedidos")}
+            >
+                <EmptyState>
+                    <h2>Pedido no encontrado</h2>
+                    <p>
+                        {error ||
+                            "No pudimos encontrar la información del pedido solicitado."}
+                    </p>
+                    <Button
+                        text="Volver a mis pedidos"
+                        variant="solid"
+                        onClick={() => navigate("/mis-pedidos")}
+                    />
+                </EmptyState>
+            </PageContainer>
+        );
+    }
 
-      {/* Modal de confirmación para cancelar pedido */}
-      {showCancelModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-            padding: "16px",
-          }}
+    const canCancel =
+        orderDetails.status === "PENDIENTE" ||
+        orderDetails.status === "PENDIENTE CARTERA";
+
+    // 1. Subtotal sin descuentos
+    const rawSubtotal = orderDetails.subtotal;
+
+    // 2. Total de descuentos promocionales (por producto)
+    const totalPromotionalDiscount = orderDetails.items.reduce(
+        (acc, item) =>
+            acc +
+            item.price *
+            item.quantity *
+            ((Number(item.promotionalDiscount) || 0) / 100),
+        0
+    );
+
+    // 3. Subtotal después de descuentos promocionales
+    const subtotalAfterPromo = rawSubtotal - totalPromotionalDiscount;
+
+    // 4. Descuento general (cliente) sobre el subtotal con promo
+    const generalDiscount =
+        subtotalAfterPromo * (Number(orderDetails.discount) / 100);
+
+    // 5. Subtotal después de descuento general
+    const subtotalAfterGeneral = subtotalAfterPromo - generalDiscount;
+
+    // 6. Descuento adicional (coordinadora) sobre el subtotal con promo y general
+    const aditionalDiscount =
+        subtotalAfterGeneral * (Number(orderDetails.aditionalDiscount) / 100);
+
+    // 7. Total final antes de IVA
+    const totalFinal = subtotalAfterGeneral - aditionalDiscount;
+
+    // IVA ya está incluido en todos los precios
+
+    return (
+        <PageContainer
+            backButtonText="Regresar"
+            backButtonOnClick={() => navigate("/mis-pedidos")}
+            style={{ padding: "16px" }}
         >
-          <div
-            style={{
-              backgroundColor: theme.colors.surface,
-              borderRadius: 8,
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-              width: "100%",
-              maxWidth: 400,
-              display: "flex",
-              flexDirection: "column",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "16px 20px",
-                borderBottom: `1px solid ${theme.colors.border}`,
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  color: theme.colors.text,
-                  fontSize: "1.1rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                <RenderIcon name="FaExclamationTriangle" size={18} />
-                <span>Confirmar cancelación</span>
-              </h3>
-            </div>
+            <PageHeader>
+                <OrderTitle>
+                    <OrderNumber>
+                        Pedido #
+                        {(() => {
+                            const idString = String(orderDetails.id || "");
+                            return idString.length > 12
+                                ? idString.substring(0, 12) + "..."
+                                : idString;
+                        })()}
+                        <RenderIcon
+                            name="FaCopy"
+                            size={16}
+                            style={{ marginLeft: "8px", cursor: "pointer" }}
+                            onClick={() => copyToClipboard(String(orderDetails.id || ""))}
+                        />
+                    </OrderNumber>
+                    <OrderDate>
+                        Realizado el{" "}
+                        {format(orderDetails.date, "d 'de' MMMM, yyyy", { locale: es })}
+                    </OrderDate>
+                </OrderTitle>
 
-            <div style={{ padding: "20px" }}>
-              <p
-                style={{
-                  margin: 0,
-                  color: theme.colors.text,
-                  fontSize: "0.95rem",
-                  lineHeight: "1.5",
-                }}
-              >
-                ¿Está seguro que desea cancelar el pedido #
-                {(() => {
-                  const idString = String(orderDetails?.id || "");
-                  return idString.length > 12
-                    ? idString.substring(0, 12) + "..."
-                    : idString;
-                })()}
-                ?
-              </p>
-              <p
-                style={{
-                  margin: "12px 0 0 0",
-                  color: theme.colors.textLight,
-                  fontSize: "0.85rem",
-                  lineHeight: "1.5",
-                }}
-              >
-                Esta acción no se puede deshacer.
-              </p>
-            </div>
+                <OrderActions>
+                    {canCancel ? (
+                        <Button
+                            text="Cancelar pedido"
+                            variant="outlined"
+                            leftIconName="FaTimesCircle"
+                            onClick={handleCancelOrder}
+                        />
+                    ) : (
+                        <Button
+                            text="No se puede cancelar"
+                            variant="outlined"
+                            leftIconName="FaCircleXmark"
+                            onClick={() =>
+                                alert(
+                                    "Lo sentimos, no es posible cancelar este pedido ya que ha sido confirmado para su procesamiento."
+                                )
+                            }
+                            disabled={true}
+                        />
+                    )}
+                    <Button
+                        text="Soporte"
+                        variant="solid"
+                        backgroundColor={theme.colors.primary}
+                        leftIconName="FaHeadset"
+                        onClick={handleContactSupport}
+                        disabled={orderDetails.status === "CANCELADO"}
+                    />
+                </OrderActions>
+            </PageHeader>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 12,
-                padding: "16px 20px",
-                borderTop: `1px solid ${theme.colors.border}`,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                text="Cancelar"
-                variant="outlined"
-                onClick={handleCancelModalClose}
-                style={{
-                  flex: "1",
-                  minWidth: "120px",
-                }}
-              />
-              <Button
-                text="Confirmar"
-                variant="solid"
-                backgroundColor={theme.colors.error}
-                onClick={handleConfirmCancel}
-                style={{
-                  flex: "1",
-                  minWidth: "120px",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </PageContainer>
-  );
+            <Section>
+                <SectionTitle>
+                    Estado del pedido:
+                    <StatusBadge $status={orderDetails.status}>
+                        {
+                            statusOptionsApi.find((opt) => opt.value === orderDetails.status)
+                                ?.label
+                        }
+                    </StatusBadge>
+                </SectionTitle>
+            </Section>
+
+            <TwoColumns>
+                <Section>
+                    <SectionTitle>
+                        <RenderIcon name="FaCircleInfo" size={18} /> Información Adicional
+                    </SectionTitle>
+
+                    <InfoItem>
+                        <Label>N° Pedido:</Label>
+                        <Value>{orderDetails.id}</Value>
+                    </InfoItem>
+                    <InfoItem>
+                        <Label>Empresa:</Label>
+                        <Value>{orderDetails.empresaInfo.name}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Fecha de pedido:</Label>
+                        <Value>
+                            {format(orderDetails.date, "d 'de' MMMM, yyyy", {
+                                locale: es,
+                            })}
+                        </Value>
+                    </InfoItem>
+                </Section>
+                <Section>
+                    <SectionTitle>
+                        <RenderIcon name="FaUser" size={18} /> Datos del cliente
+                    </SectionTitle>
+
+                    <InfoItem>
+                        <Label>Nombre:</Label>
+                        <Value>{orderDetails.customer.name}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Email:</Label>
+                        <Value>{orderDetails.customer.email}</Value>
+                    </InfoItem>
+                    <InfoItem>
+                        <Label>Contacto Principal:</Label>
+                        <Value>{orderDetails.customer.phone}</Value>
+                    </InfoItem>
+
+                    {isSeller && orderDetails.sellerName && (
+                        <InfoItem>
+                            <Label>Vendedor Acargo:</Label>
+                            <Value>{orderDetails.sellerName}</Value>
+                        </InfoItem>
+                    )}
+                </Section>
+            </TwoColumns>
+
+            <TwoColumns>
+                <Section>
+                    <SectionTitle>
+                        <RenderIcon name="FaMapPin" size={18} /> Información de envío
+                    </SectionTitle>
+
+                    <InfoItem>
+                        <Label>Dirección:</Label>
+                        <Value>{orderDetails.shipping.address}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Ciudad:</Label>
+                        <Value>{orderDetails.shipping.city}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Estado/Provincia:</Label>
+                        <Value>{orderDetails.shipping.state}</Value>
+                    </InfoItem>
+                </Section>
+                <Section>
+                    <SectionTitle>
+                        <RenderIcon name="FaFileInvoiceDollar" size={18} /> Información de
+                        Facturación
+                    </SectionTitle>
+                    <InfoItem>
+                        <Label>Dirección:</Label>
+                        <Value>{orderDetails.billing.address}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Ciudad:</Label>
+                        <Value>{orderDetails.billing.city}</Value>
+                    </InfoItem>
+
+                    <InfoItem>
+                        <Label>Estado/Provincia:</Label>
+                        <Value>{orderDetails.billing.state}</Value>
+                    </InfoItem>
+                </Section>
+            </TwoColumns>
+
+            <Section>
+                <SectionTitle>
+                    <RenderIcon name="FaBoxOpen" size={18} /> Productos
+                </SectionTitle>
+
+                {/* Mostrar descuentos si existen */}
+                {(orderDetails.aditionalDiscount > 0 || orderDetails.discount > 0) && (
+                    <div style={{ marginBottom: 16 }}>
+                        {orderDetails.discount > 0 && (
+                            <div
+                                style={{
+                                    background: theme.colors.info + "22",
+                                    border: `1px solid ${theme.colors.info}`,
+                                    color: theme.colors.info,
+                                    borderRadius: 6,
+                                    padding: "8px 12px",
+                                    marginBottom: 6,
+                                    fontWeight: 500,
+                                    fontSize: "0.95rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <RenderIcon name="FaTag" size={16} style={{ marginRight: 6 }} />
+                                Descuento general de cliente aplicado: {orderDetails.discount}%
+                            </div>
+                        )}
+                        {orderDetails.aditionalDiscount > 0 && (
+                            <div
+                                style={{
+                                    background: theme.colors.success + "22",
+                                    border: `1px solid ${theme.colors.success}`,
+                                    color: theme.colors.success,
+                                    borderRadius: 6,
+                                    padding: "8px 12px",
+                                    fontWeight: 500,
+                                    fontSize: "0.95rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <RenderIcon name="FaTag" size={16} style={{ marginRight: 6 }} />
+                                Descuento especial aplicado por coordinadora:{" "}
+                                {orderDetails.aditionalDiscount}%
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Información sobre IVA */}
+                <div
+                    style={{
+                        background: theme.colors.primary + "15",
+                        border: `1px solid ${theme.colors.primary}30`,
+                        borderRadius: 6,
+                        padding: "8px 12px",
+                        marginBottom: 16,
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        color: theme.colors.primary,
+                    }}
+                >
+                    <RenderIcon name="FaCircleInfo" size={14} />
+                    <span>
+                        IVA incluido. Todos los precios mostrados incluyen impuestos.
+                    </span>
+                </div>
+
+                <ProductsList>
+                    {orderDetails.items.map((item) => {
+                        const promoPct = Number(item.promotionalDiscount) || 0;
+                        const price = item.price; // Ya incluye IVA
+                        const qty = Number(item.quantity);
+                        const promoDiscount = price * qty * (promoPct / 100);
+                        const subtotal = price * qty; // Subtotal con IVA incluido
+                        const total = subtotal - promoDiscount; // Total con IVA incluido
+
+                        return (
+                            <ProductCard key={item.id}>
+                                <ProductCardImage
+                                    src={item.image}
+                                    alt={item.name}
+                                    loading="lazy"
+                                />
+                                <div
+                                    style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 4,
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <ProductInfoContainer>
+                                        <ProductNameContainer>
+                                            <ProductName
+                                                style={{ fontSize: "1.08rem" }}
+                                                onClick={() => handleProductClick(item.id)}
+                                            >
+                                                {item.name}
+                                            </ProductName>
+                                            <ProductSKU>SKU: {item.sku}</ProductSKU>
+                                        </ProductNameContainer>
+                                        <ProductPriceContainer>
+                                            <ProductPrice>${total.toFixed(2)}</ProductPrice>
+                                            <ProductPriceLabel>Total (IVA incl.)</ProductPriceLabel>
+                                        </ProductPriceContainer>
+                                    </ProductInfoContainer>
+                                    <ProductDetailsRow>
+                                        <ProductDetailsText>
+                                            x{qty} · ${price.toFixed(2)} c/u (IVA incl.) ={" "}
+                                            <b>${subtotal.toFixed(2)}</b>
+                                        </ProductDetailsText>
+                                        {promoPct > 0 && (
+                                            <ProductDiscount style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                                <RenderIcon name="FaTag" size={12} />
+                                                -{promoPct}% (-${promoDiscount.toFixed(2)})
+                                            </ProductDiscount>
+                                        )}
+                                    </ProductDetailsRow>
+                                </div>
+                            </ProductCard>
+                        );
+                    })}
+                </ProductsList>
+
+                <OrderSummary>
+                    <SummaryRow>
+                        <SummaryLabel>Subtotal (con iva):</SummaryLabel>
+                        <SummaryValue>${orderDetails.subtotal.toFixed(2)}</SummaryValue>
+                    </SummaryRow>
+                    {totalPromotionalDiscount > 0 && (
+                        <>
+                            <SummaryRow>
+                                <SummaryLabel>Descuentos por ítem:</SummaryLabel>
+                                <SummaryValue $operacion={true}>
+                                    -${totalPromotionalDiscount.toFixed(2)}
+                                </SummaryValue>
+                            </SummaryRow>
+                            <SummaryRow>
+                                <SummaryLabel></SummaryLabel>
+                                <SummaryValue>${subtotalAfterPromo.toFixed(2)}</SummaryValue>
+                            </SummaryRow>
+                        </>
+                    )}
+                    {orderDetails.discount > 0 && (
+                        <>
+                            <SummaryRow>
+                                <SummaryLabel>Descuento general:</SummaryLabel>
+                                <SummaryValue $operacion={true}>
+                                    -${generalDiscount.toFixed(2)}
+                                </SummaryValue>
+                            </SummaryRow>
+                            <SummaryRow>
+                                <SummaryLabel></SummaryLabel>
+                                <SummaryValue>${subtotalAfterGeneral.toFixed(2)}</SummaryValue>
+                            </SummaryRow>
+                        </>
+                    )}
+                    {orderDetails.aditionalDiscount > 0 && (
+                        <>
+                            <SummaryRow>
+                                <SummaryLabel>Descuento especial:</SummaryLabel>
+                                <SummaryValue $operacion>
+                                    -${aditionalDiscount.toFixed(2)}
+                                </SummaryValue>
+                            </SummaryRow>
+                            <SummaryRow>
+                                <SummaryLabel>Subtotal tras descuento especial:</SummaryLabel>
+                                <SummaryValue>
+                                    ${(totalFinal < 0 ? 0 : totalFinal).toFixed(2)}
+                                </SummaryValue>
+                            </SummaryRow>
+                        </>
+                    )}
+
+                    <SummaryRow>
+                        <SummaryLabel>Total:</SummaryLabel>
+                        <TotalValue>
+                            ${orderDetails.total.toFixed(2)}
+                        </TotalValue>
+                    </SummaryRow>
+                </OrderSummary>
+            </Section>
+
+            <ContactModal
+                isOpen={showContactModal}
+                onClose={() => setShowContactModal(false)}
+                selectedCompany={orderDetails?.empresaInfo?.id} // Filtrar por la empresa del pedido actual
+                selectedOrderId={orderDetails?.id}
+            />
+
+            {/* Modal de confirmación para cancelar pedido */}
+            {showCancelModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 1000,
+                        padding: "16px",
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: theme.colors.surface,
+                            borderRadius: 8,
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+                            width: "100%",
+                            maxWidth: 400,
+                            display: "flex",
+                            flexDirection: "column",
+                            maxHeight: "90vh",
+                            overflow: "auto",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "16px 20px",
+                                borderBottom: `1px solid ${theme.colors.border}`,
+                            }}
+                        >
+                            <h3
+                                style={{
+                                    margin: 0,
+                                    color: theme.colors.text,
+                                    fontSize: "1.1rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <RenderIcon name="FaExclamationTriangle" size={18} />
+                                <span>Confirmar cancelación</span>
+                            </h3>
+                        </div>
+
+                        <div style={{ padding: "20px" }}>
+                            <p
+                                style={{
+                                    margin: 0,
+                                    color: theme.colors.text,
+                                    fontSize: "0.95rem",
+                                    lineHeight: "1.5",
+                                }}
+                            >
+                                ¿Está seguro que desea cancelar el pedido #
+                                {(() => {
+                                    const idString = String(orderDetails?.id || "");
+                                    return idString.length > 12
+                                        ? idString.substring(0, 12) + "..."
+                                        : idString;
+                                })()}
+                                ?
+                            </p>
+                            <p
+                                style={{
+                                    margin: "12px 0 0 0",
+                                    color: theme.colors.textLight,
+                                    fontSize: "0.85rem",
+                                    lineHeight: "1.5",
+                                }}
+                            >
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 12,
+                                padding: "16px 20px",
+                                borderTop: `1px solid ${theme.colors.border}`,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <Button
+                                text="Cancelar"
+                                variant="outlined"
+                                onClick={handleCancelModalClose}
+                                style={{
+                                    flex: "1",
+                                    minWidth: "120px",
+                                }}
+                            />
+                            <Button
+                                text="Confirmar"
+                                variant="solid"
+                                backgroundColor={theme.colors.error}
+                                onClick={handleConfirmCancel}
+                                style={{
+                                    flex: "1",
+                                    minWidth: "120px",
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </PageContainer>
+    );
 };
 
 export default DetallePedido;

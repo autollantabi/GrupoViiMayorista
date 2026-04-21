@@ -54,6 +54,7 @@ Si el backend no está disponible, login y la mayoría de pantallas fallarán al
 - **API principal:** Base URL en `VITE_API_URL`. Autenticación por header `id-session` (session ID descifrado). Usada por auth, users, cart, order, products, bonos, profile, email, access, accessSections, optionsCatalog, xcoin. Ver [docs/apis.md](apis.md).
 - **App Shell (Lider Shell):** Las llamadas van por la API principal (`VITE_API_URL`) a rutas como `/club-shell-maxx/...`; el backend actúa como proxy y añade la API Key. Usado por `api/shell` (búsqueda por código SAP, creación de usuario Lider Shell).
 - **Imágenes:** Base URL en `VITE_API_IMAGES_URL` (`constants/links.js`). Las URLs de imágenes de productos se construyen con esta base + path.
+- **Mapas (Mapbox):** Token en `VITE_API_MAPBOX`. Usado por `MapSelector.jsx` para mapas interactivos y geocodificación inversa en la creación de direcciones.
 
 No hay otras integraciones de terceros documentadas en el código (ej. analytics, chat) más allá de las APIs anteriores.
 

@@ -1279,20 +1279,22 @@ const DetalleProducto = () => {
   // Calcular el máximo de cantidad basado en el stock disponible (siempre declarado para cumplir Rules of Hooks)
   const maxQuantity = useMemo(() => {
     if (!product) return 0;
-    return product.stock || 0;
-  }, [product]);
+    return availableStock;
+  }, [product, availableStock]);
 
   // Asegurar que la cantidad no exceda el stock disponible (siempre declarado para cumplir Rules of Hooks)
   useEffect(() => {
-    const maxStock = product?.stock || 0;
-    if (maxStock === 0) {
+    const maxStock = availableStock;
+    if (product?.stock === 0) {
+      setQuantity(0);
+    } else if (maxStock === 0) {
       setQuantity(0);
     } else if (quantity > maxStock) {
       setQuantity(maxStock);
     } else if (quantity === 0 && maxStock > 0) {
       setQuantity(1);
     }
-  }, [product?.stock]);
+  }, [availableStock, product?.stock]);
 
   // Funciones para manejar la imagen
   const handleImageLoad = () => {
@@ -1839,6 +1841,8 @@ const DetalleProducto = () => {
                   text={
                     product.stock === 0
                       ? "Sin Stock"
+                      : currentInCart >= product.stock
+                      ? "Stock máximo en carrito"
                       : isAddingToCart
                       ? "Agregando..."
                       : currentInCart > 0 && !isButtonHovered
@@ -1849,11 +1853,11 @@ const DetalleProducto = () => {
                   }
                   variant="solid"
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart || product.stock === 0}
+                  disabled={isAddingToCart || product.stock === 0 || currentInCart >= product.stock}
                   onMouseEnter={() => setIsButtonHovered(true)}
                   onMouseLeave={() => setIsButtonHovered(false)}
                   backgroundColor={({ theme }) =>
-                    product.stock === 0
+                    product.stock === 0 || currentInCart >= product.stock
                       ? theme.colors.textLight
                       : currentInCart > 0 && !isButtonHovered
                       ? theme.colors.success

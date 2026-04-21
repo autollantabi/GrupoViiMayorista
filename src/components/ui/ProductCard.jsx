@@ -28,13 +28,13 @@ const StyledCard = styled.div`
   position: relative;
   border: 1px solid
     ${({ theme, $indicadorRecurrencia }) =>
-      $indicadorRecurrencia === 1
-        ? theme.colors.primary
-        : $indicadorRecurrencia === 2
+    $indicadorRecurrencia === 1
+      ? theme.colors.primary
+      : $indicadorRecurrencia === 2
         ? getRGBA(theme.colors.primary, 1)
         : $indicadorRecurrencia === 3
-        ? getRGBA(theme.colors.primary, 1)
-        : "transparent"};
+          ? getRGBA(theme.colors.primary, 1)
+          : "transparent"};
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -46,40 +46,40 @@ const StyledCard = styled.div`
   &:hover {
     cursor: default;
     box-shadow: ${({ theme, $restricted }) =>
-      $restricted
-        ? `0 4px 12px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}30`
-        : `0 6px 20px ${theme.colors.shadow}`};
+    $restricted
+      ? `0 4px 12px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}30`
+      : `0 6px 20px ${theme.colors.shadow}`};
     transform: ${({ $restricted }) =>
-      $restricted ? "none" : "translateY(-4px)"};
+    $restricted ? "none" : "translateY(-4px)"};
   }
 
   @media (max-width: 768px) {
     border-radius: ${({ $restricted }) => ($restricted ? "6px" : "8px")};
     box-shadow: ${({ theme, $restricted }) =>
-      $restricted
-        ? `0 1px 4px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
-        : `0 1px 6px ${theme.colors.shadow}`};
+    $restricted
+      ? `0 1px 4px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
+      : `0 1px 6px ${theme.colors.shadow}`};
 
     &:hover {
       transform: ${({ $restricted }) =>
-        $restricted ? "none" : "translateY(-2px)"};
+    $restricted ? "none" : "translateY(-2px)"};
       box-shadow: ${({ theme, $restricted }) =>
-        $restricted
-          ? `0 2px 8px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}30`
-          : `0 3px 12px ${theme.colors.shadow}`};
+    $restricted
+      ? `0 2px 8px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}30`
+      : `0 3px 12px ${theme.colors.shadow}`};
     }
   }
 
   @media (max-width: 480px) {
     border-radius: ${({ $restricted }) => ($restricted ? "4px" : "6px")};
     box-shadow: ${({ theme, $restricted }) =>
-      $restricted
-        ? `0 1px 3px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
-        : `0 1px 4px ${theme.colors.shadow}`};
+    $restricted
+      ? `0 1px 3px ${theme.colors.shadow}, 0 0 0 1px ${theme.colors.primary}20`
+      : `0 1px 4px ${theme.colors.shadow}`};
 
     &:hover {
       transform: ${({ $restricted }) =>
-        $restricted ? "none" : "translateY(-1px)"};
+    $restricted ? "none" : "translateY(-1px)"};
     }
   }
 `;
@@ -692,10 +692,10 @@ const StockIndicator = styled.div`
   border-radius: 8px;
   border: 1px solid
     ${({ theme, $inStock, $lowStock }) => {
-      if ($inStock) return `${theme.colors.success}20`;
-      if ($lowStock) return `${theme.colors.warning || "#fbbf24"}20`;
-      return `${theme.colors.error}20`;
-    }};
+    if ($inStock) return `${theme.colors.success}20`;
+    if ($lowStock) return `${theme.colors.warning || "#fbbf24"}20`;
+    return `${theme.colors.error}20`;
+  }};
   width: fit-content;
   min-width: fit-content;
 
@@ -1003,7 +1003,7 @@ const ProductCard = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isClient, isVisualizacion } = useAuth();
+  const { isClient, isVisualizacion, isSeller, isB2BSeller } = useAuth();
   const { addToCart, cart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -1014,15 +1014,15 @@ const ProductCard = ({
   const cartItem = cart.find((item) => item?.id === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
-  // Asegurar que la cantidad no exceda el stock disponible
+  // Asegurar que la cantidad no exceda el stock disponible (restando lo que ya hay en el carrito)
   useEffect(() => {
-    const maxStock = product.stock || 0;
-    if (quantity > maxStock && maxStock > 0) {
-      setQuantity(maxStock);
-    } else if (maxStock === 0 && quantity > 0) {
+    const maxAvailable = (product.stock || 0) - quantityInCart;
+    if (quantity > maxAvailable && maxAvailable > 0) {
+      setQuantity(maxAvailable);
+    } else if (maxAvailable <= 0 && quantity > 0) {
       setQuantity(0);
     }
-  }, [product.stock, quantity]);
+  }, [product.stock, quantityInCart]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -1093,8 +1093,7 @@ const ProductCard = ({
       const result = await addToCart(product, quantity);
       if (result?.success) {
         toast.success(
-          `${quantity} ${product.name}${quantity > 1 ? "s" : ""} agregado${
-            quantity > 1 ? "s" : ""
+          `${quantity} ${product.name}${quantity > 1 ? "s" : ""} agregado${quantity > 1 ? "s" : ""
           } al carrito`
         );
       } else {
@@ -1112,9 +1111,11 @@ const ProductCard = ({
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    const max = product.stock || 0;
-    if (!isNaN(value) && value > 0 && value <= max) {
+    const maxAvailable = (product.stock || 0) - quantityInCart;
+    if (!isNaN(value) && value > 0 && value <= maxAvailable) {
       setQuantity(value);
+    } else if (value > maxAvailable) {
+      setQuantity(maxAvailable);
     }
   };
 
@@ -1127,9 +1128,11 @@ const ProductCard = ({
 
   const increaseQuantity = (e) => {
     e.stopPropagation();
-    const maxStock = product.stock || 0;
-    if (quantity < maxStock) {
+    const maxAvailable = (product.stock || 0) - quantityInCart;
+    if (quantity < maxAvailable) {
       setQuantity(quantity + 1);
+    } else {
+      toast.info("Has alcanzado el límite de stock disponible");
     }
   };
 
@@ -1299,7 +1302,7 @@ const ProductCard = ({
                 </div>
                 <IVAIndicator>IVA incluido</IVAIndicator>
               </PriceLeft>
-              {isClient && !isVisualizacion && product.stock > 0 && (
+              {(isClient || isSeller) && !isVisualizacion && product.stock > 0 && (
                 <PriceRight>
                   <QuantitySelector onClick={(e) => e.stopPropagation()}>
                     <QuantityButton
@@ -1321,7 +1324,7 @@ const ProductCard = ({
                     />
                     <QuantityButton
                       onClick={increaseQuantity}
-                      disabled={quantity >= (product.stock || 0)}
+                      disabled={quantity >= ((product.stock || 0) - quantityInCart)}
                     >
                       +
                     </QuantityButton>
@@ -1329,7 +1332,7 @@ const ProductCard = ({
                 </PriceRight>
               )}
             </Price>
-            {isClient && !isVisualizacion && (
+            {(isClient || isSeller) && !isVisualizacion && (
               <ButtonContainer>
                 <Button
                   leftIconName={
@@ -1339,24 +1342,35 @@ const ProductCard = ({
                   }
                   text={
                     product.stock === 0
-                      ? "Sin Stock"
-                      : isAddingToCart
-                      ? "Agregando..."
-                      : quantityInCart > 0 && !isButtonHovered
-                      ? `${quantityInCart} en carrito`
-                      : "Agregar"
+                      ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '2px', padding: '4px 0' }}>
+                          <span style={{ fontWeight: '600' }}>Sin Stock</span>
+                          {isB2BSeller && product.originalData?.DMA_INVENTARIO?.dias != null && (
+                            <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
+                              Unidades disponibles en {product.originalData.DMA_INVENTARIO.dias} días
+                            </span>
+                          )}
+                        </div>
+                      )
+                      : quantityInCart >= product.stock
+                        ? "Stock máximo en carrito"
+                        : isAddingToCart
+                          ? "Agregando..."
+                          : quantityInCart > 0 && !isButtonHovered
+                            ? `${quantityInCart} en carrito`
+                            : "Agregar"
                   }
                   variant="solid"
                   size="small"
                   backgroundColor={({ theme }) =>
-                    product.stock === 0
+                    product.stock === 0 || quantityInCart >= product.stock
                       ? theme.colors.textLight
                       : quantityInCart > 0 && !isButtonHovered
-                      ? theme.colors.success
-                      : theme.colors.primary
+                        ? theme.colors.success
+                        : theme.colors.primary
                   }
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart || product.stock === 0}
+                  disabled={isAddingToCart || product.stock === 0 || quantityInCart >= product.stock}
                   onMouseEnter={() => setIsButtonHovered(true)}
                   onMouseLeave={() => setIsButtonHovered(false)}
                   style={{ width: "100%" }}
@@ -1386,6 +1400,7 @@ export default memo(ProductCard, (prevProps, nextProps) => {
     prevProps.restricted === nextProps.restricted &&
     prevProps.product?.stock === nextProps.product?.stock &&
     prevProps.product?.price === nextProps.product?.price &&
-    prevProps.product?.discount === nextProps.product?.discount
+    prevProps.product?.discount === nextProps.product?.discount &&
+    prevProps.product?.originalData?.DMA_INVENTARIO?.dias === nextProps.product?.originalData?.DMA_INVENTARIO?.dias
   );
 });

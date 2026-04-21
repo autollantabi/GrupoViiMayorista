@@ -28,6 +28,7 @@ Todas las variables usadas en el código tienen prefijo **`VITE_`** para que Vit
 | `VITE_API_URL` | Base URL del API principal (ej. `https://api.ejemplo.com`). Usada en `src/constants/api.js`. | Sí |
 | `VITE_API_IMAGES_URL` | Base URL para imágenes de productos. Usada en `src/constants/links.js`. | Sí (si el catálogo muestra imágenes) |
 | `VITE_SECRET_KEY_TOKEN` | Clave AES para cifrar/descifrar el session ID en localStorage. Usada en `src/utils/encryptToken.js`. | Sí |
+| `VITE_API_MAPBOX` | Token de acceso para Mapbox GL JS. Usado en `src/components/ui/MapSelector.jsx`. | Sí (para mapas) |
 
 ### Variables opcionales o por flujo
 
@@ -43,6 +44,7 @@ Todas las variables usadas en el código tienen prefijo **`VITE_`** para que Vit
 VITE_API_URL=https://api.tudominio.com
 VITE_API_IMAGES_URL=https://cdn.tudominio.com/imagenes
 VITE_SECRET_KEY_TOKEN=tu_clave_secreta_aqui
+VITE_API_MAPBOX=pk.eyJ1IjoiaW5zdGFudC1tYXAiLCJhIjoiY2...
 
 # Opcional: URLs para bonos/reencauche
 # VITE_PRODUCTION_URL=https://viicommerce.com

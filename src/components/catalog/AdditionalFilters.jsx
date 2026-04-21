@@ -293,7 +293,7 @@ const AccordionHeader = styled.div`
 
   &:hover {
     background: ${({ theme }) =>
-      theme.colors.backgroundHover || theme.colors.border};
+    theme.colors.backgroundHover || theme.colors.border};
   }
 
   @media (max-width: 1024px) {
@@ -402,13 +402,13 @@ const FilterOption = styled.div`
   transition: all 0.2s ease;
   border: 1px solid
     ${({ $isSelected, theme }) =>
-      $isSelected ? theme.colors.primary : "transparent"};
+    $isSelected ? theme.colors.primary : "transparent"};
   background: ${({ $isSelected, $disabled, theme }) =>
     $disabled
       ? theme.colors.background
       : $isSelected
-      ? theme.colors.primaryLight
-      : "transparent"};
+        ? theme.colors.primaryLight
+        : "transparent"};
   opacity: ${({ $disabled }) => ($disabled ? 0.5 : 1)};
   font-size: 14px;
 
@@ -419,15 +419,15 @@ const FilterOption = styled.div`
 
   &:hover {
     background: ${({ $isSelected, $disabled, theme }) =>
-      $disabled
-        ? theme.colors.background
-        : $isSelected
+    $disabled
+      ? theme.colors.background
+      : $isSelected
         ? theme.colors.primaryLight
         : theme.colors.background};
     border-color: ${({ $isSelected, $disabled, theme }) =>
-      $disabled
-        ? "transparent"
-        : $isSelected
+    $disabled
+      ? "transparent"
+      : $isSelected
         ? theme.colors.primary
         : theme.colors.border};
   }
@@ -520,10 +520,18 @@ const AdditionalFilters = ({
     setLocalSearchQuery(searchQuery || "");
   }, [searchQuery]);
 
+  // Ref para rastrear IDs de filtros previos y evitar actualizaciones innecesarias
+  const prevFilterIdsRef = React.useRef("");
+
   // Efecto para abrir ciertos filtros por defecto cuando cambien los filtros disponibles
   useEffect(() => {
+    // Calcular un string estable de IDs para comparar
+    const filterIds = filters.map((f) => f.id).join(",");
+    if (filterIds === prevFilterIdsRef.current) return;
+    prevFilterIdsRef.current = filterIds;
+
     // Filtros que deben empezar abiertos por defecto
-    const defaultOpenFilters = ["DMA_MARCA", "DMA_GRUPO"];
+    const defaultOpenFilters = ["DMA_EMPRESA", "DMA_MARCA", "DMA_GRUPO"];
 
     setOpenAccordions((prevOpen) => {
       const newOpen = { ...prevOpen };

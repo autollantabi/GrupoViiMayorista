@@ -44,6 +44,7 @@ Mejoras técnicas sugeridas, deuda técnica detectada en el análisis del códig
 - **Estado:** Páginas como XCoinHome.jsx y AppShell.jsx concentran mucha lógica y UI; useCatalogFlow es un hook largo que maneja URL, localStorage, filtros y pasos.
 - **Sugerencia:** Extraer subcomponentes y hooks más pequeños (ej. useCatalogUrl, useCatalogFilters) para facilitar pruebas y mantenimiento.
 - **Prioridad:** Media a largo plazo.
+- **Actualización (Mar 31):** Se implementó un `LoadingOverlay` para mejorar la experiencia en el carrito durante la sincronización de precios.
 
 ---
 

@@ -8,7 +8,7 @@ Arquitectura general del Portal Mayorista Vii: capas, carpetas principales, resp
 
 - **Tipo:** SPA (Single Page Application) en React; solo frontend en este repositorio.
 - **Backend:** APIs REST externas; autenticación por session ID en header `id-session`.
-- **Estado global:** React Context (Auth, Cart, ProductCatalog, AppTheme). No hay Redux ni otro state manager externo.
+- **Estado global:** React Context (Auth, Cart, ProductCatalog, AppTheme). No hay Redux ni otro state manager externo. El AuthContext maneja el estado de `user`, `isAuthenticated` y flags de rol (`isClient`, `isVisualizacion`, `isReencaucheUser`, `isSeller`).
 - **Flujo de datos:** Login → session ID cifrado en localStorage → interceptor axios añade `id-session` → contextos y páginas consumen API y estado.
 
 Capas identificables:
@@ -54,6 +54,7 @@ PortalMayoristaVii/
     │   ├── profile/
     │   ├── shell/                # Rutas /club-shell-maxx/... vía api (proxy en backend)
     │   ├── users/
+    │   ├── vendedores/           # api_vendedores_getClientes, api_vendedores_getProductos, api_vendedores_getDirecciones
     │   └── xcoin/
     ├── assets/                   # Imágenes (logos empresas, ClubShell, etc.)
     ├── components/
@@ -83,7 +84,7 @@ PortalMayoristaVii/
 
 | Carpeta | Responsabilidad |
 |---------|-----------------|
-| **api/** | Módulos que llaman a la API REST. Cada subcarpeta es un dominio (auth, cart, order, products, bonos, shell, xcoin, etc.). Devuelven `{ success, message, data?, error? }`. Shell usa la misma instancia `api` (proxy en backend). |
+| **api/** | Módulos que llaman a la API REST. Cada subcarpeta es un dominio (auth, cart, order, products, bonos, shell, xcoin, vendedores, etc.). Devuelven `{ success, message, data?, error? }`. Shell usa la misma instancia `api` (proxy en backend). |
 | **assets/** | Imágenes y recursos estáticos referenciados desde código (logos por empresa, ClubShell, GrupoVii). |
 | **components/** | Componentes reutilizables: layout (Header, Sidebar, Layouts), catálogo, UI (Button, Input, Modal, Table), export/PDF, SEO. |
 | **config/** | Configuración en JSON (p. ej. `catalogFlow.json`: líneas de negocio y pasos del flujo de catálogo). |
@@ -157,6 +158,8 @@ No es obligatorio tener tests en el repo actual; si se introducen, ubicar tests 
 - **Rutas protegidas:** ProtectedRoute como componente que comprueba autenticación y `allowedRoles` antes de renderizar el elemento; en caso contrario redirige a login o al home del rol.
 - **Normalización de API:** Los módulos en `api/` devuelven un formato común `{ success, message, data?, error? }` para que las páginas y contextos manejen errores de forma uniforme.
 - **Configuración por datos:** Rutas y roles en constantes; flujo de catálogo en `catalogFlow.json` y `productLineConfig.js` para evitar hardcodear líneas de negocio en el código.
+- **Loading Overlay (Premium State):** Patrón de bloqueo total de la interfaz mediante un `LoadingOverlay` avanzado mientras se realizan operaciones críticas de sincronización o hidratación de precios, previniendo estados inconsistentes.
+- **Unificación de Vendedores:** Estructura compartida donde los vendedores B2C utilizan el mismo motor de lógica de carrito que los B2B, garantizando coherencia en la persistencia de precios y la sourcing del catálogo.
 
 No hay uso explícito de Factory, Observer (más allá del propio React) ni otros patrones documentados en el código analizado.
 
@@ -176,8 +179,8 @@ No hay uso explícito de Factory, Observer (más allá del propio React) ni otro
 
 ### Contextos (context/)
 
-- **AuthContext:** user, loading, isAuthenticated, isClient, isVisualizacion, isReencaucheUser; login, logout, verifyIdentification, registerUser, sendVerificationCode, verifyCode, resetPassword; getHomeRouteByRole, navigateToHomeByRole. Inicialización con `api_auth_me` y sessionId desde encryptToken.
-- **CartContext:** cart, cartTotal, isLoading, cartIds (por empresa); addItem, removeItem, updateQuantity, loadCartFromAPI, syncCartToAPI; totales con descuentos por producto, descuento por empresa (user.DESCUENTOS), IVA (user.IVA o TAXES.IVA_PERCENTAGE). Solo clientes (isClient) pueden modificar carrito.
+- **AuthContext:** user, loading, isAuthenticated, isClient, isVisualizacion, isReencaucheUser, isSeller; login, logout, verifyIdentification, registerUser, sendVerificationCode, verifyCode, resetPassword; getHomeRouteByRole, navigateToHomeByRole. Inicialización con `api_auth_me` y sessionId desde encryptToken. Incluye lógica de normalización de usuario para roles de VENDEDOR (B2B/B2C).
+- **CartContext:** cart, cartTotal, isLoading, cartIds (por empresa); addItem, removeItem, updateQuantity, loadCartFromAPI, syncCartToAPI; totales con descuentos por producto, descuento por empresa (user.DESCUENTOS), IVA (user.IVA o TAXES.IVA_PERCENTAGE). Solo clientes (isClient) pueden modificar carrito. Implementa un sistema de **hidratación inmediata de precios** mediante `sessionStorage` (`barcodePriceMap`) para mantener la persistencia durante recargas de página.
 - **ProductCatalogContext:** catalogByEmpresa, loadingByEmpresa, errorByEmpresa; loadProductsForEmpresa, loadProductByCodigo, loadProductsBySearchTerm, mapApiProductToAppFormat (productLineConfig y baseLinkImages).
 - **AppThemeContext:** theme (light/dark), isDarkMode, toggleTheme; persistencia en localStorage y clase en documentElement.
 - **ProductCacheContext:** definido pero no conectado en main.jsx (TTL 10 min; código muerto o futuro).

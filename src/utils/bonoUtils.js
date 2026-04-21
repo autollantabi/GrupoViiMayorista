@@ -39,11 +39,7 @@ const generateInvoiceQRCode = async (invoiceNumber) => {
     if (response.success && response.data.qrCode) {
 
       // Construir la URL completa de verificación
-      const preUrl =
-        import.meta.env.VITE_NODE_ENV === "production"
-          ? import.meta.env.VITE_PRODUCTION_URL
-          : import.meta.env.VITE_DEVELOPMENT_URL;
-      const verificationUrl = `${preUrl}/reencauche/verificacion?code=${response.data.qrCode}`;
+      const verificationUrl = `${window.location.origin}/reencauche/verificacion?code=${response.data.qrCode}`;
 
       // Generar el código QR visualmente usando la librería qrcode
       const qrDataURL = await QRCode.toDataURL(verificationUrl, {

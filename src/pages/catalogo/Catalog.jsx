@@ -175,9 +175,9 @@ const LineCard = styled.div`
   &:hover {
     transform: translateY(-6px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 12px 32px rgba(0, 0, 0, 0.25)"
-        : "0 12px 32px rgba(0, 0, 0, 0.12)"};
+    theme.mode === "dark"
+      ? "0 12px 32px rgba(0, 0, 0, 0.25)"
+      : "0 12px 32px rgba(0, 0, 0, 0.12)"};
     border-color: ${({ theme }) => theme.colors.primary};
 
     &::before {
@@ -320,10 +320,10 @@ const UnauthorizedContainer = styled.div`
     right: 0;
     bottom: 0;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `radial-gradient(ellipse at top center, ${theme.colors.primary}15 0%, transparent 50%),
+    theme.mode === "dark"
+      ? `radial-gradient(ellipse at top center, ${theme.colors.primary}15 0%, transparent 50%),
            radial-gradient(ellipse at bottom center, ${theme.colors.warning}10 0%, transparent 50%)`
-        : `radial-gradient(ellipse at top center, ${theme.colors.primary}10 0%, transparent 50%),
+      : `radial-gradient(ellipse at top center, ${theme.colors.primary}10 0%, transparent 50%),
            radial-gradient(ellipse at bottom center, ${theme.colors.warning}08 0%, transparent 50%)`};
     pointer-events: none;
     z-index: 0;
@@ -495,7 +495,7 @@ const UnauthorizedButton = styled.button`
 
   &:hover {
     background: ${({ theme }) =>
-      theme.colors.primaryDark || theme.colors.primary};
+    theme.colors.primaryDark || theme.colors.primary};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
@@ -565,7 +565,7 @@ const FormInput = styled.input`
 
   &:disabled {
     background: ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.background}80` : "#f3f4f6"};
+    theme.mode === "dark" ? `${theme.colors.background}80` : "#f3f4f6"};
     cursor: not-allowed;
     opacity: 0.7;
   }
@@ -613,7 +613,7 @@ const SubmitButton = styled.button`
 
   &:hover:not(:disabled) {
     background: ${({ theme }) =>
-      theme.colors.primaryDark || theme.colors.primary};
+    theme.colors.primaryDark || theme.colors.primary};
     transform: translateY(-2px);
     box-shadow: 0 8px 25px ${({ theme }) => `${theme.colors.primary}40`};
   }
@@ -683,12 +683,14 @@ const Catalog = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, isSeller, isVisualizacion } = useAuth();
   const {
     loadProductsForEmpresa,
     catalogByEmpresa,
     loadingByEmpresa,
     reloadProductsForEmpresa,
+    loadProductsForMultipleCompanies,
+    getProductsForCompanies,
   } = useProductCatalog();
   const [pendingRestore, setPendingRestore] = useState(null);
   const [initialSort, setInitialSort] = useState("default");
@@ -718,10 +720,12 @@ const Catalog = () => {
 
   // Cargar productos de la empresa cuando hay empresaName
   useEffect(() => {
-    if (empresaName && !catalogByEmpresa[empresaName]) {
+    if (isSeller && user?.EMPRESAS) {
+      loadProductsForMultipleCompanies(user.EMPRESAS);
+    } else if (empresaName && !catalogByEmpresa[empresaName]) {
       loadProductsForEmpresa(empresaName);
     }
-  }, [empresaName]);
+  }, [empresaName, user, loadProductsForMultipleCompanies, isSeller]);
 
   // Función para actualizar la URL - MERGE con parámetros existentes
   const updateURL = useCallback(
@@ -790,13 +794,6 @@ const Catalog = () => {
   );
 
   const {
-    selectedLinea,
-    selectedValues,
-    filteredProducts,
-    availableLines,
-    currentStepOptions,
-    flowConfig,
-    additionalFilters,
     loading,
     isAtProductView,
     currentStep,
@@ -812,9 +809,19 @@ const Catalog = () => {
     isInitialized,
     setSelectedValues,
     setCurrentStepIndex,
+    selectedLinea,
+    availableLines,
+    filteredProducts,
+    selectedValues,
+    additionalFilters,
+    flowConfig,
   } = useCatalogFlow(
-    empresaName,
-    empresaName ? catalogByEmpresa[empresaName] : null,
+    isSeller ? null : empresaName,
+    isSeller
+      ? getProductsForCompanies(user?.EMPRESAS || [])
+      : empresaName
+        ? catalogByEmpresa[empresaName]
+        : null,
     searchParams,
     updateURL
   );
@@ -1012,64 +1019,64 @@ const Catalog = () => {
 
                   <UnauthorizedRight>
                     <AccessRequestForm onSubmit={handleAccessRequestSubmit}>
-                    {/* Información del usuario (solo lectura) */}
-                    <FormGroup>
-                      <FormLabel>RUC / Cédula</FormLabel>
-                      <FormInput
-                        type="text"
-                        value={user?.ACCOUNT_USER || "No disponible"}
-                        disabled
-                      />
-                    </FormGroup>
+                      {/* Información del usuario (solo lectura) */}
+                      <FormGroup>
+                        <FormLabel>RUC / Cédula</FormLabel>
+                        <FormInput
+                          type="text"
+                          value={user?.ACCOUNT_USER || "No disponible"}
+                          disabled
+                        />
+                      </FormGroup>
 
-                    <FormGroup>
-                      <FormLabel>Nombre Completo</FormLabel>
-                      <FormInput
-                        type="text"
-                        value={user?.NAME_USER || "No disponible"}
-                        disabled
-                      />
-                    </FormGroup>
+                      <FormGroup>
+                        <FormLabel>Nombre Completo</FormLabel>
+                        <FormInput
+                          type="text"
+                          value={user?.NAME_USER || "No disponible"}
+                          disabled
+                        />
+                      </FormGroup>
 
-                    <FormGroup>
-                      <FormLabel>Correo Electrónico</FormLabel>
-                      <FormInput
-                        type="email"
-                        value={user?.EMAIL || "No disponible"}
-                        disabled
-                      />
-                    </FormGroup>
+                      <FormGroup>
+                        <FormLabel>Correo Electrónico</FormLabel>
+                        <FormInput
+                          type="email"
+                          value={user?.EMAIL || "No disponible"}
+                          disabled
+                        />
+                      </FormGroup>
 
-                    <FormGroup>
-                      <FormLabel htmlFor="telefono">Teléfono *</FormLabel>
-                      <FormInput
-                        type="tel"
-                        id="telefono"
-                        name="telefono"
-                        value={accessRequestForm.telefono}
-                        onChange={handleFormChange}
-                        placeholder="0987654321"
-                        required
-                      />
-                    </FormGroup>
+                      <FormGroup>
+                        <FormLabel htmlFor="telefono">Teléfono *</FormLabel>
+                        <FormInput
+                          type="tel"
+                          id="telefono"
+                          name="telefono"
+                          value={accessRequestForm.telefono}
+                          onChange={handleFormChange}
+                          placeholder="0987654321"
+                          required
+                        />
+                      </FormGroup>
 
-                    <SubmitButton type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <RenderIcon
-                            name="FaSpinner"
-                            size={16}
-                            style={{
-                              animation: "spin 1s linear infinite",
-                              marginRight: "8px",
-                            }}
-                          />
-                          Enviando...
-                        </>
-                      ) : (
-                        "Enviar Solicitud"
-                      )}
-                    </SubmitButton>
+                      <SubmitButton type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <RenderIcon
+                              name="FaSpinner"
+                              size={16}
+                              style={{
+                                animation: "spin 1s linear infinite",
+                                marginRight: "8px",
+                              }}
+                            />
+                            Enviando...
+                          </>
+                        ) : (
+                          "Enviar Solicitud"
+                        )}
+                      </SubmitButton>
                     </AccessRequestForm>
                   </UnauthorizedRight>
                 </UnauthorizedContent>

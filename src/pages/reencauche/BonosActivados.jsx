@@ -590,11 +590,8 @@ const BonosActivados = () => {
         const encryptedMaster = response.data.qrCode;
 
         // Abrir en nueva pestaña con el parámetro mstr
-        const preUrl =
-          import.meta.env.VITE_NODE_ENV === "production"
-            ? import.meta.env.VITE_PRODUCTION_URL
-            : import.meta.env.VITE_DEVELOPMENT_URL;
-        const verifyUrl = `${preUrl}${
+        // Usar window.location.origin para asegurar que la URL sea correcta en producción
+        const verifyUrl = `${window.location.origin}${
           ROUTES.REENCAUCHE.VERIFICAR
         }?mstr=${encodeURIComponent(encryptedMaster)}`;
         window.open(verifyUrl, "_blank");

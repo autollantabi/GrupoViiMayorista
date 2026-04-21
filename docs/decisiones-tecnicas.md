@@ -62,6 +62,13 @@ Justificación de las tecnologías elegidas, alternativas que se infieren del co
 - **Alternativas:** No cifrar (menos seguro), httpOnly cookies (requiere backend y misma configuración CORS/dominio). Las cookies httpOnly no son accesibles desde JS; el backend actual parece diseñado para enviar idSession y leerlo desde el cliente, por lo que el cifrado en localStorage es una capa adicional.
 - **Trade-off:** La clave AES está en el bundle del cliente; quien tenga acceso al código y al .env puede descifrar. La seguridad real depende del backend (invalidación de sesiones, vida útil del token).
 
+### Mapbox GL JS
+
+- **Uso:** Mapas interactivos para selección de direcciones en `Carrito.jsx` y `Direcciones.jsx`.
+- **Justificación (inferida):** Necesidad de precisión geográfica en entregas; Mapbox ofrece mejor rendimiento y personalización que alternativas gratuitas básicas.
+- **Alternativas:** Google Maps (ya presente en dependencias pero se eligió Mapbox para este flujo), Leaflet (OpenStreetMap).
+- **Trade-off:** Requiere un token API expuesto; se mitiga con restricciones de dominio y CSP.
+
 ### JavaScript (no TypeScript)
 
 - **Uso:** Todo el código en .js y .jsx; solo @types/react y @types/react-dom en devDependencies para ayuda del IDE.
@@ -135,6 +142,7 @@ Justificación de las tecnologías elegidas, alternativas que se infieren del co
 | react-toastify ^11.0.5 | Notificaciones toast |
 | crypto-js ^4.2.0 | Cifrado AES del session ID en localStorage |
 | react-icons ^5.5.0 | Iconos (Fa, Fi, Lu, etc.) |
+| mapbox-gl ^3.10.0 | Mapas interactivos y geocodificación |
 
 ### Otras dependencias
 

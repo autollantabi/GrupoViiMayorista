@@ -31,12 +31,12 @@ Resumen de los headers HTTP configurados en el proyecto para seguridad y privaci
 
 Política configurada (resumida):
 
-- **default-src 'self'** — Por defecto solo recursos del mismo origen.
-- **script-src** — En **desarrollo** (Vite): `'self' 'unsafe-inline' 'unsafe-eval'` para que HMR y React Refresh funcionen (Vite inyecta scripts inline). En **producción** (vercel.json): `'self'` solo (sin inline).
+- **script-src** — En **desarrollo** (Vite): `'self' 'unsafe-inline' 'unsafe-eval' blob:` para que HMR, React Refresh y **Mapbox Workers** funcionen.
+- **worker-src / child-src 'self' blob:** — Permite la ejecución de web workers desde blobs, necesario para el motor de renderizado de Mapbox GL JS.
 - **style-src 'self' 'unsafe-inline' https://fonts.googleapis.com** — Estilos propios, inline (styled-components) y Google Fonts.
 - **font-src 'self' https://fonts.gstatic.com** — Fuentes propias y Google.
-- **img-src 'self' data: https:** — Imágenes propias, data URL e imágenes HTTPS (API, ui-avatars.com, etc.).
-- **connect-src 'self' https:** — En producción: XHR/fetch solo a mismo origen y cualquier HTTPS. En desarrollo (Vite) se añaden `http://localhost:4200`, `http://localhost:5000`, `http://localhost:3000` y equivalentes en `127.0.0.1` para que el front pueda llamar al API en otro puerto.
+- **img-src 'self' data: blob: https://*.mapbox.com https://pub-1e1c8241c1104bde88eaab1eb52e8c32.r2.dev https://pub-56169cdc291748da8c4a8ad361387f22.r2.dev https://placehold.co** — Imágenes propias, data URL, blobs, tiles de Mapbox, imágenes de recompensas XCoin y **placeholders de desarrollo**.
+- **connect-src 'self' https://*.mapbox.com** — Conexiones a Mapbox API y telemetría. En desarrollo (Vite) se añaden también los hosts locales (`192.168.0.68:3102`, etc.) para desarrollo de APIs.
 - **frame-ancestors 'self'** — Solo tu origen puede embeber la página en iframe (refuerza X-Frame-Options).
 - **base-uri 'self'** — Evita inyección de `<base>` que redirija recursos a otro dominio.
 - **form-action 'self'** — Los formularios solo pueden enviarse al mismo origen.

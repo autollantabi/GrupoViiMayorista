@@ -93,8 +93,7 @@ export const PRODUCT_LINE_CONFIG = {
     ],
     nameTemplate: (item) => `${item.DMA_NOMBREITEM || ""}`,
     descriptionTemplate: (item) =>
-      `${item.DMA_MARCA || ""} ${item.DMA_DISENIO || ""} ${
-        item.DMA_APLICACION || ""
+      `${item.DMA_MARCA || ""} ${item.DMA_DISENIO || ""} ${item.DMA_APLICACION || ""
       }`,
     categoryLabels: CATEGORY_TYPE_LABELS,
     categoryOrder: CATEGORY_TYPE_ORDER.LLANTAS,
@@ -173,8 +172,7 @@ export const PRODUCT_LINE_CONFIG = {
     ],
     nameTemplate: (item) => `${item.DMA_NOMBREITEM || ""}`,
     descriptionTemplate: (item) =>
-      `${item.DMA_MARCA || ""} ${item.DMA_DISENIO || ""} ${
-        item.DMA_APLICACION || ""
+      `${item.DMA_MARCA || ""} ${item.DMA_DISENIO || ""} ${item.DMA_APLICACION || ""
       }`,
     categoryLabels: CATEGORY_TYPE_LABELS,
     categoryOrder: CATEGORY_TYPE_ORDER.LLANTAS,

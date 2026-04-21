@@ -17,6 +17,11 @@ Definidos en `src/constants/roles.js`:
 | COORDINADOR | "COORDINADOR" | Listado y detalle de pedidos, edición de pedidos |
 | VISUALIZACION | "VISUALIZACION" | Catálogo y vistas de e-commerce sin modificar carrito |
 | REENCAUCHE_USER | "REENCAUCHE_USER" | Home reencauche, bonos activados, activación, verificación, clientes reencauche |
+| VENDEDOR_B2B | "VENDEDOR B2B" | Catálogo de productos unificado para clientes B2B, gestión de clientes asignados |
+| VENDEDOR_B2C | "VENDEDOR B2C" | Catálogo de productos unificado para clientes B2C, gestión de clientes asignados (usa lógica de carrito compartida con B2B) |
+| REPORTE_LUBRICANTES | "reportes.lubricantes" | Acceso al reporte especializado de lubricantes (Power BI) con permisos de jefatura |
+
+**Reporte de Lubricantes:** Los usuarios con el rol `reportes.lubricantes` tienen acceso a un dashboard de Power BI filtrado automáticamente por Empresa (GRUPO VII), Línea (LUBRICANTES) y Canal (TODOS). El enlace se encuentra en el menú de Reportes del Header.
 
 El usuario que devuelve el backend tiene **ROLE_NAME** (string). En el código se usa `user.ROLE_NAME` para rutas y redirecciones; el hook `useNavigateByRole` usa `user.ROLES` (array), lo que puede generar inconsistencias si el backend no envía `ROLES` (ver [docs/pendientes.md](pendientes.md)).
 
@@ -28,7 +33,7 @@ El usuario que devuelve el backend tiene **ROLE_NAME** (string). En el código s
    - Si no autenticado → redirige a `ROUTES.AUTH.LOGIN`.
    - Si autenticado pero el rol no está en `allowedRoles` → redirige al “home” del rol con `getHomeForRole(user.ROLE_NAME)`.
    - `getHomeForRole`: ADMIN → dashboard, COORDINADOR → coordinadora, resto (incl. REENCAUCHE_USER) → ECOMMERCE.HOME. Es decir, REENCAUCHE_USER no tiene case explícito y cae en ECOMMERCE.HOME; la redirección a reencauche/home se hace en **Home.jsx** según `user.ROLE_NAME`.
-4. **Home ("/"):** Según `user.ROLE_NAME` redirige a: ADMIN → dashboard, COORDINADOR → coordinadora, REENCAUCHE_USER → reencauche/home, resto → ClientHomeComponent (e-commerce home).
+4. **Home ("/"):** Según `user.ROLE_NAME` redirige a: ADMIN → dashboard, COORDINADOR → coordinadora, REENCAUCHE_USER → reencauche/home, VENDEDOR B2B/B2C → ClientHomeComponent, resto → ClientHomeComponent.
 
 ### Permisos por sección
 
@@ -92,7 +97,9 @@ Si el login falla, se muestra mensaje (toast) y no se guarda sesión.
 2. **Detalle de producto:** Usuario abre un producto. Se carga con ProductCatalogContext (getProductByCodigo o similar) y se muestra detalle. Solo CLIENTE puede añadir al carrito.
 3. **Añadir al carrito:** CartContext `addItem`. Si ya existe carrito para esa empresa (cartId), se actualiza vía `api_cart_updateCarrito`; si no, se puede crear o sincronizar en la siguiente operación (loadCartFromAPI, syncCartToAPI).
 4. **Carrito:** Página Carrito muestra ítems; usuario puede modificar cantidades o eliminar. CartContext usa api/cart (getCarrito, updateCarrito, deleteDetail). Totales con IVA y descuentos (constants/taxes, user.DESCUENTOS).
-5. **Crear pedido:** Desde Carrito (o flujo de checkout), se sincroniza carrito con API si aplica y se llama a `api_order_createOrder` con los datos del pedido. Tras éxito, se limpia o actualiza carrito y se redirige a detalle de pedido o listado (Mis Pedidos).
+5. **Persistencia y Recuperación**: El sistema utiliza `sessionStorage` para hidratar el `barcodePriceMap` inmediatamente en cada recarga, evitando que los precios se reseteen a cero. Además, cuenta con un **recovery guard** para detectar y sincronizar "productos fantasma" que pudieran aparecer en el backend sin estar en el estado local.
+6. **Crear pedido:** Desde Carrito (o flujo de checkout), se sincroniza carrito con API si aplica y se llama a `api_order_createOrder` con los datos del pedido. Tras éxito, se limpia o actualiza carrito y se redirige a detalle de pedido o listado (Mis Pedidos).
+7. **Pantalla de Carga (Loading Screen):** Para prevenir interacciones con productos sin precio o durante la sincronización, se implementa un `LoadingOverlay` premium a pantalla completa. Este bloquea la interfaz mientras se hidratan los precios y se valida el estado del carrito.
 
 ---
 
@@ -100,6 +107,23 @@ Si el login falla, se muestra mensaje (toast) y no se guarda sesión.
 
 1. Usuario con rol COORDINADOR entra (redirigido desde Home a `/coordinadora`). CoordinadorHomeComponent lista pedidos (api_order: getPedidosByEnterprise o similar).
 2. Al abrir un pedido, navega a `/coordinadora/pedidos/:orderId` (DetallePedidoCoordinador). Puede editar con EditarPedido (`/coordinadora/pedidos/:orderId/editar`). Las llamadas de actualización están en api/order (y en las páginas que las invocan).
+
+---
+
+## Flujo Vendedor (B2B/B2C)
+
+Los vendedores tienen un flujo especializado para gestionar clientes y realizar compras en su nombre:
+
+1. **Selección de Cliente:** Al ingresar, el vendedor ve una lista de clientes (SOCIOS) asignados. Estos se obtienen mediante `api_vendedores_getClientes`.
+2. **Cambio de Cliente:** El vendedor puede cambiar el cliente activo en cualquier momento. Esto actualiza el contexto del carrito y la visualización de precios/stock según el cliente seleccionado.
+3. **Selección de SPANCOP (Solo B2B):** Si el vendedor es B2B y el cliente seleccionado **no está registrado en SAP** (su origen es "B2B"), se debe seleccionar obligatoriamente un SPANCOP de la lista proporcionada por el cliente. 
+    - El código seleccionado (`CODIGO_DATOS_SPANCOP`) se almacena en `sessionStorage`.
+    - Si el cliente **ya está registrado en SAP** (origen "SAP" o "AMBOS"), este paso se omite automáticamente.
+4. **Catálogo de Vendedor:** Al navegar por el catálogo, los productos se obtienen mediante `api_vendedores_getProductos`. A diferencia del flujo de cliente estándar, no requiere una selección de empresa inicial, ya que el backend resuelve las empresas permitidas para el vendedor.
+5. **Direcciones:** El vendedor puede ver y seleccionar direcciones de entrega del cliente mediante `api_vendedores_getDirecciones`.
+   - **Registro de Direcciones**: Al crear una nueva dirección de envío o facturación para un vendedor B2B, es **obligatorio** utilizar el mapa interactivo. El sistema está restringido a la empresa "AUTOLLANTA" para la creación de nuevas direcciones en este flujo.
+   - **Mapbox**: La selección en el mapa auto-rellena Provincia, Ciudad y Calle, y asigna coordenadas precisas al registro.
+6. **Unificación B2C/B2B:** Los vendedores B2C ahora comparten la misma lógica de carrito que los B2B. Esto asegura que los precios se mantengan persistentes a través del `barcodePriceMap` del catálogo y que las operaciones de backend utilicen correctamente la cuenta del cliente seleccionado por el vendedor.
 
 ---
 
@@ -115,13 +139,24 @@ Si el login falla, se muestra mensaje (toast) y no se guarda sesión.
 ## Flujo XCoin
 
 1. Usuario accede a `/xcoin` (XCoinHome). Se usa api/xcoin: getBalance, getProducts, getRedemptionHistory, createRedemption.
-2. Se muestra balance de puntos, catálogo de canje y historial; el usuario puede canjear productos (createRedemption).
+2. Se muestra balance de puntos, catálogo de canje e historial (Canjeados); el usuario puede canjear productos (createRedemption).
+3. **Mapeo de Estados**: El historial de canjes extrae el nombre del estado desde un objeto anidado `STATUS { NAME: "..." }`, permitiendo visualizar correctamente etiquetas como "Procesado", "Recibido" o "Enviado".
 
 ---
 
 ## Flujo App Shell (Lider Shell)
 
 1. Usuario accede a `/app-shell` (AppShell). Se busca usuario por código SAP con api_shell_searchManager; se puede crear usuario en la app Lider Shell con api_shell_createUser. Las llamadas van por la API principal (api.js) a rutas `/club-shell-maxx/...`; el backend hace de proxy y añade la API Key.
+
+---
+
+## Integración de Mapas
+
+El sistema utiliza **Mapbox GL JS** para mejorar la precisión en la creación de direcciones de envío:
+
+- **Selección Interactiva**: El usuario debe marcar un punto en el mapa para confirmar la ubicación de entrega.
+- **Geocodificación Inversa**: Al mover el marcador o hacer clic en el mapa, se consultan automáticamente los datos de Provincia, Ciudad y Dirección para auto-rellenar el formulario.
+- **Validación**: Es obligatorio seleccionar una ubicación en el mapa para guardar direcciones de envío en los flujos de Carrito y Perfil.
 
 ---
 

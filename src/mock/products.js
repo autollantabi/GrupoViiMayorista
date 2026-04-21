@@ -52,6 +52,45 @@ export const empresas = [
   },
 ];
 
+export const lineasNegocio = [
+  {
+    id: "LLANTAS",
+    nombre: "LLANTAS",
+    descripcion: "",
+    logoLight: "",
+    logoDark: "",
+    color: "#dc3545",
+    empresas: ["AUTOLLANTA", "MAXXIMUNDO", "STOX", "IKONIX"],
+  },
+  {
+    id: "LLANTAS MOTO",
+    nombre: "LLANTAS MOTO",
+    descripcion: "",
+    logoLight: "",
+    logoDark: "",
+    color: "#dc3545",
+    empresas: ["AUTOLLANTA", "MAXXIMUNDO", "STOX", "IKONIX"],
+  },
+  {
+    id: "LUBRICANTES",
+    nombre: "LUBRICANTES",
+    descripcion: "",
+    logoLight: "",
+    logoDark: "",
+    color: "#dc3545",
+    empresas: ["AUTOLLANTA", "MAXXIMUNDO", "STOX", "IKONIX"],
+  },
+  {
+    id: "HERRAMIENTAS",
+    nombre: "HERRAMIENTAS",
+    descripcion: "",
+    logoLight: "",
+    logoDark: "",
+    color: "#dc3545",
+    empresas: ["AUTOLLANTA", "MAXXIMUNDO", "STOX", "IKONIX"],
+  }
+]
+
 // Función helper para obtener el logo según el tema
 export const getEmpresaLogo = (empresa, isDarkMode) => {
   return isDarkMode ? empresa.logoDark : empresa.logoLight;

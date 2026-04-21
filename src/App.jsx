@@ -7,6 +7,7 @@ import {
   ecommerceRoutes,
   coordinadorRoutes,
   reencaucheRoutes,
+  vendedorRoutes,
   publicRoutes,
 } from "./routes/routes";
 import { createGlobalStyle } from "styled-components";
@@ -92,7 +93,8 @@ function RouteHandler() {
     // Limpiar localStorage del catálogo cuando se navega fuera de las rutas del catálogo
     const isCatalogRoute =
       location.pathname.startsWith("/catalogo") ||
-      location.pathname.startsWith("/busqueda");
+      location.pathname.startsWith("/busqueda") ||
+      location.pathname.startsWith("/vendedor");
 
     if (!isCatalogRoute) {
       localStorage.removeItem("catalogState");
@@ -134,6 +136,8 @@ const App = () => {
                 ROLES.COORDINADOR,
                 ROLES.VISUALIZACION,
                 ROLES.REENCAUCHE_USER,
+                ROLES.VENDEDOR_B2C,
+                ROLES.VENDEDOR_B2B,
               ]}
             />
           }
@@ -189,6 +193,20 @@ const App = () => {
           {reencaucheRoutes.map((route, idx) => (
             <Route
               key={`reencauche-${idx}`}
+              path={route.path}
+              element={
+                <ProtectedRoute
+                  element={route.element}
+                  allowedRoles={route.allowedRoles}
+                />
+              }
+            />
+          ))}
+
+          {/* Rutas de vendedor */}
+          {vendedorRoutes.map((route, idx) => (
+            <Route
+              key={`vendedor-${idx}`}
               path={route.path}
               element={
                 <ProtectedRoute

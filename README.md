@@ -15,8 +15,9 @@ Permite a clientes mayoristas consultar catálogos por empresa (MAXXIMUNDO, STOX
 ## Problema que resuelve
 
 - **Centralización:** Un solo frontend para catálogo mayorista, pedidos y perfiles de múltiples empresas.
-- **Multi-empresa y multi-rol:** Acceso segregado por empresa y por rol (cliente, administrador, coordinador, visualización, reencauche).
-- **Flujos especializados:** Reencauche (bonos, verificación, PDF/QR), coordinación de pedidos, integración con App Shell (Lider Shell) y programa de puntos XCoin.
+- **Multi-empresa y multi-rol:** Acceso segregado por empresa y por rol (cliente, administrador, coordinador, visualización, reencauche, vendedor B2B/B2C).
+- **Flujos especializados:** Reencauche (bonos, verificación, PDF/QR), coordinación de pedidos, integración con App Shell (Lider Shell), programa de puntos XCoin e integración de **Mapbox GL JS** para geolocalización precisa.
+- **Experiencia Premium:** Interfaz optimizada con estados de carga avanzados (Loading Overlays) y persistencia de datos crítica (precios y carritos sincronizados).
 
 ---
 

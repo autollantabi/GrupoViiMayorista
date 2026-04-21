@@ -40,9 +40,8 @@ export const api_order_createOrder = async (orderData) => {
       message: response.data.message || "Pedido creado correctamente",
       data: response.data.data || {},
     };
-    
+
   } catch (error) {
-    console.log(error);
     const message = error?.message || "Ocurrió un error al crear el pedido";
 
     return {
@@ -61,6 +60,7 @@ export const api_order_createOrder = async (orderData) => {
 export const api_order_getOrderById = async (orderId) => {
   try {
     const response = await api.get(`/pedidos/getPedidosByOrder/${orderId}`);
+    console.log(response.data);
     return {
       success: true,
       message: response.data.message || "Pedido obtenido correctamente",
@@ -135,3 +135,30 @@ export const api_order_updateOrder = async (orderId, orderData) => {
     };
   }
 };
+
+/**
+ * Obtener pedidos para vendedores
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_order_getOrdersBySeller = async () => {
+  try {
+    const response = await api.get("/vendedores/pedidos");
+    return {
+      success: true,
+      message:
+        response.data.message || "Pedidos del vendedor obtenidos correctamente",
+      data: response.data.data || [],
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al obtener los pedidos del vendedor";
+
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+

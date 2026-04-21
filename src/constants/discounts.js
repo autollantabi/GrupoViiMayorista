@@ -1,0 +1,3 @@
+export const DISCOUNT_LIMITS = {
+  PRODUCT_MAX_PERCENT: 5,
+};

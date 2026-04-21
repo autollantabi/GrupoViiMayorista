@@ -6,10 +6,12 @@ import { useCart } from "../../context/CartContext";
 import { useAppTheme } from "../../context/AppThemeContext";
 import { useState, useEffect } from "react";
 import { ROUTES } from "../../constants/routes";
+import { ROLES } from "../../constants/roles";
 import {
   api_access_sections_get_permission_by_email_and_section,
 } from "../../api/accessSections/apiAccessSections";
 import GrupoViiLogo from "../../assets/GrupoViiLogo.png";
+import GrupoViiIsoLogo from "../../assets/GrupoViiIsoLogo.webp";
 
 import RenderIcon from "../ui/RenderIcon";
 
@@ -129,7 +131,7 @@ const UserMenuDropdown = styled.div`
     height: 100vh;
     border-radius: 0;
     transform: ${({ $isOpen }) =>
-      $isOpen ? "translateX(0)" : "translateX(100%)"};
+    $isOpen ? "translateX(0)" : "translateX(100%)"};
     transition: transform 0.3s ease;
     display: block;
   }
@@ -310,7 +312,7 @@ const NavLink = styled.button`
 `;
 
 export default function Header() {
-  const { user, isClient, isVisualizacion, isReencaucheUser, logout } =
+  const { user, isClient, isVisualizacion, isReencaucheUser, isSeller, logout } =
     useAuth();
   const { hasItems } = useCart(); // Solo usamos hasItems para mostrar indicador
   const { isDarkMode, toggleTheme } = useAppTheme();
@@ -319,13 +321,19 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [accessSections, setAccessSections] = useState([]);
+  const isB2CSeller = user?.ROLE_NAME === ROLES.VENDEDOR_B2C;
+
 
   // Verificar si estamos en el home
   const isHome = location.pathname === ROUTES.ECOMMERCE.HOME;
+  // El carrito del vendedor solo se muestra dentro del catálogo /vendedor/
+  const isInSellerCatalog = location.pathname.startsWith("/vendedor/");
+  const isOfferPage = location.pathname === ROUTES.VENDEDOR.OFERTA;
+  const isVendedorCatalogo = isInSellerCatalog && !isOfferPage;
 
   // Obtener accesos a secciones
   useEffect(() => {
-    if (!user?.EMAIL) return;
+    if (!user?.EMAIL || isSeller) return;
 
     const fetchAccessSections = async () => {
       try {
@@ -358,7 +366,7 @@ export default function Header() {
   const hasAppShellAccess = accessSections.some(
     (section) => section.SECTION_PERMITTED_USER === "APPSHELL"
   );
-  
+
   const hasReencaucheAccess = accessSections.some(
     (section) => section.SECTION_PERMITTED_USER === "REENCAUCHE"
   );
@@ -377,6 +385,16 @@ export default function Header() {
     navigate("/carrito");
     setIsMobileMenuOpen(false);
   };
+
+  const handleGoToOffer = () => {
+    if (isB2CSeller) {
+      navigate(ROUTES.ECOMMERCE.CARRITO);
+    } else {
+      navigate(ROUTES.VENDEDOR.OFERTA);
+    }
+    setIsMobileMenuOpen(false);
+  };
+
 
   const handleGoToHome = () => {
     navigate("/");
@@ -429,10 +447,10 @@ export default function Header() {
   // Función helper para hacer scroll a un elemento esperando a que esté disponible
   const scrollToElement = (selector, maxAttempts = 20, interval = 100) => {
     let attempts = 0;
-    
+
     const tryScroll = () => {
       const element = document.querySelector(selector);
-      
+
       if (element) {
         // Verificar que el elemento esté visible y tenga dimensiones
         const rect = element.getBoundingClientRect();
@@ -441,7 +459,7 @@ export default function Header() {
           return true;
         }
       }
-      
+
       attempts++;
       if (attempts < maxAttempts) {
         setTimeout(tryScroll, interval);
@@ -454,17 +472,17 @@ export default function Header() {
           }
         }, 500);
       }
-      
+
       return false;
     };
-    
+
     tryScroll();
   };
 
   // Función para manejar la navegación y scroll a una sección
   const handleNavigateAndScroll = (selector) => {
     setIsMobileMenuOpen(false);
-    
+
     if (location.pathname !== ROUTES.ECOMMERCE.HOME) {
       // Si no estamos en el home, navegar primero
       navigate(ROUTES.ECOMMERCE.HOME);
@@ -482,7 +500,7 @@ export default function Header() {
     <>
       <HeaderContainer>
         <Logo onClick={handleGoToHome}>
-          <img src={GrupoViiLogo} alt="Grupo VII" />
+          <img src={(isSeller && isInSellerCatalog) ? GrupoViiIsoLogo : GrupoViiLogo} alt="Grupo VII" />
         </Logo>
 
         <NavigationMenu>
@@ -492,12 +510,14 @@ export default function Header() {
           >
             Inicio
           </NavLink>
-          <NavLink
-            $active={false}
-            onClick={() => handleNavigateAndScroll("#empresas-grid")}
-          >
-            Catálogos
-          </NavLink>
+          {!isSeller && (
+            <NavLink
+              $active={false}
+              onClick={() => handleNavigateAndScroll("#empresas-grid")}
+            >
+              Catálogos
+            </NavLink>
+          )}
           {hasAppShellAccess && (
             <NavLink
               $active={false}
@@ -543,6 +563,17 @@ export default function Header() {
               />
             )}
 
+            {isSeller && isVendedorCatalogo && !isVisualizacion && (
+              <IconButton
+                text={hasItems && <CartIndicator />}
+                leftIconName={isB2CSeller ? "FaCartShopping" : "FaTag"}
+                iconSize={18}
+                onClick={handleGoToOffer}
+                title={isB2CSeller ? "Ver Carrito" : "Ver Oferta"}
+              />
+            )}
+
+
             <UserMenu onMouseLeave={handleUserMenuMouseLeave}>
               <IconButton
                 onClick={toggleUserMenu}
@@ -564,7 +595,7 @@ export default function Header() {
                   </UserMenuItem>
                 )}
 
-                {isClient && !isVisualizacion && !isReencaucheUser && (
+                {!isVisualizacion && !isReencaucheUser && (
                   <UserMenuItem onClick={handleOrderHistory}>
                     <RenderIcon name="FaBagShopping" size={16} />
                     Mis Pedidos
@@ -606,6 +637,17 @@ export default function Header() {
               />
             )}
 
+            {isSeller && isVendedorCatalogo && !isVisualizacion && (
+              <IconButton
+                text={hasItems && <CartIndicator />}
+                leftIconName={isB2CSeller ? "FaCartShopping" : "FaTag"}
+                iconSize={20}
+                onClick={handleGoToOffer}
+                title={isB2CSeller ? "Ver Carrito" : "Ver Oferta"}
+              />
+            )}
+
+
             <MobileMenuButton onClick={toggleMobileMenu}>
               <RenderIcon name="FaBars" size={20} />
             </MobileMenuButton>
@@ -629,14 +671,16 @@ export default function Header() {
             <RenderIcon name="FaHouse" size={16} />
             Inicio
           </UserMenuItem>
-          <UserMenuItem
-            onClick={() => {
-              handleNavigateAndScroll("#empresas-grid");
-            }}
-          >
-            <RenderIcon name="FaBuilding" size={16} />
-            Catálogos
-          </UserMenuItem>
+          {!isSeller && (
+            <UserMenuItem
+              onClick={() => {
+                handleNavigateAndScroll("#empresas-grid");
+              }}
+            >
+              <RenderIcon name="FaBuilding" size={16} />
+              Catálogos
+            </UserMenuItem>
+          )}
           {hasAppShellAccess && (
             <UserMenuItem
               onClick={() => {
@@ -679,7 +723,7 @@ export default function Header() {
               Perfil
             </UserMenuItem>
           )}
-          {isClient && !isVisualizacion && !isReencaucheUser && (
+          {!isVisualizacion && !isReencaucheUser && (
             <UserMenuItem onClick={handleOrderHistory}>
               <RenderIcon name="FaBagShopping" size={16} />
               Mis Pedidos

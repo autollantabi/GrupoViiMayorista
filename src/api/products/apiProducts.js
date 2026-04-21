@@ -125,6 +125,70 @@ export const api_products_getProductById = async (productId, empresaId) => {
 };
 
 /**
+ * Obtiene productos paginados por campo con soporte de offset.
+ * Requiere que el backend soporte query params: limit, offset, y filtros adicionales.
+ * Cuando el backend esté listo, usar esta función en lugar de api_products_getProductByField.
+ *
+ * Ejemplo de URL generada:
+ *   /productos/getProductos/empresa/AUTOLLANTA/DEFAULT?limit=24&offset=0&linea=LLANTAS
+ *
+ * @param {Object} params
+ * @param {string} params.field       - Campo a filtrar (ej. "empresa")
+ * @param {string} params.value       - Valor del campo (ej. "AUTOLLANTA")
+ * @param {string} [params.ordenamiento]  - Ordenamiento (DEFAULT, CLASIFICACION_INDICE, RECURRENCIA)
+ * @param {number} [params.limit]     - Cantidad de registros por página (ej. 24)
+ * @param {number} [params.offset]    - Posición de inicio (ej. 0 para pág 1, 24 para pág 2)
+ * @param {Object} [params.filters]   - Filtros adicionales como key-value (ej. { DMA_LINEANEGOCIO: "LLANTAS" })
+ * @returns {Promise<{ success: boolean, data: Array, total: number }>}
+ */
+export const api_products_getProductsByFieldPaginated = async ({
+  field,
+  value,
+  ordenamiento,
+  limit = 24,
+  offset = 0,
+  filters = {},
+}) => {
+  try {
+    let url = `/productos/getProductos/${field}/${value}`;
+    if (ordenamiento) {
+      url += `/${ordenamiento}`;
+    }
+
+    // Construir query params: limit, offset, y filtros adicionales
+    const queryParams = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+      ...filters,
+    });
+
+    url += `?${queryParams.toString()}`;
+
+
+    const response = await api.get(url);
+
+    return {
+      success: true,
+      message: response.data.message || "Productos obtenidos correctamente",
+      data: response.data.data || [],
+      // El backend debe devolver el total de registros para calcular las páginas
+      total: response.data.total ?? (response.data.data?.length ?? 0),
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message ||
+      "Ocurrió un error al obtener los productos";
+    return {
+      success: false,
+      message,
+      data: [],
+      total: 0,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
  * Obtiene información de productos (incluyendo cantidad)
  * @return {Promise<Object>} - Respuesta de la API
  */

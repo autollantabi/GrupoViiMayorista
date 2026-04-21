@@ -6,7 +6,7 @@ import DataTable from "../../components/ui/Table";
 import { useAppTheme } from "../../context/AppThemeContext";
 import { differenceInHours, format, formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
-import { api_order_getOrdersByAccount } from "../../api/order/apiOrder";
+import { api_order_getOrdersByAccount, api_order_getOrdersBySeller } from "../../api/order/apiOrder";
 import { useAuth } from "../../context/AuthContext";
 import Select from "../../components/ui/Select";
 import SearchBar from "../../components/ui/SearchBar";
@@ -168,23 +168,23 @@ const StatusBadge = styled.span`
   }};
   border: 1px solid
     ${({ theme, status }) => {
-      switch (status) {
-        case "PENDIENTE":
-          return theme.colors.warning + "40";
-        case "PENDIENTE CARTERA":
-          return theme.colors.info + "40";
-        case "CONFIRMADO":
-          return theme.colors.info + "40";
-        case "ENTREGADO":
-          return theme.colors.success + "40";
-        case "CANCELADO":
-          return theme.colors.error + "40";
-        default:
-          return theme.mode === "dark"
-            ? `${theme.colors.border}40`
-            : `${theme.colors.border}30`;
-      }
-    }};
+    switch (status) {
+      case "PENDIENTE":
+        return theme.colors.warning + "40";
+      case "PENDIENTE CARTERA":
+        return theme.colors.info + "40";
+      case "CONFIRMADO":
+        return theme.colors.info + "40";
+      case "ENTREGADO":
+        return theme.colors.success + "40";
+      case "CANCELADO":
+        return theme.colors.error + "40";
+      default:
+        return theme.mode === "dark"
+          ? `${theme.colors.border}40`
+          : `${theme.colors.border}30`;
+    }
+  }};
 `;
 
 const NoOrdersContainer = styled.div`
@@ -235,9 +235,9 @@ const MobileOrderCard = styled.div`
   &:hover {
     transform: translateY(-3px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
-        : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
+    theme.mode === "dark"
+      ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
+      : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
     border-color: ${({ theme }) => theme.colors.primary};
   }
 
@@ -322,7 +322,7 @@ const NoOrdersText = styled.p`
 const MisPedidos = () => {
   const navigate = useNavigate();
   const { theme } = useAppTheme();
-  const { user } = useAuth();
+  const { user, isSeller } = useAuth();
   const [statusFilter, setStatusFilter] = useState("todos");
   const [dateFilter, setDateFilter] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
@@ -367,14 +367,18 @@ const MisPedidos = () => {
   const handleObtainOrders = async () => {
     try {
       setLoading(true);
-      const response = await api_order_getOrdersByAccount(user.ACCOUNT_USER);
+      const response = isSeller
+        ? await api_order_getOrdersBySeller()
+        : await api_order_getOrdersByAccount(user.ACCOUNT_USER);
+
+
       if (response.success && response.data) {
         // Transformar los datos de la API al formato que espera nuestro componente
         const formattedOrders = response.data.map((order) => {
           // Calcular el total si está vacío
           const total = order.CABECERA.TOTAL || order.CABECERA.SUBTOTAL;
           const subtotal = order.CABECERA.SUBTOTAL;
-          
+
           // Calcular el IVA
           const ivaPercentage = order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
           const ivaAmount = total - subtotal; // El IVA es la diferencia entre total y subtotal
@@ -396,6 +400,7 @@ const MisPedidos = () => {
             paymentMethod: "Pendiente", // Este dato no viene en la API
             empresaId: order.CABECERA.ENTERPRISE,
             businessLine: order.CABECERA.BUSINESS_LINE || "N/A", // Línea de negocio
+            clientName: order.CABECERA.USER?.NAME_USER || "N/A", // Nombre del cliente (solo para vendedores)
             // Guardamos la información original para mostrarla en detalles
             originalData: order,
           };
@@ -418,20 +423,24 @@ const MisPedidos = () => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
+
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user?.ACCOUNT_USER) return;
+      if (!isSeller && !user?.ACCOUNT_USER) {
+        return;
+      }
 
       try {
         setLoading(true);
-        const response = await api_order_getOrdersByAccount(user.ACCOUNT_USER);
+        const response = isSeller
+          ? await api_order_getOrdersBySeller()
+          : await api_order_getOrdersByAccount(user.ACCOUNT_USER);
 
         if (response.success && response.data) {
           // Transformar los datos de la API al formato que espera nuestro componente
@@ -439,7 +448,7 @@ const MisPedidos = () => {
             // Calcular el total si está vacío
             const total = order.CABECERA.TOTAL;
             const subtotal = order.CABECERA.SUBTOTAL;
-            
+
             // Calcular el IVA
             const ivaPercentage =
               order.CABECERA.IVA_DETAIL?.IVA_PERCENTAGE || 19; // Por defecto 19%
@@ -463,6 +472,7 @@ const MisPedidos = () => {
               paymentMethod: "Pendiente", // Este dato no viene en la API
               empresaId: order.CABECERA.ENTERPRISE,
               businessLine: order.CABECERA.BUSINESS_LINE || "N/A", // Línea de negocio
+              clientName: order.CABECERA.USER?.NAME_USER || "N/A", // Nombre del cliente (solo para vendedores)
               // Guardamos la información original para mostrarla en detalles
               originalData: order,
             };
@@ -561,18 +571,10 @@ const MisPedidos = () => {
       render: (row) => {
         const date = new Date(row.date);
         const now = new Date();
-        const hoursAgo = differenceInHours(now, date);
-
-        if (hoursAgo >= 1) {
-          // Si pasó más de una hora, mostrar fecha y hora completas
-          return format(date, "d 'de' MMMM, yyyy HH:mm", { locale: es });
-        } else {
-          // Si pasó menos de una hora, mostrar tiempo relativo
-          return formatDistance(date, now, {
-            addSuffix: true, // Añade "hace" al principio
-            locale: es,
-          });
-        }
+        return formatDistance(date, now, {
+          addSuffix: true,
+          locale: es,
+        });
       },
       sortValue: (row) => new Date(row.date).getTime(),
     },
@@ -585,6 +587,12 @@ const MisPedidos = () => {
       field: "businessLine",
       render: (row) => formatBusinessLine(row.businessLine),
     },
+    // Mostrar columna de cliente solo para vendedores
+    ...(isSeller ? [{
+      header: "Cliente",
+      field: "clientName",
+      render: (row) => row.clientName,
+    }] : []),
     // {
     //   header: "Subtotal",
     //   field: "subtotal",
@@ -634,12 +642,12 @@ const MisPedidos = () => {
       text="Detalles"
       variant="outlined"
       size="small"
-      onClick={() => navigate(`/mis-pedidos/${row.id}`)}
+      onClick={() => navigate(`/mis-pedidos/${row.id}`, { state: { orderData: row.originalData } })}
     />
   );
 
   const handleViewDetails = (row) => {
-    navigate(`/mis-pedidos/${row.id}`);
+    navigate(`/mis-pedidos/${row.id}`, { state: { orderData: row.originalData } });
   };
   const statusOptions = [
     { value: "todos", label: "Todos" },
@@ -689,7 +697,7 @@ const MisPedidos = () => {
                 </StatusBadge>
               </MobileOrderStatus>
             </MobileOrderHeader>
-            
+
             <MobileOrderInfo>
               <MobileOrderRow>
                 <MobileOrderLabel>Fecha:</MobileOrderLabel>
@@ -697,38 +705,37 @@ const MisPedidos = () => {
                   {(() => {
                     const date = new Date(order.date);
                     const now = new Date();
-                    const hoursAgo = differenceInHours(now, date);
-
-                    if (hoursAgo >= 1) {
-                      return format(date, "d 'de' MMMM, yyyy HH:mm", {
-                        locale: es,
-                      });
-                    } else {
-                      return formatDistance(date, now, {
-                        addSuffix: true,
-                        locale: es,
-                      });
-                    }
+                    return formatDistance(date, now, {
+                      addSuffix: true,
+                      locale: es,
+                    });
                   })()}
                 </MobileOrderValue>
               </MobileOrderRow>
-              
+
               <MobileOrderRow>
                 <MobileOrderLabel>Proveedor:</MobileOrderLabel>
                 <MobileOrderValue>{order.empresaId}</MobileOrderValue>
               </MobileOrderRow>
-              
+
+              {isSeller && (
+                <MobileOrderRow>
+                  <MobileOrderLabel>Cliente:</MobileOrderLabel>
+                  <MobileOrderValue>{order.clientName}</MobileOrderValue>
+                </MobileOrderRow>
+              )}
+
               <MobileOrderRow>
                 <MobileOrderLabel>Total:</MobileOrderLabel>
                 <MobileOrderValue>${order.total.toFixed(2)}</MobileOrderValue>
               </MobileOrderRow>
-              
+
               <MobileOrderRow>
                 <MobileOrderLabel>Productos:</MobileOrderLabel>
                 <MobileOrderValue>{order.items} items</MobileOrderValue>
               </MobileOrderRow>
             </MobileOrderInfo>
-            
+
             <MobileOrderActions>
               <Button
                 text="Ver detalle"
@@ -753,8 +760,8 @@ const MisPedidos = () => {
           window.innerWidth <= 768
             ? "16px"
             : window.innerWidth <= 480
-            ? "12px"
-            : "24px",
+              ? "12px"
+              : "24px",
       }}
     >
       <PageTitleContainer>

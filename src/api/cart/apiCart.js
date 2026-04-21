@@ -8,7 +8,6 @@ import api from "../../constants/api";
 export const api_cart_getCarrito = async (account) => {
   try {
     const response = await api.get(`/carrito/getCarrito/${account}`);
-
     return {
       success: true,
       message: response.data.message || "Carrito obtenido correctamente",
@@ -82,6 +81,37 @@ export const api_cart_deleteProductsFromCart = async (
     const message =
       error.response?.data?.message ||
       "Ocurrió un error al eliminar los productos del carrito";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Crea un nuevo carrito para un cliente (usado por vendedores al seleccionar cliente)
+ * @param {string} accountUser - Código de cuenta del cliente (ACCOUNT_USER)
+ * @param {string} enterprise  - Empresa asociada al cliente (ENTERPRISE)
+ * @returns {Promise<Object>} { success, message, data }
+ */
+export const api_cart_createCarrito = async (accountUser, enterprise) => {
+  try {
+    const response = await api.post("/vendedores/carrito", {
+      ACCOUNT_USER: accountUser,
+      ENTERPRISE: enterprise,
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      return {
+        success: true,
+        message: response.data.message || "Carrito creado correctamente",
+        data: response.data.data || {},
+      };
+    }
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al crear el carrito";
     return {
       success: false,
       message,

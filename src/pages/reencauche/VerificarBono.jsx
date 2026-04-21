@@ -539,16 +539,11 @@ const VerificarBono = () => {
         const qrResults = await Promise.all(qrPromises);
 
         // Construir los links de verificación usando los QR generados
-        const preUrl =
-          import.meta.env.VITE_NODE_ENV === "production"
-            ? import.meta.env.VITE_PRODUCTION_URL
-            : import.meta.env.VITE_DEVELOPMENT_URL;
-
         const links = qrResults.map(
           (result) =>
-            `${preUrl}${ROUTES.REENCAUCHE.VERIFICAR}?mstr=${encodeURIComponent(
-              result.qrCode
-            )}`
+            `${window.location.origin}${
+              ROUTES.REENCAUCHE.VERIFICAR
+            }?mstr=${encodeURIComponent(result.qrCode)}`
         );
 
         setSubmitting(true);
