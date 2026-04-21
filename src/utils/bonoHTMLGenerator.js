@@ -235,19 +235,8 @@ export const generateCompleteBonosHTML = async (
     )
     .join("");
 
-  // Intentar cargar la plantilla HTML
-  try {
-    const templateResponse = await fetch("/src/templates/bonoPreview.html");
-    const templateHTML = await templateResponse.text();
-
-    // Reemplazar placeholders en la plantilla
-    return templateHTML
-      .replace("{INVOICE_NUMBER}", invoiceNumber)
-      .replace("{PAGES_CONTENT}", pagesHTML);
-  } catch (error) {
-    console.warn("⚠️ No se pudo cargar la plantilla, usando HTML inline");
-    // Fallback: retornar HTML inline con estilos
-    return `
+  // Usar la plantilla directamente como string para evitar problemas de fetch en producción con rutas de /src
+  return `
       <!DOCTYPE html>
       <html>
         <head>
@@ -293,7 +282,7 @@ export const generateCompleteBonosHTML = async (
             .footer-content { text-align: center; font-size: 7px; color: #64748b; position: relative; z-index: 1; }
             .footer-text { margin: 0; display: flex; align-items: center; justify-content: center; gap: 2mm; font-weight: 600; }
             .footer-date { margin: 1mm 0 0 0; display: flex; align-items: center; justify-content: center; gap: 2mm; font-weight: 500; }
-            @media print { body { background: white; padding: 0; } .page-container { margin: 0; box-shadow: none; } }
+            @media print { body { background: white; padding: 0; } .page-container { margin: 0; box-shadow: none; border-radius: 0; } }
           </style>
         </head>
         <body>
@@ -301,5 +290,4 @@ export const generateCompleteBonosHTML = async (
         </body>
       </html>
     `;
-  }
 };

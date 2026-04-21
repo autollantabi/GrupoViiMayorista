@@ -105,6 +105,60 @@ export const previewBonosHTML = async (bonos, cliente, invoiceNumber) => {
 };
 
 /**
+ * Genera el HTML de un solo bono para PDF
+ */
+const generateBonoPDFHTML = async (bono, cliente) => {
+  const qrCodeDataURL = await generateInvoiceQRCode(bono.INVOICENUMBER);
+
+  // Convertir el bono único a un array para usar el generador modular
+  const htmlString = await generateCompleteBonosHTML(
+    [bono],
+    cliente,
+    bono.INVOICENUMBER,
+    qrCodeDataURL
+  );
+
+  // Crear un iframe temporal oculto para parsear el HTML
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  // Escribir el HTML en el iframe
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(htmlString);
+  iframe.contentDocument.close();
+
+  // Crear elemento temporal para html2canvas
+  const tempDiv = document.createElement("div");
+  tempDiv.style.position = "absolute";
+  tempDiv.style.left = "-9999px";
+  tempDiv.style.top = "-9999px";
+  tempDiv.style.width = "210mm";
+  tempDiv.style.backgroundColor = "#ffffff";
+  tempDiv.style.fontFamily = "Arial, sans-serif";
+
+  // Clonar el contenido del body del iframe
+  const iframeBody = iframe.contentDocument.body;
+  tempDiv.innerHTML = iframeBody.innerHTML;
+
+  // Copiar los estilos computados del iframe
+  const iframeStyles = iframe.contentDocument.getElementsByTagName("style");
+  for (let styleEl of iframeStyles) {
+    const newStyle = document.createElement("style");
+    newStyle.textContent = styleEl.textContent;
+    tempDiv.appendChild(newStyle);
+  }
+
+  // Remover el iframe
+  document.body.removeChild(iframe);
+
+  // Agregar el div temporal al documento
+  document.body.appendChild(tempDiv);
+
+  return tempDiv;
+};
+
+/**
  * Genera el HTML del PDF con múltiples bonos en formato de tarjetas
  * Usa el mismo generador que el preview para consistencia
  */
