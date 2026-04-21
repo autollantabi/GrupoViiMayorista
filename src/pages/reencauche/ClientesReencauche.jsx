@@ -1211,30 +1211,39 @@ const ClientesReencauche = () => {
                               </BonosCount>
                             </FacturaInfo>
                             <ButtonsContainer>
-                              <ViewButton
-                                onClick={() =>
-                                  handleRedirectToVerificarBono(invoiceNumber)
-                                }
-                              >
-                                <RenderIcon name="FaEye" size={14} />
-                                Ver
-                              </ViewButton>
-                              <PreviewButton
-                                onClick={() =>
-                                  handlePreviewPDF(invoiceNumber, bonosFactura)
-                                }
-                              >
-                                <RenderIcon name="FaEye" size={14} />
-                                Preview PDF
-                              </PreviewButton>
-                              <PDFButton
-                                onClick={() =>
-                                  handleGeneratePDF(invoiceNumber, bonosFactura)
-                                }
-                              >
-                                <RenderIcon name="FaFilePdf" size={14} />
-                                Descargar PDF
-                              </PDFButton>
+                              <Button
+                                text="Ver"
+                                leftIconName="FaEye"
+                                size="small"
+                                backgroundColor="#10b981"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleRedirectToVerificarBono(invoiceNumber);
+                                }}
+                              />
+                              <Button
+                                text="Preview PDF"
+                                leftIconName="FaEye"
+                                size="small"
+                                variant="solid"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handlePreviewPDF(invoiceNumber, bonosFactura);
+                                }}
+                              />
+                              <Button
+                                text="Descargar PDF"
+                                leftIconName="FaFilePdf"
+                                size="small"
+                                backgroundColor="#ef4444"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleGeneratePDF(invoiceNumber, bonosFactura);
+                                }}
+                              />
                             </ButtonsContainer>
                           </FacturaHeader>
 

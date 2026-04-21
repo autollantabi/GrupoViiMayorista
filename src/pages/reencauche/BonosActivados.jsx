@@ -785,14 +785,17 @@ const BonosActivados = () => {
                           <RenderIcon name="FaTag" size={18} />
                           Master: {grupo.master}
                         </FacturaTitle>
-                        <ViewButton
-                          onClick={() =>
-                            handleRedirectToVerificarBono(grupo.master)
-                          }
-                        >
-                          <RenderIcon name="FaEye" size={12} />
-                          Ver
-                        </ViewButton>
+                        <Button
+                          text="Ver"
+                          leftIconName="FaEye"
+                          size="small"
+                          backgroundColor="#10b981"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRedirectToVerificarBono(grupo.master);
+                          }}
+                        />
                       </div>
                       <FacturaStats>
                         {grupo.totalBonuses} bono

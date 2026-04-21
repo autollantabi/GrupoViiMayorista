@@ -216,6 +216,8 @@ export const api_bonos_verifyQRCodeMaster = async (encryptedMaster) => {
     const response = await api.post("/bonos/verifyQRCodeMaster", {
       qrCode: encryptedMaster,
     });
+
+
     return {
       success: true,
       message:
@@ -319,6 +321,8 @@ export const api_bonos_generateQRMaster = async (master) => {
     const response = await api.post(`/bonos/generateQRMaster`, {
       master: master,
     });
+
+
     return {
       success: true,
       message: response.data.message || "QR generado correctamente",
@@ -554,7 +558,6 @@ export const api_bonos_getSalesDataForBonus = async (codigoSocio, empresas) => {
       data: response.data.data || null,
     };
   } catch (error) {
-    console.log("error", error);
     const message =
       error.response?.data?.message ||
       "Ocurrió un error al obtener los datos de bonos";
