@@ -1010,7 +1010,9 @@ const ProductSpecifications = ({ product }) => {
       if (/^https?:\/\//i.test(trimmed)) {
         technicalSheetUrl = trimmed;
       } else {
-        technicalSheetUrl = `${baseLinkFicha}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
+        // Aseguramos que el base URL esté definido
+        const baseUrl = baseLinkFicha || baseLinkImages || "";
+        technicalSheetUrl = `${baseUrl}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
       }
     }
   }
@@ -1044,7 +1046,20 @@ const ProductSpecifications = ({ product }) => {
             variant="outlined"
             size="small"
             leftIconName="FaFilePdf"
-            onClick={() => window.open(technicalSheetUrl, "_blank")}
+            onClick={async () => {
+              try {
+                // Descargamos el contenido como blob para ocultar la URL real
+                const response = await fetch(technicalSheetUrl);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                window.open(blobUrl, "_blank");
+                // Liberamos la memoria después de abrir
+                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+              } catch (error) {
+                // Fallback en caso de error (ej. CORS)
+                window.open(technicalSheetUrl, "_blank");
+              }
+            }}
           />
         )}
       </SpecificationsHeader>
