@@ -17,7 +17,7 @@ import PageContainer from "../../components/layout/PageContainer";
 import ContactModal from "../../components/ui/ContactModal";
 import SEO from "../../components/seo/SEO";
 import { useProductStructuredData } from "../../hooks/useStructuredData";
-import { baseLinkImages } from "../../constants/links";
+import { baseLinkImages, baseLinkFicha } from "../../constants/links";
 
 const ProductLayout = styled.div`
   display: grid;
@@ -188,7 +188,7 @@ const DescriptionSection = styled.div`
   margin-top: 1.5rem;
   border-top: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   @media (max-width: 768px) {
     margin-top: 1.25rem;
@@ -256,18 +256,18 @@ const StockIndicator = styled.div`
   }};
   border: 1px solid
     ${({ theme, $inStock, $lowStock }) => {
-      if ($inStock)
-        return theme.mode === "dark"
-          ? `${theme.colors.success}30`
-          : `${theme.colors.success}20`;
-      if ($lowStock)
-        return theme.mode === "dark"
-          ? `${theme.colors.warning || "#fbbf24"}30`
-          : `${theme.colors.warning || "#fbbf24"}20`;
+    if ($inStock)
       return theme.mode === "dark"
-        ? `${theme.colors.error}30`
-        : `${theme.colors.error}20`;
-    }};
+        ? `${theme.colors.success}30`
+        : `${theme.colors.success}20`;
+    if ($lowStock)
+      return theme.mode === "dark"
+        ? `${theme.colors.warning || "#fbbf24"}30`
+        : `${theme.colors.warning || "#fbbf24"}20`;
+    return theme.mode === "dark"
+      ? `${theme.colors.error}30`
+      : `${theme.colors.error}20`;
+  }};
   display: flex;
   align-items: center;
   width: max-content;
@@ -304,7 +304,7 @@ const BrandCompanyBadge = styled.div`
       : `${theme.colors.surface}99`};
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   font-size: 0.85rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
@@ -332,11 +332,11 @@ const StockBadge = styled.span`
   font-size: 0.8rem;
   font-weight: 700;
   background-color: ${({ theme, $inStock, $lowStock }) => {
-    const color = $inStock 
-      ? theme.colors.success 
-      : $lowStock 
-      ? theme.colors.warning || "#fbbf24"
-      : theme.colors.error;
+    const color = $inStock
+      ? theme.colors.success
+      : $lowStock
+        ? theme.colors.warning || "#fbbf24"
+        : theme.colors.error;
     // Agregar 85% de opacidad (D9 en hexadecimal)
     return `${color}D9`;
   }};
@@ -448,11 +448,11 @@ const QuantityButton = styled(Button)`
   height: 38px;
   border: 1px solid
     ${({ theme, disabled }) =>
-      disabled
-        ? theme.mode === "dark"
-          ? `${theme.colors.border}40`
-          : `${theme.colors.border}30`
-        : theme.mode === "dark"
+    disabled
+      ? theme.mode === "dark"
+        ? `${theme.colors.border}40`
+        : `${theme.colors.border}30`
+      : theme.mode === "dark"
         ? `${theme.colors.border}40`
         : `${theme.colors.border}30`};
   background-color: ${({ theme, disabled }) =>
@@ -477,8 +477,8 @@ const QuantityButton = styled(Button)`
     disabled
       ? "none"
       : theme.mode === "dark"
-      ? "0 2px 4px rgba(0, 0, 0, 0.1)"
-      : "0 2px 4px rgba(0, 0, 0, 0.04)"};
+        ? "0 2px 4px rgba(0, 0, 0, 0.1)"
+        : "0 2px 4px rgba(0, 0, 0, 0.04)"};
 
   &:first-child {
     border-radius: 10px 0 0 10px;
@@ -490,9 +490,9 @@ const QuantityButton = styled(Button)`
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.primary}15`
-        : `${theme.colors.primary}08`};
+    theme.mode === "dark"
+      ? `${theme.colors.primary}15`
+      : `${theme.colors.primary}08`};
     border-color: ${({ theme }) => theme.colors.primary};
     transform: scale(1.05);
   }
@@ -513,7 +513,7 @@ const QuantityInput = styled.input`
   height: 38px;
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   border-left: none;
   border-right: none;
   text-align: center;
@@ -549,7 +549,7 @@ const SpecificationsSection = styled.div`
   padding-top: 1.25rem;
   border-top: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   @media (max-width: 768px) {
     margin-top: 1.25rem;
@@ -557,14 +557,28 @@ const SpecificationsSection = styled.div`
   }
 `;
 
+const SpecificationsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+`;
+
 const SpecificationsTitle = styled.h3`
-  margin: 0 0 1rem 0;
+  margin: 0;
   font-size: clamp(1.1rem, 2.5vw, 1.25rem);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
 
   @media (max-width: 768px) {
-    margin-bottom: 0.875rem;
+    font-size: 1.1rem;
   }
 `;
 
@@ -582,7 +596,7 @@ const SpecificationsTable = styled.table`
 const SpecRow = styled.tr`
   border-bottom: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
+    theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
 
   &:last-child {
     border-bottom: none;
@@ -597,7 +611,7 @@ const SpecLabel = styled.td`
   font-size: 0.95rem;
   border-right: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
+    theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
 
   @media (max-width: 768px) {
     padding: 0.5rem 0.625rem;
@@ -638,15 +652,15 @@ const SpecCell = styled.td`
         ? `${theme.colors.surface}E6`
         : "#ffffff"
       : theme.mode === "dark"
-      ? `${theme.colors.surface}CC`
-      : "#f8f9fa"};
+        ? `${theme.colors.surface}CC`
+        : "#f8f9fa"};
   transition: background-color 0.2s ease;
 
   &:hover {
     background-color: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.primary}30`
-        : `${theme.colors.primary}15`};
+    theme.mode === "dark"
+      ? `${theme.colors.primary}30`
+      : `${theme.colors.primary}15`};
   }
 
   @media (max-width: 768px) {
@@ -700,7 +714,7 @@ const BreadcrumbsContainer = styled.nav`
   padding: 1rem 0;
   border-bottom: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
   @media (max-width: 768px) {
     margin-bottom: 1.25rem;
@@ -751,9 +765,9 @@ const BreadcrumbLink = styled.button`
 
   &:hover:not([disabled]) {
     background-color: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `${theme.colors.primary}15`
-        : `${theme.colors.primary}08`};
+    theme.mode === "dark"
+      ? `${theme.colors.primary}15`
+      : `${theme.colors.primary}08`};
     color: ${({ theme }) => theme.colors.primary};
   }
 
@@ -799,7 +813,7 @@ const ImageCaption = styled.div`
   margin-top: 0.4rem;
   border-top: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
+    theme.mode === "dark" ? `${theme.colors.border}20` : `${theme.colors.border}15`};
 
   @media (max-width: 768px) {
     margin-top: 0.5rem;
@@ -835,7 +849,7 @@ const MainImageContainer = styled.div`
       : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -843,9 +857,9 @@ const MainImageContainer = styled.div`
 
   &:hover {
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
-        : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
+    theme.mode === "dark"
+      ? "0 8px 30px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2)"
+      : "0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)"};
   }
 
   @media (max-width: 768px) {
@@ -895,7 +909,7 @@ const ImagePlaceholder = styled.div`
   border-radius: 16px;
   border: 2px dashed
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
 
   @media (max-width: 992px) {
     height: 350px;
@@ -932,7 +946,7 @@ const ZoomWindow = styled.div`
   z-index: 5000;
   border: 1px solid
     ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   visibility: ${({ $visible }) => ($visible ? "visible" : "hidden")};
 
   @media (max-width: 992px) {
@@ -950,8 +964,10 @@ const ZoomedImage = styled.div`
   transform-origin: 0 0;
 `;
 
-// En el componente DetalleProducto, agregar esta función para renderizar especificaciones
-const renderSpecifications = (product) => {
+// En el componente DetalleProducto, agregar este componente para renderizar especificaciones
+const ProductSpecifications = ({ product }) => {
+  const [isValidSheet, setIsValidSheet] = useState(false);
+
   if (!product.specs || Object.keys(product.specs).length === 0) {
     return null;
   }
@@ -965,7 +981,7 @@ const renderSpecifications = (product) => {
     .map((specConfig) => {
       const value = product.specs[specConfig.field];
       if (value === null || value === undefined || value === "") return null;
-      
+
       return {
         field: specConfig.field,
         label: specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label,
@@ -980,9 +996,58 @@ const renderSpecifications = (product) => {
     groupedSpecs.push(specsWithValues.slice(i, i + 2));
   }
 
+  // Obtener URL de ficha técnica si existe
+  const technicalSheetUrlRaw =
+    product.originalData?.DMA_RUTAFICHAPDF ||
+    product.originalData?.FICHA_TECNICA ||
+    product.originalData?.DMA_FICHA ||
+    product.ficha_tecnica;
+
+  let technicalSheetUrl = null;
+  if (technicalSheetUrlRaw) {
+    const trimmed = technicalSheetUrlRaw.trim();
+    if (trimmed) {
+      if (/^https?:\/\//i.test(trimmed)) {
+        technicalSheetUrl = trimmed;
+      } else {
+        technicalSheetUrl = `${baseLinkFicha}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
+      }
+    }
+  }
+
+  // Validar si la ficha existe (no es 404)
+  useEffect(() => {
+    let isMounted = true;
+    if (technicalSheetUrl) {
+      fetch(technicalSheetUrl, { method: "HEAD" })
+        .then((response) => {
+          if (isMounted) setIsValidSheet(response.ok);
+        })
+        .catch(() => {
+          if (isMounted) setIsValidSheet(false);
+        });
+    } else {
+      setIsValidSheet(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [technicalSheetUrl]);
+
   return (
     <SpecificationsSection>
-      <SpecificationsTitle>Especificaciones técnicas</SpecificationsTitle>
+      <SpecificationsHeader>
+        <SpecificationsTitle>Especificaciones técnicas</SpecificationsTitle>
+        {technicalSheetUrl && isValidSheet && (
+          <Button
+            text="Ver ficha técnica"
+            variant="outlined"
+            size="small"
+            leftIconName="FaFilePdf"
+            onClick={() => window.open(technicalSheetUrl, "_blank")}
+          />
+        )}
+      </SpecificationsHeader>
       <SpecificationsTable>
         <tbody>
           {groupedSpecs.map((pair, rowIndex) => {
@@ -991,7 +1056,7 @@ const renderSpecifications = (product) => {
               // Patrón: blanca (0,3), gris (1,2) - se repite cada 4 celdas
               return totalCellIndex % 4 === 0 || totalCellIndex % 4 === 3;
             };
-            
+
             return (
               <SpecRow key={`row-${rowIndex}`}>
                 {pair.map((spec, cellIndex) => (
@@ -1350,9 +1415,8 @@ const DetalleProducto = () => {
     if (/^https?:\/\//i.test(trimmed)) {
       return trimmed;
     }
-    return `${baseLinkImages}${
-      trimmed.startsWith("/") ? trimmed.slice(1) : trimmed
-    }`;
+    return `${baseLinkImages}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed
+      }`;
   }, [product?.image]);
 
   useEffect(() => {
@@ -1654,17 +1718,14 @@ const DetalleProducto = () => {
         title={product?.name || "Producto"}
         description={
           product?.description ||
-          `Producto ${product?.name} de la marca ${
-            product?.brand
+          `Producto ${product?.name} de la marca ${product?.brand
           }. Precio: $${priceWithIVA?.toFixed(2)}. Stock disponible.`
         }
-        keywords={`${product?.name}, ${product?.brand}, ${
-          product?.empresa
-        }, neumáticos, repuestos automotrices, ${
-          product?.filtersByType
+        keywords={`${product?.name}, ${product?.brand}, ${product?.empresa
+          }, neumáticos, repuestos automotrices, ${product?.filtersByType
             ? Object.values(product.filtersByType).flat().join(", ")
             : ""
-        }`}
+          }`}
         image={product?.image}
         url={`https://viicommerce.com/productos/${product?.empresaId || resolvedEmpresaId || ""}/${product?.id}`}
         type="product"
@@ -1676,14 +1737,14 @@ const DetalleProducto = () => {
           <ImageSection>
             {/* Nombre del producto */}
             <ProductTitle>{product.name}</ProductTitle>
-            
+
             {/* Categoría */}
             <Category>
               {product.filtersByType &&
-              Object.keys(product.filtersByType).length > 0
+                Object.keys(product.filtersByType).length > 0
                 ? Object.values(product.filtersByType)
-                    .flat() // Aplanar el array de arrays
-                    .join(", ")
+                  .flat() // Aplanar el array de arrays
+                  .join(", ")
                 : "Producto sin categoría"}
             </Category>
 
@@ -1699,9 +1760,8 @@ const DetalleProducto = () => {
                 {product.stock === 0
                   ? "Sin Stock"
                   : product.stock > 100
-                  ? "+100 Unidades"
-                  : `${product.stock} Unidad${
-                      product.stock !== 1 ? "es" : ""
+                    ? "+100 Unidades"
+                    : `${product.stock} Unidad${product.stock !== 1 ? "es" : ""
                     }`}
               </StockBadge>
 
@@ -1722,9 +1782,8 @@ const DetalleProducto = () => {
                 <ZoomedImage
                   src={product.image}
                   style={{
-                    transform: `translate(-${mousePosition.x * 80}%, -${
-                      mousePosition.y * 75
-                    }%)`,
+                    transform: `translate(-${mousePosition.x * 80}%, -${mousePosition.y * 75
+                      }%)`,
                   }}
                 />
               </ZoomWindow>
@@ -1775,7 +1834,7 @@ const DetalleProducto = () => {
                   </>
                 )}
               </div>
-              
+
               {/* Controles de cantidad a la derecha del precio */}
               {isClient && !isVisualizacion && product.stock > 0 && (
                 <QuantitySelector>
@@ -1826,7 +1885,7 @@ const DetalleProducto = () => {
                 </QuantitySelector>
               )}
             </PriceContainer>
-            
+
             {/* Botón de agregar al carrito */}
             {isClient && !isVisualizacion && (
               <AddToCartButtonWrapper>
@@ -1835,21 +1894,21 @@ const DetalleProducto = () => {
                     product.stock === 0
                       ? "FaCartShopping"
                       : currentInCart > 0 && !isButtonHovered
-                      ? "FaCheck"
-                      : "FaCartShopping"
+                        ? "FaCheck"
+                        : "FaCartShopping"
                   }
                   text={
                     product.stock === 0
                       ? "Sin Stock"
                       : currentInCart >= product.stock
-                      ? "Stock máximo en carrito"
-                      : isAddingToCart
-                      ? "Agregando..."
-                      : currentInCart > 0 && !isButtonHovered
-                      ? `${currentInCart} en carrito`
-                      : isButtonHovered && quantity > 0
-                      ? `Agregar ${quantity}`
-                      : "Agregar"
+                        ? "Stock máximo en carrito"
+                        : isAddingToCart
+                          ? "Agregando..."
+                          : currentInCart > 0 && !isButtonHovered
+                            ? `${currentInCart} en carrito`
+                            : isButtonHovered && quantity > 0
+                              ? `Agregar ${quantity}`
+                              : "Agregar"
                   }
                   variant="solid"
                   onClick={handleAddToCart}
@@ -1860,8 +1919,8 @@ const DetalleProducto = () => {
                     product.stock === 0 || currentInCart >= product.stock
                       ? theme.colors.textLight
                       : currentInCart > 0 && !isButtonHovered
-                      ? theme.colors.success
-                      : theme.colors.primary
+                        ? theme.colors.success
+                        : theme.colors.primary
                   }
                   size="medium"
                   style={{ width: "100%" }}
@@ -1878,7 +1937,7 @@ const DetalleProducto = () => {
                 </div>
               </DescriptionSection>
             </Description>
-            {renderSpecifications(product)}
+            <ProductSpecifications product={product} />
           </InfoSection>
         </ProductLayout>
 
