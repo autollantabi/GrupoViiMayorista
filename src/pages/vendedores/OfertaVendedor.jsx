@@ -1234,6 +1234,11 @@ const OfertaVendedor = () => {
     currentY += 20;
     doc.setFont("helvetica", "normal");
     doc.text("Firma: ___________________________________", margin, currentY);
+    
+    // Validez de la oferta
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("VALIDEZ DE LA OFERTA: 7 DIAS", margin, currentY + 10);
 
     // 8. Marcas en el pie de página
     const brandAssets = [
