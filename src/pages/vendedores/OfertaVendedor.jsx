@@ -1122,7 +1122,8 @@ const OfertaVendedor = () => {
     const clientRuc = sellerData.clientAccounts ? sellerData.clientAccounts[selectedCompany] : "";
 
     doc.setFont("helvetica", "bold");
-    doc.text(clientName, 50, 35);
+    const splitClientName = doc.splitTextToSize(clientName, 75);
+    doc.text(splitClientName, 50, 35);
 
     // Información a la derecha (Removido: Número de identificación)
     doc.setFont("helvetica", "normal");
@@ -1134,7 +1135,8 @@ const OfertaVendedor = () => {
 
     // RUC debajo del nombre
     doc.setFontSize(9);
-    doc.text(`RUC/CI: ${clientRuc}`, 50, 42);
+    const rucYOffset = 42 + ((splitClientName.length - 1) * 4);
+    doc.text(`RUC/CI: ${clientRuc}`, 50, rucYOffset);
 
     // 3. Título del Pedido con Número de Cotización Dinámico
     let quoteNumber = "---";
