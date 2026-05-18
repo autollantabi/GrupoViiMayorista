@@ -1342,16 +1342,14 @@ const ProductCard = ({
                   }
                   text={
                     product.stock === 0
-                      ? (
+                      ? product.originalData?.DMA_INVENTARIO?.dias != null ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '2px', padding: '4px 0' }}>
                           <span style={{ fontWeight: '600' }}>Sin Stock</span>
-                          {isB2BSeller && product.originalData?.DMA_INVENTARIO?.dias != null && (
-                            <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
-                              Unidades disponibles en {product.originalData.DMA_INVENTARIO.dias} días
-                            </span>
-                          )}
+                          <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
+                            Unidades disponibles en {product.originalData.DMA_INVENTARIO.dias} días
+                          </span>
                         </div>
-                      )
+                      ) : "Sin Stock"
                       : quantityInCart >= product.stock
                         ? "Stock máximo en carrito"
                         : isAddingToCart
