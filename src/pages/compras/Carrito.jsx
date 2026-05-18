@@ -1850,7 +1850,16 @@ const Carrito = () => {
 
     // Aplicar descuento extra al TOTAL (vendedor)
     const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
-    const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue;
+    const totalConIvaSinEcovalor = subtotalFinalWithIVA - totalExtraDiscountValue;
+
+    let groupEcovalor = 0;
+    lineData.items.forEach(item => {
+      const lineaItem = (item.lineaNegocio || "").toUpperCase();
+      if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
+      else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+    });
+
+    const totalConIva = totalConIvaSinEcovalor + groupEcovalor;
 
     // Obtener el ACCOUNT_USER correcto
     let accountUser = user.ACCOUNT_USER;
@@ -1890,6 +1899,7 @@ const Carrito = () => {
       ADITIONAL_DISCOUNT: 0, // No mandamos descuento de línea plano, ya va en el precio/subtotal
       OFFER_TOTAL_DISCOUNT: extraTotalDiscountPct,
       EXTRA_DISCOUNT: isB2BSeller ? extraTotalDiscountPct : 0,
+      ECOVALOR: groupEcovalor,
       TOTAL: totalConIva,
       PRODUCTOS: productsToProcess,
     };
@@ -2478,7 +2488,15 @@ const Carrito = () => {
                   const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + (i.discountAmt * i.quantity), 0);
                   const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
                   const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
-                  const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue;
+                  
+                  let groupEcovalor = 0;
+                  lineData.items.forEach(item => {
+                    const lineaItem = (item.lineaNegocio || "").toUpperCase();
+                    if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
+                    else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+                  });
+
+                  const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
 
                   const companyData = groupedCart[selectedCompany];
 
@@ -2499,6 +2517,12 @@ const Carrito = () => {
                         <SummaryRow>
                           <SummaryLabel>Descuento Extra Oferta ({extraTotalDiscountPct}%):</SummaryLabel>
                           <SummaryValue style={{ color: "#ef4444" }}>-${totalExtraDiscountValue.toFixed(2)}</SummaryValue>
+                        </SummaryRow>
+                      )}
+                      {groupEcovalor > 0 && (
+                        <SummaryRow>
+                          <SummaryLabel>Ecovalor:</SummaryLabel>
+                          <SummaryValue>${groupEcovalor.toFixed(2)}</SummaryValue>
                         </SummaryRow>
                       )}
                       <SummaryRow>

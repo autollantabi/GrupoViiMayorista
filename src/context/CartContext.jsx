@@ -161,14 +161,26 @@ export function CartProvider({ children }) {
       const totalDiscountValue = subtotalAfterAditional * (extraTotalDiscount / 100);
       const subtotalFinalConDescuentoTotal = subtotalAfterAditional - totalDiscountValue;
 
+      // 6.2 Calcular ecovalor
+      const totalEcovalor = items.reduce((acc, item) => {
+        let ecovalorUnit = 0;
+        const linea = (item.lineaNegocio || "").toUpperCase();
+        if (linea === "LLANTAS") {
+          ecovalorUnit = 1;
+        } else if (linea === "LLANTAS MOTO") {
+          ecovalorUnit = 0.5;
+        }
+        return acc + (ecovalorUnit * item.quantity);
+      }, 0);
+
       // 7. IVA (si tienes un valor por empresa, úsalo, si no, pon 0)
       const ivaPct = user?.IVA || TAXES.IVA_PERCENTAGE;
       const valorIVA =
         (subtotalFinalConDescuentoTotal < 0 ? 0 : subtotalFinalConDescuentoTotal) *
         (ivaPct / 100);
-      // 8. Total con IVA
+      // 8. Total con IVA y Ecovalor
       const totalConIva =
-        (subtotalFinalConDescuentoTotal < 0 ? 0 : subtotalFinalConDescuentoTotal) + valorIVA;
+        (subtotalFinalConDescuentoTotal < 0 ? 0 : subtotalFinalConDescuentoTotal) + valorIVA + totalEcovalor;
 
       total += totalConIva;
     });

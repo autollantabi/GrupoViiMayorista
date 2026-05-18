@@ -926,6 +926,15 @@ const OfertaVendedor = () => {
     const companyTotalOfferDiscount = subtotalAfterGeneral * (totalExtraDiscount / 100);
     const subtotalFinal = subtotalAfterGeneral - companyTotalOfferDiscount;
 
+    let companyEcovalor = 0;
+    items.forEach(item => {
+      const linea = (item.lineaNegocio || "").toUpperCase();
+      let ecovalorUnit = 0;
+      if (linea === "LLANTAS") ecovalorUnit = 1;
+      else if (linea === "LLANTAS MOTO") ecovalorUnit = 0.5;
+      companyEcovalor += ecovalorUnit * item.quantity;
+    });
+
     const ivaPct = user?.IVA || TAXES.IVA_PERCENTAGE;
     const companyIva = (subtotalFinal < 0 ? 0 : subtotalFinal) * (ivaPct / 100);
 
@@ -934,8 +943,10 @@ const OfertaVendedor = () => {
       promoAndExtraDiscount: companyPromoAndExtra,
       generalDiscount: companyGeneralDiscount,
       totalOfferDiscount: companyTotalOfferDiscount,
+      subtotalFinal: subtotalFinal < 0 ? 0 : subtotalFinal,
+      ecovalor: companyEcovalor,
       iva: companyIva,
-      finalTotal: (subtotalFinal < 0 ? 0 : subtotalFinal) + companyIva
+      finalTotal: (subtotalFinal < 0 ? 0 : subtotalFinal) + companyIva + companyEcovalor
     };
   };
 
@@ -1023,7 +1034,17 @@ const OfertaVendedor = () => {
       // 3. Descuento Extra Total
       const subtotalFinal = currentSubtotal * (1 - totalExtraDiscount / 100);
       const ivaAmount = (subtotalFinal < 0 ? 0 : subtotalFinal) * (ivaPct / 100);
-      const groupFinalTotal = (subtotalFinal < 0 ? 0 : subtotalFinal) + ivaAmount;
+
+      let groupEcovalor = 0;
+      products.forEach(p => {
+        const linea = (p.lineaNegocio || "").toUpperCase();
+        let ecovalorUnit = 0;
+        if (linea === "LLANTAS") ecovalorUnit = 1;
+        else if (linea === "LLANTAS MOTO") ecovalorUnit = 0.5;
+        groupEcovalor += ecovalorUnit * p.quantity;
+      });
+
+      const groupFinalTotal = (subtotalFinal < 0 ? 0 : subtotalFinal) + ivaAmount + groupEcovalor;
 
       const proformaData = {
         ENTERPRISE: selectedCompany,
@@ -1032,6 +1053,7 @@ const OfertaVendedor = () => {
         SAP_DISCOUNT: sapDiscountPctHeader,
         ADITIONAL_DISCOUNT: 0,
         TOTAL: groupFinalTotal,
+        ECOVALOR: groupEcovalor,
         BUSINESS_LINE: line,
         IVA: 1,
         CODE_SELLER: user.UUID || user.ID_USER || "",
@@ -1217,7 +1239,12 @@ const OfertaVendedor = () => {
 
     doc.text("Subtotal", summaryX, currentY);
     doc.rect(valueX - boxWidth, currentY - 4.5, boxWidth, 6);
-    doc.text(`USD ${(totals.finalTotal / (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100)).toFixed(2)}`, valueX - 2, currentY, { align: "right" });
+    doc.text(`USD ${totals.subtotalFinal.toFixed(2)}`, valueX - 2, currentY, { align: "right" });
+
+    currentY += 7;
+    doc.text("Ecovalor", summaryX, currentY);
+    doc.rect(valueX - boxWidth, currentY - 4.5, boxWidth, 6);
+    doc.text(`USD ${totals.ecovalor.toFixed(2)}`, valueX - 2, currentY, { align: "right" });
 
     currentY += 7;
     doc.text("Impuesto", summaryX, currentY);
@@ -1369,6 +1396,12 @@ const OfertaVendedor = () => {
           <SummaryRow style={{ color: "#ef4444" }}>
             <span>Descuento Cliente / Empresa (IVA Incl.):</span>
             <span>-${(totals.generalDiscount * (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100)).toFixed(2)}</span>
+          </SummaryRow>
+        )}
+        {totals.ecovalor > 0 && (
+          <SummaryRow>
+            <span>Ecovalor:</span>
+            <span>${totals.ecovalor.toFixed(2)}</span>
           </SummaryRow>
         )}
         {/* Descuento extra al total eliminado según requerimiento */}
