@@ -1890,6 +1890,9 @@ const Carrito = () => {
     const spancopCodeStr = sessionStorage.getItem("CODIGO_DATOS_SPANCOP");
     const proformaHeaderStr = sessionStorage.getItem("PROFORMA_HEADER");
 
+    // Obtener SOURCE de sessionStorage
+    const clientSource = sessionStorage.getItem("SOURCE") || "";
+
     const orderToProcess = {
       ENTERPRISE: company,
       ACCOUNT_USER: accountUser,
@@ -1902,6 +1905,7 @@ const Carrito = () => {
       ECOVALOR: groupEcovalor,
       TOTAL: totalConIva,
       PRODUCTOS: productsToProcess,
+      SOURCE: clientSource || ""
     };
 
     // Agregar PROFORMA_HEADER si el usuario es VENDEDOR B2B
@@ -2488,7 +2492,7 @@ const Carrito = () => {
                   const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + (i.discountAmt * i.quantity), 0);
                   const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
                   const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
-                  
+
                   let groupEcovalor = 0;
                   lineData.items.forEach(item => {
                     const lineaItem = (item.lineaNegocio || "").toUpperCase();

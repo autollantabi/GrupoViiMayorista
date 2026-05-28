@@ -661,6 +661,7 @@ const SeleccionClienteModal = ({ isOpen, onClose, onSelectClient, onSkip }) => {
 
     // Para otros casos (SAP, AMBOS o no B2B), proceder directamente y limpiar el código de spancop
     sessionStorage.removeItem("CODIGO_DATOS_SPANCOP");
+    sessionStorage.setItem("SOURCE", client.SOURCE || "");
     onSelectClient(client);
   };
 
@@ -669,6 +670,7 @@ const SeleccionClienteModal = ({ isOpen, onClose, onSelectClient, onSkip }) => {
 
     // Guardar SPANCOP seleccionado en sessionStorage
     sessionStorage.setItem("CODIGO_DATOS_SPANCOP", spancop.CODIGO_DATOS_SPANCOP);
+    sessionStorage.setItem("SOURCE", pendingClient.SOURCE || "");
 
     onSelectClient(pendingClient);
   };

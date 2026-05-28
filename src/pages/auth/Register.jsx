@@ -56,9 +56,9 @@ const FormCard = styled(FlexBoxComponent)`
     width: 300px;
     height: 300px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `radial-gradient(circle, ${theme.colors.primary}10 0%, transparent 70%)`
-        : `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`};
+    theme.mode === "dark"
+      ? `radial-gradient(circle, ${theme.colors.primary}10 0%, transparent 70%)`
+      : `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`};
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -67,9 +67,9 @@ const FormCard = styled(FlexBoxComponent)`
   &:hover {
     transform: translateY(-4px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark"
-        ? "0 25px 70px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.25)"
-        : "0 25px 70px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)"};
+    theme.mode === "dark"
+      ? "0 25px 70px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.25)"
+      : "0 25px 70px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)"};
   }
 
   > * {
@@ -190,9 +190,8 @@ const StepDot = styled.div`
   border-radius: 50%;
   background: ${({ theme, $active }) =>
     $active
-      ? `linear-gradient(135deg, ${theme.colors.primary}, ${
-          theme.colors.accent || theme.colors.primary
-        })`
+      ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.accent || theme.colors.primary
+      })`
       : theme.colors.border};
   margin: 0;
   transition: all 0.3s ease;
@@ -445,19 +444,15 @@ const StyledPageContainer = styled.div`
     right: 0;
     bottom: 0;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `radial-gradient(circle at 20% 50%, ${
-            theme.colors.primary
-          }12 0%, transparent 50%),
-           radial-gradient(circle at 80% 80%, ${
-             theme.colors.accent || theme.colors.primary
-           }08 0%, transparent 50%)`
-        : `radial-gradient(circle at 20% 50%, ${
-            theme.colors.primary
-          }10 0%, transparent 50%),
-           radial-gradient(circle at 80% 80%, ${
-             theme.colors.accent || theme.colors.primary
-           }06 0%, transparent 50%)`};
+    theme.mode === "dark"
+      ? `radial-gradient(circle at 20% 50%, ${theme.colors.primary
+      }12 0%, transparent 50%),
+           radial-gradient(circle at 80% 80%, ${theme.colors.accent || theme.colors.primary
+      }08 0%, transparent 50%)`
+      : `radial-gradient(circle at 20% 50%, ${theme.colors.primary
+      }10 0%, transparent 50%),
+           radial-gradient(circle at 80% 80%, ${theme.colors.accent || theme.colors.primary
+      }06 0%, transparent 50%)`};
     pointer-events: none;
     z-index: 0;
   }
@@ -470,9 +465,9 @@ const StyledPageContainer = styled.div`
     width: 600px;
     height: 600px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`
-        : `radial-gradient(circle, ${theme.colors.primary}06 0%, transparent 70%)`};
+    theme.mode === "dark"
+      ? `radial-gradient(circle, ${theme.colors.primary}08 0%, transparent 70%)`
+      : `radial-gradient(circle, ${theme.colors.primary}06 0%, transparent 70%)`};
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
@@ -668,6 +663,7 @@ const Register = () => {
     try {
       // Llamar a la función de verificación del AuthContext
       const response = await verifyIdentification(identification);
+      console.log("response", response);
 
       if (response.success) {
         // Verificar si hay emails asociados
