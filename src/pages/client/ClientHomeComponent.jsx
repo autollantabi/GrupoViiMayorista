@@ -1646,7 +1646,6 @@ const ClientHomeComponent = () => {
       //     user.EMAIL,
       //     "REENCAUCHE"
       //   );
-      //   console.log("Access sections:", response);
       // }
     };
     fetchAccessSections();

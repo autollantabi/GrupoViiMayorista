@@ -3,6 +3,7 @@ import styled, { keyframes } from "styled-components";
 import { api_vendedores_getClientes } from "../../api/vendedores/apiVendedores";
 import RenderIcon from "../ui/RenderIcon";
 import RenderLoader from "../ui/RenderLoader";
+import { useAuth } from "../../context/AuthContext";
 
 /* ─────────────────────────── Animations ─────────────────────────── */
 const fadeIn = keyframes`
@@ -561,8 +562,8 @@ const SpancopLetterSquare = styled.div`
  * @param {function} onSkip           - Entrar al catálogo sin seleccionar cliente
  */
 const SeleccionClienteModal = ({ isOpen, onClose, onSelectClient, onSkip }) => {
+  const { isB2BSeller: isB2B } = useAuth();
   const [clientes, setClientes] = useState([]);
-  const [vendedorRole, setVendedorRole] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -583,7 +584,6 @@ const SeleccionClienteModal = ({ isOpen, onClose, onSelectClient, onSkip }) => {
         if (!cancelled) {
           if (res.success && res.data?.SOCIOS) {
             setClientes(res.data.SOCIOS);
-            setVendedorRole(res.data.ROLE_USER);
           } else {
             setError(res.message || "No se pudieron obtener los clientes");
             setClientes([]);
@@ -649,7 +649,7 @@ const SeleccionClienteModal = ({ isOpen, onClose, onSelectClient, onSkip }) => {
     return nameStr.slice(0, 2).toUpperCase();
   };
 
-  const isB2B = vendedorRole === 1008;
+
 
   const handleSelectClient = (client) => {
     // Si el vendedor es B2B y el cliente tiene SOURCE "B2B" o "B2B-SAP" y tiene SPANCOPs, mostrar paso de selección

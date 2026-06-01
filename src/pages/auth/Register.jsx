@@ -663,7 +663,6 @@ const Register = () => {
     try {
       // Llamar a la función de verificación del AuthContext
       const response = await verifyIdentification(identification);
-      console.log("response", response);
 
       if (response.success) {
         // Verificar si hay emails asociados

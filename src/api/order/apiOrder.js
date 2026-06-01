@@ -34,7 +34,6 @@ export const api_order_getOrdersByAccount = async (account) => {
  */
 export const api_order_createOrder = async (orderData) => {
   try {
-    console.log(orderData);
     const response = await api.post("/pedidos/createPedido", orderData);
     return {
       success: true,
@@ -61,7 +60,6 @@ export const api_order_createOrder = async (orderData) => {
 export const api_order_getOrderById = async (orderId) => {
   try {
     const response = await api.get(`/pedidos/getPedidosByOrder/${orderId}`);
-    console.log(response.data);
     return {
       success: true,
       message: response.data.message || "Pedido obtenido correctamente",
