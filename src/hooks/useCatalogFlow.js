@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useProductCatalog } from "../context/ProductCatalogContext";
 import { useAuth } from "../context/AuthContext";
 import catalogFlowConfig from "../config/catalogFlow.json";
+import { searchProducts } from "./useSearchUtil";
 
 // Array vacío estable para evitar crear nuevas referencias en cada render
 const EMPTY_ARRAY = [];
@@ -19,6 +20,7 @@ const useCatalogFlow = (
   const [isInitialized, setIsInitialized] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingFilter, setEditingFilter] = useState(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
 
   // Refs para acceder a los valores actuales sin incluirlos como dependencias
   const selectedLineaRef = React.useRef(selectedLinea);
@@ -658,19 +660,7 @@ const useCatalogFlow = (
     });
 
     // Aplicar búsqueda por texto desde la URL
-    if (urlSearchQuery.trim()) {
-      const query = urlSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter((product) => {
-        const name = (product.name || "").toLowerCase();
-        const brand = (product.brand || "").toLowerCase();
-        const category = (product.specs?.categoria || "").toLowerCase();
-        return (
-          name.includes(query) ||
-          brand.includes(query) ||
-          category.includes(query)
-        );
-      });
-    }
+    filtered = searchProducts(filtered, urlSearchQuery);
 
     setFilteredProducts(filtered);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1093,22 +1083,7 @@ const useCatalogFlow = (
     });
 
     // Aplicar búsqueda por texto desde la URL si existe (para que los conteos sean consistentes)
-    if (urlSearchQuery.trim()) {
-      const query = urlSearchQuery.toLowerCase().trim();
-      baseFilteredProducts = baseFilteredProducts.filter((product) => {
-        const name = (product.name || "").toLowerCase();
-        const brand = (product.brand || "").toLowerCase();
-        const category = (product.specs?.categoria || "").toLowerCase();
-        const description = (product.description || "").toLowerCase();
-
-        return (
-          name.includes(query) ||
-          brand.includes(query) ||
-          category.includes(query) ||
-          description.includes(query)
-        );
-      });
-    }
+    baseFilteredProducts = searchProducts(baseFilteredProducts, urlSearchQuery);
 
     // Duplicados permitidos según requerimiento
 
@@ -1161,23 +1136,9 @@ const useCatalogFlow = (
             }
           );
 
-          // Aplicar búsqueda por texto desde la URL si existe (igual que en filteredProducts)
-          if (urlSearchQuery.trim()) {
-            const query = urlSearchQuery.toLowerCase().trim();
-            filteredForCount = filteredForCount.filter((product) => {
-              const name = (product.name || "").toLowerCase();
-              const brand = (product.brand || "").toLowerCase();
-              const category = (product.specs?.categoria || "").toLowerCase();
-              const description = (product.description || "").toLowerCase();
-
-              return (
-                name.includes(query) ||
-                brand.includes(query) ||
-                category.includes(query) ||
-                description.includes(query)
-              );
-            });
-          }
+          // Nota: la búsqueda por texto ya fue aplicada antes sobre baseFilteredProducts,
+          // por lo que filteredForCount (que parte de ese array) ya respeta el searchQuery.
+          // No es necesario volver a ejecutar searchProducts aquí (evita recalcular Fuse N veces)
 
           // Ahora contar cuántos productos tendrían este valor específico
           // Normalizar el valor para comparación
@@ -1382,6 +1343,8 @@ const useCatalogFlow = (
       }
 
       searchTimeoutRef.current = setTimeout(() => {
+        setDebouncedSearchQuery(query);
+        
         if (updateURL && isInitialized) {
           syncURL({
             selectedLinea,
@@ -1390,7 +1353,7 @@ const useCatalogFlow = (
             searchQuery: query,
           });
         }
-      }, 500); // 500ms de debounce
+      }, 700); // 500ms de debounce
     },
     [
       selectedLinea,

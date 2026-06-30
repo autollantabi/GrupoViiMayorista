@@ -1266,7 +1266,7 @@ const Catalog = () => {
         ) : (
           <FilterCards
             step={currentStep}
-            options={currentStepOptions}
+            // options={currentStepOptions}
             selectedValue={selectedValues[currentStep?.id]}
             onSelect={handleFilterSelect}
           />
