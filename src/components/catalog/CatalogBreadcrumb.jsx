@@ -1,6 +1,7 @@
-import React from "react";
 import styled from "styled-components";
 import RenderIcon from "../ui/RenderIcon";
+import { useVendedorAsignado } from "../../hooks/useVendedorAsignado";
+import VendedorAsignado from "./VendedorAsignado";
 
 const BreadcrumbContainer = styled.nav`
   position: sticky;
@@ -177,7 +178,11 @@ const CatalogBreadcrumb = ({
   isSeller,
   authorizedCompanies = [],
   selectedClientName = "",
+  empresaName
 }) => {
+
+  const { vendedores, loading: loadingVendedor, error: errorVendedor } = useVendedorAsignado(empresaName);
+
   const selectedLineaData = availableLines.find(
     (line) => line.key === selectedLinea
   );
@@ -333,6 +338,12 @@ const CatalogBreadcrumb = ({
                 </BreadcrumbList>
               </BreadcrumbSectionFilters>
             )}
+
+            <VendedorAsignado
+              vendedores={vendedores}
+              loading={loadingVendedor}
+              error={errorVendedor}
+            />
           </>
         )}
       </BreadcrumbContent>

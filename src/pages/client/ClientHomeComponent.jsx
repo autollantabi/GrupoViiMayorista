@@ -1542,6 +1542,7 @@ const ClientHomeComponent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingCart, setIsCreatingCart] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
 
   const [accessSections, setAccessSections] = useState([]);
 

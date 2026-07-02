@@ -1204,7 +1204,9 @@ const Catalog = () => {
           currentStep={currentStep}
           flowConfig={flowConfig}
           isAtProductView={isAtProductView}
+          empresaName={empresaName}
         />
+        
 
         <MainContentProducts>
           <ContentWithFilters>
