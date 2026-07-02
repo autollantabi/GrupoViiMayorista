@@ -287,15 +287,364 @@ const OrderSummary = styled.div`
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   padding: 2rem;
   height: fit-content;
-  position: sticky;
-  top: 70px;
 
   @media (max-width: 768px) {
     border-radius: 16px;
     padding: 1.5rem;
-    position: static;
   }
 `;
+
+const SummarySidebar = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: fit-content;
+
+  @media (min-width: 900px) {
+    position: sticky;
+    top: 70px;
+  }
+`;
+
+const COMPANY_SLIDES = {
+  AUTOLLANTA: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Llantas Premium de Alta Gama",
+      subtitle: "Seguridad, control y durabilidad garantizada para tu vehículo"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "El Stock Más Completo",
+      subtitle: "Distribución directa a nivel nacional con precios de distribuidor"
+    }
+  ],
+  MAXXIMUNDO: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Lubricantes de Alta Tecnología",
+      subtitle: "Protección superior contra el desgaste en condiciones extremas"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "Distribución Directa",
+      subtitle: "Lubricantes premium para todo tipo de motor"
+    }
+  ],
+  STOX: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Logística Inteligente y Abastecimiento",
+      subtitle: "Socio estratégico de tu negocio con entregas a tiempo"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "Soluciones Industriales Integrales",
+      subtitle: "Optimiza tus operaciones con productos de alto rendimiento"
+    }
+  ],
+  IKONIX: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Tecnología Automotriz Innovadora",
+      subtitle: "Accesorios inteligentes y equipamiento de última generación"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "Sistemas de Iluminación Avanzados",
+      subtitle: "Visibilidad perfecta y seguridad para viajes nocturnos"
+    }
+  ],
+  AUTOMAX: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Servicios Especializados Automotrices",
+      subtitle: "Garantía de calidad con tecnología de punta en cada componente"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "Rendimiento Deportivo y Urbano",
+      subtitle: "Encuentra la combinación ideal para cualquier tipo de terreno"
+    }
+  ],
+  DEFAULT: [
+    {
+      url: "https://placehold.co/500x500",
+      title: "Portal Mayorista Grupo VII",
+      subtitle: "Tu canal de distribución oficial para llantas, lubricantes y repuestos"
+    },
+    {
+      url: "https://placehold.co/500x500",
+      title: "Variedad, Stock y Calidad Garantizada",
+      subtitle: "Los mejores precios del mercado con soporte especializado"
+    }
+  ]
+};
+
+const CartSliderSection = styled.div`
+  width: 100%;
+  box-sizing: border-box;
+  animation: fadeIn 0.8s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const CartSliderContainer = styled.div`
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15)"
+      : "0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+`;
+
+const CartSliderTrack = styled.div`
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transform: ${({ activeIndex }) => `translateX(-${activeIndex * 100}%)`};
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+const CartSlide = styled.div`
+  min-width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const CartSliderImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+`;
+
+const CartSlideOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(15, 23, 42, 0.85) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.85) 100%)"};
+  z-index: 2;
+`;
+
+const CartSlideContent = styled.div`
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 0 2rem;
+  color: ${({ theme }) => theme.colors.text};
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+  align-items: center;
+`;
+
+const CartSlideTitle = styled.h3`
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+  color: ${({ theme }) => theme.colors.text};
+  text-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 4px rgba(0, 0, 0, 0.6)"
+      : "0 1px 2px rgba(255, 255, 255, 0.8)"};
+`;
+
+const CartSlideSubtitle = styled.p`
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin: 0;
+  line-height: 1.4;
+  text-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 1px 2px rgba(0, 0, 0, 0.6)"
+      : "0 1px 2px rgba(255, 255, 255, 0.8)"};
+`;
+
+const CartSliderArrow = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: ${({ theme }) =>
+    theme.mode === "dark" ? "rgba(30, 41, 59, 0.75)" : "rgba(255, 255, 255, 0.75)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)"};
+  color: ${({ theme }) => theme.colors.text};
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  left: ${({ direction }) => (direction === "left" ? "1rem" : "auto")};
+  right: ${({ direction }) => (direction === "right" ? "1rem" : "auto")};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}40`};
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    left: ${({ direction }) => (direction === "left" ? "0.5rem" : "auto")};
+    right: ${({ direction }) => (direction === "right" ? "0.5rem" : "auto")};
+  }
+`;
+
+const CartSliderDots = styled.div`
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const CartSliderDot = styled.button`
+  width: ${({ active }) => (active ? "18px" : "6px")};
+  height: 6px;
+  border-radius: 3px;
+  background: ${({ active, theme }) =>
+    active ? theme.colors.primary : theme.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.2)"};
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary};
+    opacity: 0.8;
+  }
+`;
+
+const CartImageSlider = ({ empresaName }) => {
+  const activeCompany = (empresaName || "").toUpperCase();
+  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const timerRef = useRef(null);
+
+  // Reset image slider index when company changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [activeCompany]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  }, [slides.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  }, [slides.length]);
+
+  const goToSlide = (index) => {
+    setCurrentIndex(index);
+  };
+
+  // Autoplay hook
+  useEffect(() => {
+    if (isHovered || slides.length <= 1) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      nextSlide();
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [nextSlide, isHovered, slides.length]);
+
+  if (!slides || slides.length === 0) return null;
+
+  return (
+    <CartSliderSection>
+      <CartSliderContainer
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <CartSliderTrack activeIndex={currentIndex}>
+          {slides.map((slide, idx) => (
+            <CartSlide key={idx}>
+              <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
+              <CartSlideOverlay />
+              {(slide.title || slide.subtitle) && (
+                <CartSlideContent>
+                  {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
+                  {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
+                </CartSlideContent>
+              )}
+            </CartSlide>
+          ))}
+        </CartSliderTrack>
+
+        {slides.length > 1 && (
+          <>
+            <CartSliderArrow direction="left" onClick={prevSlide} aria-label="Anterior">
+              <RenderIcon name="FaChevronLeft" size={16} />
+            </CartSliderArrow>
+            <CartSliderArrow direction="right" onClick={nextSlide} aria-label="Siguiente">
+              <RenderIcon name="FaChevronRight" size={16} />
+            </CartSliderArrow>
+            <CartSliderDots>
+              {slides.map((_, idx) => (
+                <CartSliderDot
+                  key={idx}
+                  active={currentIndex === idx}
+                  onClick={() => goToSlide(idx)}
+                  aria-label={`Ir a diapositiva ${idx + 1}`}
+                />
+              ))}
+            </CartSliderDots>
+          </>
+        )}
+      </CartSliderContainer>
+    </CartSliderSection>
+  );
+};
 
 const SummaryTitle = styled.h2`
   font-size: clamp(1.2rem, 3vw, 1.4rem);
@@ -2454,183 +2803,186 @@ const Carrito = () => {
           </ShippingSection>
         </div>
 
-        <OrderSummary>
-          <SummaryTitle>Resumen del pedido</SummaryTitle>
+        <SummarySidebar>
+          <OrderSummary>
+            <SummaryTitle>Resumen del pedido</SummaryTitle>
 
-          <Button
-            text="Seguir comprando"
-            variant="outlined"
-            style={{ width: "100%", marginTop: "0px", marginBottom: "12px" }}
-            onClick={() => navigate(getCatalogUrl())}
-          />
-          <div
-            style={{
-              borderTop: `1px solid ${theme.colors.border}`,
-              marginBottom: "12px",
-            }}
-          ></div>
-          {/* Resumen por empresa y línea */}
-          {selectedCompany && groupedCart[selectedCompany] && (
-            <>
-              {Object.entries(groupedCart[selectedCompany].lines).map(
-                ([line, lineData]) => {
-                  const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+            <Button
+              text="Seguir comprando"
+              variant="outlined"
+              style={{ width: "100%", marginTop: "0px", marginBottom: "12px" }}
+              onClick={() => navigate(getCatalogUrl())}
+            />
+            <div
+              style={{
+                borderTop: `1px solid ${theme.colors.border}`,
+                marginBottom: "12px",
+              }}
+            ></div>
+            {/* Resumen por empresa y línea */}
+            {selectedCompany && groupedCart[selectedCompany] && (
+              <>
+                {Object.entries(groupedCart[selectedCompany].lines).map(
+                  ([line, lineData]) => {
+                    const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
 
-                  const extraProductDiscounts = offerData?.items || {};
-                  const extraTotalDiscountPct = offerData?.total || 0;
-                  const previewDiscounts = offerData?.previews || {};
-                  const preview = previewDiscounts[selectedCompany];
+                    const extraProductDiscounts = offerData?.items || {};
+                    const extraTotalDiscountPct = offerData?.total || 0;
+                    const previewDiscounts = offerData?.previews || {};
+                    const preview = previewDiscounts[selectedCompany];
 
-                  const itemsWithIVA = lineData.items.map((item) => {
-                    const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
-                    const extraDiscount = extraProductDiscounts[item.id] || 0;
-                    const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
-                    const totalPct = (promoDiscount + extraDiscount) / 100;
+                    const itemsWithIVA = lineData.items.map((item) => {
+                      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+                      const extraDiscount = extraProductDiscounts[item.id] || 0;
+                      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
+                      const totalPct = (promoDiscount + extraDiscount) / 100;
 
-                    const discountedPrice = item.price * (1 - totalPct);
-                    const priceWithIVABeforeClient = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
+                      const discountedPrice = item.price * (1 - totalPct);
+                      const priceWithIVABeforeClient = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
 
-                    const lineaItem = (item.lineaNegocio || "").toUpperCase();
-                    let itemClientDiscountPct = 0;
-                    if (preview?.DESCUENTO_CLIENTE) {
-                      if (lineaItem === "LUBRICANTES") {
-                        itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0;
+                      const lineaItem = (item.lineaNegocio || "").toUpperCase();
+                      let itemClientDiscountPct = 0;
+                      if (preview?.DESCUENTO_CLIENTE) {
+                        if (lineaItem === "LUBRICANTES") {
+                          itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0;
+                        } else {
+                          itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+                        }
                       } else {
-                        itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+                        const discountKey = lineData.discountKey || line;
+                        const potentialDiscount = user?.DESCUENTOS?.[selectedCompany];
+                        itemClientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === 'number' ? potentialDiscount : 0);
                       }
-                    } else {
-                      const discountKey = lineData.discountKey || line;
-                      const potentialDiscount = user?.DESCUENTOS?.[selectedCompany];
-                      itemClientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === 'number' ? potentialDiscount : 0);
-                    }
 
-                    const discountAmt = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
-                    const finalPriceIVA = priceWithIVABeforeClient - discountAmt;
+                      const discountAmt = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
+                      const finalPriceIVA = priceWithIVABeforeClient - discountAmt;
 
-                    return {
-                      ...item,
-                      priceWithIVABeforeClient,
-                      discountAmt,
-                      finalPriceIVA,
-                      totalWithIVA: finalPriceIVA * item.quantity,
-                      totalBeforeClientWithIVA: priceWithIVABeforeClient * item.quantity,
-                    };
-                  });
+                      return {
+                        ...item,
+                        priceWithIVABeforeClient,
+                        discountAmt,
+                        finalPriceIVA,
+                        totalWithIVA: finalPriceIVA * item.quantity,
+                        totalBeforeClientWithIVA: priceWithIVABeforeClient * item.quantity,
+                      };
+                    });
 
-                  const subtotalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
-                  const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + (i.discountAmt * i.quantity), 0);
-                  const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
-                  const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+                    const subtotalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
+                    const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + (i.discountAmt * i.quantity), 0);
+                    const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
+                    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
-                  let groupEcovalor = 0;
-                  lineData.items.forEach(item => {
-                    const lineaItem = (item.lineaNegocio || "").toUpperCase();
-                    if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
-                    else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
-                  });
+                    let groupEcovalor = 0;
+                    lineData.items.forEach(item => {
+                      const lineaItem = (item.lineaNegocio || "").toUpperCase();
+                      if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
+                      else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+                    });
 
-                  const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+                    const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
 
-                  const companyData = groupedCart[selectedCompany];
+                    const companyData = groupedCart[selectedCompany];
 
-                  return (
-                    <CompanySummary key={line}>
-                      <CompanyName>{selectedCompany} {line}</CompanyName>
-                      <SummaryRow>
-                        <SummaryLabel>Subtotal ({lineData.items.length} productos)</SummaryLabel>
-                        <SummaryValue>${subtotalWithIVA.toFixed(2)}</SummaryValue>
-                      </SummaryRow>
-                      {totalClientDiscountAmount > 0 && (
-                        <SummaryRow>
-                          <SummaryLabel>Descuento Cliente {line}:</SummaryLabel>
-                          <SummaryValue>-${totalClientDiscountAmount.toFixed(2)}</SummaryValue>
-                        </SummaryRow>
-                      )}
-                      {extraTotalDiscountPct > 0 && (
-                        <SummaryRow>
-                          <SummaryLabel>Descuento Extra Oferta ({extraTotalDiscountPct}%):</SummaryLabel>
-                          <SummaryValue style={{ color: "#ef4444" }}>-${totalExtraDiscountValue.toFixed(2)}</SummaryValue>
-                        </SummaryRow>
-                      )}
-                      {groupEcovalor > 0 && (
-                        <SummaryRow>
-                          <SummaryLabel>Ecovalor:</SummaryLabel>
-                          <SummaryValue>${groupEcovalor.toFixed(2)}</SummaryValue>
-                        </SummaryRow>
-                      )}
-                      <SummaryRow>
-                        <SummaryLabel style={{ fontSize: "0.8rem", fontStyle: "italic" }}>* Precios con IVA incluido</SummaryLabel>
-                      </SummaryRow>
-                      <TotalRow>
-                        <SummaryLabel>Total</SummaryLabel>
-                        <SummaryValue $bold>${totalConIva.toFixed(2)}</SummaryValue>
-                      </TotalRow>
-
-                      {!companyData.shippingAddressId && (
-                        <ValidationWarning>Falta dirección de envío</ValidationWarning>
-                      )}
-                      {!companyData.billingAddressId && (
-                        <ValidationWarning>Falta dirección de facturación</ValidationWarning>
-                      )}
-
-                      <CompanyCheckoutButton
-                        text={`Proceder al pedido`}
-                        color={theme.colors.white}
-                        variant="outlined"
-                        size="small"
-                        leftIconName={"FaCartShopping"}
-                        backgroundColor={theme.colors.primary}
-                        style={{ width: "100%" }}
-                        onClick={() => handleLineCheckoutClick(selectedCompany, line)}
-                        disabled={!companyData.shippingAddressId || !companyData.billingAddressId}
-                      />
-                    </CompanySummary>
-                  );
-                }
-              )}
-            </>
-          )}
-          {showConfirmModal && (
-            <ProcessingOverlay>
-              <ProcessingCard>
-                <ProcessingTitle>¿Está seguro que desea confirmar esta orden?</ProcessingTitle>
-                <ProcessingMessage>
-                  {companyToCheckout && (() => {
-                    const [company, line] = companyToCheckout.split("_");
                     return (
-                      <>Se generará el pedido para <b>{company} - {line}</b>.</>
+                      <CompanySummary key={line}>
+                        <CompanyName>{selectedCompany} {line}</CompanyName>
+                        <SummaryRow>
+                          <SummaryLabel>Subtotal ({lineData.items.length} productos)</SummaryLabel>
+                          <SummaryValue>${subtotalWithIVA.toFixed(2)}</SummaryValue>
+                        </SummaryRow>
+                        {totalClientDiscountAmount > 0 && (
+                          <SummaryRow>
+                            <SummaryLabel>Descuento Cliente {line}:</SummaryLabel>
+                            <SummaryValue>-${totalClientDiscountAmount.toFixed(2)}</SummaryValue>
+                          </SummaryRow>
+                        )}
+                        {extraTotalDiscountPct > 0 && (
+                          <SummaryRow>
+                            <SummaryLabel>Descuento Extra Oferta ({extraTotalDiscountPct}%):</SummaryLabel>
+                            <SummaryValue style={{ color: "#ef4444" }}>-${totalExtraDiscountValue.toFixed(2)}</SummaryValue>
+                          </SummaryRow>
+                        )}
+                        {groupEcovalor > 0 && (
+                          <SummaryRow>
+                            <SummaryLabel>Ecovalor:</SummaryLabel>
+                            <SummaryValue>${groupEcovalor.toFixed(2)}</SummaryValue>
+                          </SummaryRow>
+                        )}
+                        <SummaryRow>
+                          <SummaryLabel style={{ fontSize: "0.8rem", fontStyle: "italic" }}>* Precios con IVA incluido</SummaryLabel>
+                        </SummaryRow>
+                        <TotalRow>
+                          <SummaryLabel>Total</SummaryLabel>
+                          <SummaryValue $bold>${totalConIva.toFixed(2)}</SummaryValue>
+                        </TotalRow>
+
+                        {!companyData.shippingAddressId && (
+                          <ValidationWarning>Falta dirección de envío</ValidationWarning>
+                        )}
+                        {!companyData.billingAddressId && (
+                          <ValidationWarning>Falta dirección de facturación</ValidationWarning>
+                        )}
+
+                        <CompanyCheckoutButton
+                          text={`Proceder al pedido`}
+                          color={theme.colors.white}
+                          variant="outlined"
+                          size="small"
+                          leftIconName={"FaCartShopping"}
+                          backgroundColor={theme.colors.primary}
+                          style={{ width: "100%" }}
+                          onClick={() => handleLineCheckoutClick(selectedCompany, line)}
+                          disabled={!companyData.shippingAddressId || !companyData.billingAddressId}
+                        />
+                      </CompanySummary>
                     );
-                  })()}
-                </ProcessingMessage>
-                <Button
-                  text="Confirmar"
-                  variant="solid"
-                  backgroundColor={theme.colors.success}
-                  style={{ width: "100%", marginBottom: "12px" }}
-                  onClick={async () => {
-                    setShowConfirmModal(false);
-                    if (companyToCheckout) {
+                  }
+                )}
+              </>
+            )}
+            {showConfirmModal && (
+              <ProcessingOverlay>
+                <ProcessingCard>
+                  <ProcessingTitle>¿Está seguro que desea confirmar esta orden?</ProcessingTitle>
+                  <ProcessingMessage>
+                    {companyToCheckout && (() => {
                       const [company, line] = companyToCheckout.split("_");
-                      await handleCheckoutSingleLine(company, line);
+                      return (
+                        <>Se generará el pedido para <b>{company} - {line}</b>.</>
+                      );
+                    })()}
+                  </ProcessingMessage>
+                  <Button
+                    text="Confirmar"
+                    variant="solid"
+                    backgroundColor={theme.colors.success}
+                    style={{ width: "100%", marginBottom: "12px" }}
+                    onClick={async () => {
+                      setShowConfirmModal(false);
+                      if (companyToCheckout) {
+                        const [company, line] = companyToCheckout.split("_");
+                        await handleCheckoutSingleLine(company, line);
+                        setCompanyToCheckout(null);
+                      }
+                    }}
+                    leftIconName="FaCheck"
+                  />
+                  <Button
+                    text="Cancelar"
+                    variant="outlined"
+                    style={{ width: "100%" }}
+                    onClick={() => {
+                      setShowConfirmModal(false);
                       setCompanyToCheckout(null);
-                    }
-                  }}
-                  leftIconName="FaCheck"
-                />
-                <Button
-                  text="Cancelar"
-                  variant="outlined"
-                  style={{ width: "100%" }}
-                  onClick={() => {
-                    setShowConfirmModal(false);
-                    setCompanyToCheckout(null);
-                  }}
-                  leftIconName="FaXmark"
-                />
-              </ProcessingCard>
-            </ProcessingOverlay>
-          )}
-        </OrderSummary>
+                    }}
+                    leftIconName="FaXmark"
+                  />
+                </ProcessingCard>
+              </ProcessingOverlay>
+            )}
+          </OrderSummary>
+          <CartImageSlider empresaName={selectedCompany} />
+        </SummarySidebar>
 
       </CartLayout>
 

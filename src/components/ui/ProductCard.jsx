@@ -246,16 +246,21 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: ${({ $restricted }) => ($restricted ? "160px" : "180px")};
+  height: 190px;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    height: 180px;
+  }
 
   @media (max-width: 768px) {
     padding: ${({ $restricted }) => ($restricted ? "12px" : "16px")};
-    min-height: ${({ $restricted }) => ($restricted ? "140px" : "160px")};
+    height: 160px;
   }
 
   @media (max-width: 480px) {
     padding: ${({ $restricted }) => ($restricted ? "10px" : "12px")};
-    min-height: ${({ $restricted }) => ($restricted ? "120px" : "140px")};
+    height: 150px;
   }
 `;
 
@@ -264,16 +269,21 @@ const RestrictedContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 160px;
+  height: 190px;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    height: 180px;
+  }
 
   @media (max-width: 768px) {
     padding: 12px;
-    min-height: 140px;
+    height: 160px;
   }
 
   @media (max-width: 480px) {
     padding: 10px;
-    min-height: 120px;
+    height: 150px;
   }
 `;
 
@@ -285,6 +295,13 @@ const ProductName = styled.h3`
   font-weight: ${({ $restricted }) => ($restricted ? "normal" : "600")};
   line-height: 1.3;
   word-break: break-word;
+  
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 2.6em;
+
   &:hover {
     text-decoration: underline;
   }
@@ -292,16 +309,19 @@ const ProductName = styled.h3`
   @media (max-width: 1024px) {
     font-size: ${({ $restricted }) => ($restricted ? "0.85rem" : "0.95rem")};
     margin-bottom: ${({ $restricted }) => ($restricted ? "6px" : "10px")};
+    height: 2.6em;
   }
 
   @media (max-width: 768px) {
     font-size: ${({ $restricted }) => ($restricted ? "0.75rem" : "0.85rem")};
     margin-bottom: ${({ $restricted }) => ($restricted ? "5px" : "8px")};
+    height: 2.6em;
   }
 
   @media (max-width: 480px) {
     font-size: ${({ $restricted }) => ($restricted ? "0.7rem" : "0.8rem")};
     margin-bottom: ${({ $restricted }) => ($restricted ? "4px" : "6px")};
+    height: 2.6em;
   }
 `;
 
@@ -647,24 +667,24 @@ const SpecItem = styled.li`
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.85rem;
+  font-size: 0rem;
 
   @media (max-width: 1024px) {
     margin-bottom: 5px;
     gap: 3px;
-    font-size: 0.75rem;
+    font-size: 0rem;
   }
 
   @media (max-width: 768px) {
     margin-bottom: 4px;
     gap: 2px;
-    font-size: 0.7rem;
+    font-size: 0rem;
   }
 
   @media (max-width: 480px) {
     margin-bottom: 3px;
     gap: 2px;
-    font-size: 0.65rem;
+    font-size: 0rem;
   }
 `;
 
@@ -1003,7 +1023,7 @@ const ProductCard = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isClient, isVisualizacion, isSeller, isB2BSeller } = useAuth();
+  const { isClient, isVisualizacion, isSeller } = useAuth();
   const { addToCart, cart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -1022,7 +1042,7 @@ const ProductCard = ({
     } else if (maxAvailable <= 0 && quantity > 0) {
       setQuantity(0);
     }
-  }, [product.stock, quantityInCart]);
+  }, [product.stock, quantityInCart, quantity]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
