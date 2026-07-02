@@ -990,7 +990,6 @@ const CartItem = ({
   extraDiscount = 0,
   isB2BSeller = false,
 }) => {
-  const discount = item?.discount || 0;
   const maxStock = item?.stock || 0;
   const quantityIntervalRef = useRef(null);
   const currentQuantityRef = useRef(item.quantity);
@@ -1383,7 +1382,16 @@ const Carrito = () => {
   } = useCart();
   const navigate = useNavigate();
   const { theme } = useAppTheme();
-  const { user, isSeller, isB2CSeller, isB2BSeller } = useAuth(); // Obtenemos el usuario actual e info de rol
+  const { user, isSeller, isB2BSeller } = useAuth(); // Obtenemos el usuario actual e info de rol
+
+  const getClientName = () => {
+    if (isSeller) {
+      const sellerData = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
+      return sellerData.clientName || "CLIENTE GENERAL";
+    }
+    return null;
+  };
+  const clientNameForTitle = getClientName();
 
 
   // Estados para manejar direcciones
@@ -1395,12 +1403,14 @@ const Carrito = () => {
 
   // Agregar estos nuevos estados para el proceso de checkout
   const [isProcessingOrders, setIsProcessingOrders] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [currentProcessingCompany, setCurrentProcessingCompany] = useState("");
   const [completedOrders, setCompletedOrders] = useState(0);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [totalOrdersToProcess, setTotalOrdersToProcess] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [lastProcessedCompanies, setLastProcessedCompanies] = useState([]);
-  const [loadingTimeoutReached, setLoadingTimeoutReached] = useState(false);
 
   const [companyToCheckout, setCompanyToCheckout] = useState(null);
   const skipCartLoadRef = useRef(false); // Ref para evitar recargar el carrito cuando el modal está visible
@@ -1423,6 +1433,7 @@ const Carrito = () => {
   });
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [showConfirmAddressModal, setShowConfirmAddressModal] = useState(false);
 
   // Nueva función para confirmar el pago de una línea
   const handleLineCheckoutClick = (company, line) => {
@@ -1519,6 +1530,7 @@ const Carrito = () => {
 
   useEffect(() => {
     loadAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isSeller]);
 
   // Agrupar items del carrito por empresa (y dentro por línea)
@@ -1618,6 +1630,7 @@ const Carrito = () => {
     };
 
     groupByCompany();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, addresses, showSuccessCard, isProcessingOrders]);
 
   // Mostrar el overlay de carga si está cargando o hidratando
@@ -1659,7 +1672,16 @@ const Carrito = () => {
   if (cart.length === 0 && !showSuccessCard) {
     return (
       <PageContainer style={{ padding: "16px" }}>
-        <PageTitle>Carrito de compras</PageTitle>
+        <PageTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h1>Carrito de compras</h1>
+          </div>
+          {clientNameForTitle && (
+            <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
+              Comprando para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
+            </div>
+          )}
+        </PageTitle>
         <CartEmptyState>
           <RenderIcon
             name="FaCartShopping"
@@ -1693,26 +1715,31 @@ const Carrito = () => {
     setAddressModalType(type);
     setAddressModalCompany(company);
 
-    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B) {
+    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller) {
       setIsCreateAddressModalOpen(true);
     } else {
       setIsAddressModalOpen(true);
     }
   };
 
-  const handleCreateAddressSubmit = async () => {
+  const handleCreateAddressSubmit = () => {
     if (!newAddressData.state || !newAddressData.city || !newAddressData.street) {
       toast.warning("Por favor completa todos los campos requeridos");
       return;
     }
 
-    // Validación obligatoria de mapa para envío y facturación en B2B
+    // Validación obligatoria de mapa para envío y facturación
     if (!selectedLocation) {
       toast.warning("Por favor selecciona una ubicación en el mapa");
       return;
     }
 
+    setShowConfirmAddressModal(true);
+  };
+
+  const executeCreateAddress = async () => {
     setIsCreatingAddress(true);
+    setShowConfirmAddressModal(false);
 
     try {
       const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
@@ -1741,13 +1768,45 @@ const Carrito = () => {
         setIsCreateAddressModalOpen(false);
         setNewAddressData({ country: "EC", state: "", city: "", street: "" });
         setSelectedLocation(null);
+
+        const createdId = response.data?.data?.ID || response.data?.data?.id || response.data?.ID || response.data?.id || response.data?.insertId || Date.now().toString();
+
+        if (!isSeller) {
+          const newRawAddr = {
+            ID: createdId,
+            CLASIFICATION: "PRINCIPAL",
+            TYPE: addressModalType,
+            STREET: newAddressData.street.toUpperCase(),
+            CITY: newAddressData.city.toUpperCase(),
+            STATE: newAddressData.state.toUpperCase(),
+            PREDETERMINED: false,
+            EMPRESA: addressModalCompany,
+            ORIGIN: "USER",
+            LATITUDE: selectedLocation?.lat || null,
+            LONGITUDE: selectedLocation?.lng || null,
+          };
+          if (!user.DIRECCIONES) user.DIRECCIONES = {};
+          if (!user.DIRECCIONES[addressModalCompany]) user.DIRECCIONES[addressModalCompany] = [];
+          user.DIRECCIONES[addressModalCompany].push(newRawAddr);
+        }
+
         // Recargar direcciones para ver la nueva (forzando petición al endpoint)
         await loadAddresses(true);
+
+        const updated = { ...groupedCart };
+        if (updated[addressModalCompany]) {
+          if (addressModalType === "S") {
+            updated[addressModalCompany].shippingAddressId = createdId.toString();
+          } else {
+            updated[addressModalCompany].billingAddressId = createdId.toString();
+          }
+          setGroupedCart(updated);
+        }
       } else {
         toast.error(response.error || "Error al crear la dirección");
       }
     } catch (error) {
-      console.error("Error en handleCreateAddressSubmit:", error);
+      console.error("Error en executeCreateAddress:", error);
       toast.error("Ocurrió un error inesperado al crear la dirección");
     } finally {
       setIsCreatingAddress(false);
@@ -1798,9 +1857,6 @@ const Carrito = () => {
     const extraTotalDiscountPct = offerData?.total || 0;
     const previewDiscounts = offerData?.previews || {};
     const preview = previewDiscounts[company];
-
-    let totalDiscountAmount = 0;
-    let totalPromoAndExtraAmount = 0;
 
     // Calcular total con IVA incluido para cada item
     const itemsWithIVA = lineData.items.map((item) => {
@@ -2069,9 +2125,16 @@ const Carrito = () => {
 
   return (
     <PageContainer style={{ padding: "16px" }}>
-      <PageTitle>
-        <RenderIcon name="FaCartShopping" size={28} />
-        <h1>Carrito de compras</h1>
+      <PageTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <RenderIcon name="FaCartShopping" size={28} />
+          <h1>Carrito de compras</h1>
+        </div>
+        {clientNameForTitle && (
+          <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
+            Comprando para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
+          </div>
+        )}
       </PageTitle>
 
       {/* Pestañas de empresas */}
@@ -2244,34 +2307,17 @@ const Carrito = () => {
               </EmptyAddressState>
             )}
 
-            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B ? (
+            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? (
               <NewAddressButton
                 onClick={() => handleOpenAddressModal("S", selectedCompany)}
                 text={"Crear dirección de envío"}
                 size="small"
                 leftIconName={"FaPlus"}
               />
-            ) : isSeller ? (
-
+            ) : (
               <NewAddressButton
                 onClick={() => handleOpenAddressModal("S", selectedCompany)}
                 text={"Seleccionar dirección de envío"}
-                size="small"
-                leftIconName={"FaPlus"}
-              />
-            ) : (
-              <NewAddressButton
-                onClick={() =>
-                  navigate(ROUTES.ECOMMERCE.PERFIL, {
-                    state: {
-                      activeTab: "addresses",
-                      openAddressForm: true,
-                      addressType: "S",
-                      empresa: selectedCompany,
-                    },
-                  })
-                }
-                text={"Ir a Perfil para agregar dirección de envío"}
                 size="small"
                 leftIconName={"FaPlus"}
               />
@@ -2390,34 +2436,17 @@ const Carrito = () => {
               </EmptyAddressState>
             )}
 
-            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B ? (
+            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? (
               <NewAddressButton
                 onClick={() => handleOpenAddressModal("B", selectedCompany)}
                 text={"Crear dirección de facturación"}
                 leftIconName={"FaPlus"}
                 size="small"
               />
-            ) : isSeller ? (
-
+            ) : (
               <NewAddressButton
                 onClick={() => handleOpenAddressModal("B", selectedCompany)}
                 text={"Seleccionar dirección de facturación"}
-                leftIconName={"FaPlus"}
-                size="small"
-              />
-            ) : (
-              <NewAddressButton
-                onClick={() =>
-                  navigate(ROUTES.ECOMMERCE.PERFIL, {
-                    state: {
-                      activeTab: "addresses",
-                      openAddressForm: true,
-                      addressType: "B",
-                      empresa: selectedCompany,
-                    },
-                  })
-                }
-                text={"Ir a Perfil para agregar dirección de facturación"}
                 leftIconName={"FaPlus"}
                 size="small"
               />
@@ -2672,6 +2701,31 @@ const Carrito = () => {
             />
           </ProcessingCard>
         </>
+      )}
+      {showConfirmAddressModal && (
+        <ProcessingOverlay style={{ zIndex: 9999 }}>
+          <ProcessingCard>
+            <ProcessingTitle>¿Está seguro que desea crear esta dirección?</ProcessingTitle>
+            <ProcessingMessage>
+              <b style={{ color: theme.colors.error }}>Advertencia:</b> La dirección creada no podrá ser modificada posteriormente. Por favor, revise bien si los datos de la dirección son correctos.
+            </ProcessingMessage>
+            <Button
+              text="Sí, crear dirección"
+              variant="solid"
+              backgroundColor={theme.colors.success}
+              style={{ width: "100%", marginBottom: "12px" }}
+              onClick={executeCreateAddress}
+              leftIconName="FaCheck"
+            />
+            <Button
+              text="Revisar nuevamente"
+              variant="outlined"
+              style={{ width: "100%" }}
+              onClick={() => setShowConfirmAddressModal(false)}
+              leftIconName="FaPencilAlt"
+            />
+          </ProcessingCard>
+        </ProcessingOverlay>
       )}
       {/* Modal de selección de direcciones para vendedores */}
       <Modal

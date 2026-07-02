@@ -38,12 +38,17 @@ const Container = styled.div`
   position: relative;
 `;
 
-const Title = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 2rem;
+const Title = styled.div`
   display: flex;
   align-items: center;
+  margin-bottom: 2rem;
   gap: 1rem;
+
+  h1 {
+    font-size: 2rem;
+    margin: 0;
+    font-weight: 700;
+  }
 `;
 
 const ProductList = styled.div`
@@ -645,6 +650,12 @@ const OfertaVendedor = () => {
   const [selectedCompany, setSelectedCompany] = useState("");
   const [previewDiscounts, setPreviewDiscounts] = useState({});
 
+  const getClientName = () => {
+    const sellerData = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
+    return selectedClientName || sellerData.clientName || "CLIENTE GENERAL";
+  };
+  const clientNameForTitle = getClientName();
+
   const groupedItems = useMemo(() => {
     const grouped = {};
     cart.forEach((item) => {
@@ -669,7 +680,7 @@ const OfertaVendedor = () => {
       });
     });
     return grouped;
-  }, [cart, isB2B]);
+  }, [cart]);
 
   const companies = useMemo(() => Object.keys(groupedItems), [groupedItems]);
   const isB2CSeller = user?.ROLE_NAME === ROLES.VENDEDOR_B2C;
@@ -717,6 +728,7 @@ const OfertaVendedor = () => {
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartLoading, updateQuantity]);
 
   useEffect(() => {
@@ -779,16 +791,14 @@ const OfertaVendedor = () => {
       if (changed) setPreviewDiscounts(newPreviews);
     };
 
-    if (companies.length > 0) {
-      fetchAllDiscounts();
-    }
+    fetchAllDiscounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies]);
 
-  // Cargar desde sessionStorage al montar
   useEffect(() => {
     const saved = sessionStorage.getItem("ofertaVendedor");
     if (saved) {
-      const { items, total, previews } = JSON.parse(saved);
+      const { items, previews } = JSON.parse(saved);
       setExtraDiscounts(items || {});
       setTotalExtraDiscount(0);
       setPreviewDiscounts(previews || {});
@@ -831,12 +841,12 @@ const OfertaVendedor = () => {
     setExtraDiscounts(prev => ({ ...prev, [productId]: parseFloat(extraDiscountNeeded.toFixed(2)) }));
   };
 
-  const handleTotalDiscountChange = (value) => {
+  const _handleTotalDiscountChange = () => {
     // El descuento extra al total ahora es siempre 0 según requerimiento
     setTotalExtraDiscount(0);
   };
 
-  const clearOffer = () => {
+  const _clearOffer = () => {
     setExtraDiscounts({});
     setTotalExtraDiscount(0);
     toast.info("Se han reseteado los descuentos de la oferta");
@@ -1095,7 +1105,7 @@ const OfertaVendedor = () => {
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
-    const company = selectedCompany || "AUTOLLANTA CIA LTDA";
+    const _company = selectedCompany || "AUTOLLANTA CIA LTDA";
     const now = new Date();
     const dateStr = now.toLocaleDateString('es-ES');
     const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -1234,7 +1244,7 @@ const OfertaVendedor = () => {
     currentY = doc.lastAutoTable.finalY + 10;
 
     // Descuento
-    const totalDescSuma = ((totals.promoAndExtraDiscount + totals.generalDiscount + totals.totalOfferDiscount) * (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100));
+    const _totalDescSuma = ((totals.promoAndExtraDiscount + totals.generalDiscount + totals.totalOfferDiscount) * (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100));
     doc.setFont("helvetica", "normal")
 
     doc.text("Subtotal", summaryX, currentY);
@@ -1261,7 +1271,7 @@ const OfertaVendedor = () => {
     currentY += 20;
     doc.setFont("helvetica", "normal");
     doc.text("Firma: ___________________________________", margin, currentY);
-    
+
     // Validez de la oferta
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
@@ -1291,7 +1301,8 @@ const OfertaVendedor = () => {
           // Fallback simple por si falla loadImage pero el asset es usable directamente (ej: base64)
           try {
             doc.addImage(brandAssets[i], 'PNG', startX + (i * (brandWidth + brandSpacing)), brandY, brandWidth, brandHeight, undefined, 'FAST');
-          } catch (err) {
+          } catch (e) {
+            const _err = e;
             console.warn(`No se pudo cargar la marca en índice ${i}`);
           }
         }
@@ -1330,8 +1341,16 @@ const OfertaVendedor = () => {
   if (cart.length === 0) {
     return (
       <Container>
-        <Title>
-          <RenderIcon name="FaTag" /> Oferta de Vendedor
+        <Title style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <RenderIcon name="FaTag" size={28} />
+            <h1>Oferta de Vendedor</h1>
+          </div>
+          {clientNameForTitle && (
+            <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
+              Generando oferta para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
+            </div>
+          )}
         </Title>
         <p>No hay productos en el carrito para generar una oferta.</p>
         <Button
@@ -1345,8 +1364,16 @@ const OfertaVendedor = () => {
 
   return (
     <Container>
-      <Title>
-        <RenderIcon name="FaTag" /> Oferta de Vendedor
+      <Title style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <RenderIcon name="FaTag" size={28} />
+          <h1>Oferta de Vendedor</h1>
+        </div>
+        {clientNameForTitle && (
+          <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
+            Generando oferta para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
+          </div>
+        )}
       </Title>
 
       {companies.length > 0 && !isB2B && (
