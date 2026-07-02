@@ -30,7 +30,8 @@ const CatalogContainer = styled.div`
 const MainContent = styled.div`
   background: ${({ theme }) => theme.colors.background};
   width: 100%;
-  height: calc(100vh - 45px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 `;
@@ -678,12 +679,340 @@ const BackLink = styled.a`
   }
 `;
 
+const COMPANY_SLIDES = {
+  AUTOLLANTA: [
+    {
+      url: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Llantas Premium de Alta Gama",
+      subtitle: "Seguridad, control y durabilidad garantizada para tu vehículo"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "El Stock Más Completo",
+      subtitle: "Distribución directa a nivel nacional con precios de distribuidor"
+    }
+  ],
+  MAXXIMUNDO: [
+    {
+      url: "https://placehold.co/1024x90",
+    },
+    {
+      url: "https://placehold.co/1024x90",
+      title: "Lubricantes de Alta Tecnología",
+      subtitle: "Protección superior contra el desgaste en condiciones extremas"
+    }
+  ],
+  STOX: [
+    {
+      url: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Logística Inteligente y Abastecimiento",
+      subtitle: "Socio estratégico de tu negocio con entregas a tiempo"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Soluciones Industriales Integrales",
+      subtitle: "Optimiza tus operaciones con productos de alto rendimiento"
+    }
+  ],
+  IKONIX: [
+    {
+      url: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Tecnología Automotriz Innovadora",
+      subtitle: "Accesorios inteligentes y equipamiento de última generación"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Sistemas de Iluminación Avanzados",
+      subtitle: "Visibilidad perfecta y seguridad para viajes nocturnos"
+    }
+  ],
+  AUTOMAX: [
+    {
+      url: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Servicios Especializados Automotrices",
+      subtitle: "Garantía de calidad con tecnología de punta en cada componente"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1562620644-856c4faee402?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Rendimiento Deportivo y Urbano",
+      subtitle: "Encuentra la combinación ideal para cualquier tipo de terreno"
+    }
+  ],
+  DEFAULT: [
+    {
+      url: "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Portal Mayorista Grupo VII",
+      subtitle: "Tu canal de distribución oficial para llantas, lubricantes y repuestos"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&w=1600&h=450&q=80",
+      title: "Variedad, Stock y Calidad Garantizada",
+      subtitle: "Los mejores precios del mercado con soporte especializado"
+    }
+  ]
+};
+
+const SliderSection = styled.div`
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem;
+  box-sizing: border-box;
+  animation: fadeIn 0.8s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.125rem 1rem 0.125rem;
+  }
+`;
+
+const SliderContainer = styled.div`
+  width: 100%;
+  height: 90px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 8px 30px rgba(0, 0, 0, 0.3)"
+      : "0 8px 24px rgba(0, 0, 0, 0.08)"};
+  border: 1px solid ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}20`};
+
+  @media (max-width: 1024px) {
+    height: 90px;
+  }
+
+  @media (max-width: 768px) {
+    height: 90px;
+    border-radius: 12px;
+  }
+`;
+
+const SliderTrack = styled.div`
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transform: ${({ activeIndex }) => `translateX(-${activeIndex * 100}%)`};
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+const Slide = styled.div`
+  min-width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+const SliderImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+`;
+
+const SlideOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "linear-gradient(90deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(15, 23, 42, 0.1) 100%)"
+      : "linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.1) 100%)"};
+  z-index: 2;
+`;
+
+const SlideContent = styled.div`
+  position: relative;
+  z-index: 3;
+  padding: 0 4rem;
+  max-width: 60%;
+  color: ${({ theme }) => theme.colors.text};
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: slideFadeInUp 0.8s ease-out;
+
+  @keyframes slideFadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 1024px) {
+    padding: 0 3rem;
+    max-width: 75%;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 1.5rem;
+    max-width: 85%;
+    gap: 0.25rem;
+  }
+`;
+
+const SlideTitle = styled.h2`
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+  color: ${({ theme }) => theme.colors.text};
+  text-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 2px 4px rgba(0, 0, 0, 0.5)"
+      : "0 1px 2px rgba(255, 255, 255, 0.8)"};
+`;
+
+const SlideSubtitle = styled.p`
+  font-size: clamp(0.8rem, 1.5vw, 1.05rem);
+  font-weight: 450;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin: 0;
+  line-height: 1.4;
+  text-shadow: ${({ theme }) =>
+    theme.mode === "dark"
+      ? "0 1px 2px rgba(0, 0, 0, 0.5)"
+      : "0 1px 2px rgba(255, 255, 255, 0.8)"};
+`;
+
+const SliderDots = styled.div`
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    bottom: 0.5rem;
+    gap: 0.35rem;
+  }
+`;
+
+const SliderDot = styled.button`
+  width: ${({ active }) => (active ? "20px" : "8px")};
+  height: 8px;
+  border-radius: 4px;
+  background: ${({ active, theme }) =>
+    active ? theme.colors.primary : theme.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.2)"};
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary};
+    opacity: 0.8;
+  }
+
+  @media (max-width: 768px) {
+    height: 5px;
+    width: ${({ active }) => (active ? "12px" : "5px")};
+    border-radius: 2.5px;
+  }
+`;
+
+const ImageSlider = ({ empresaName }) => {
+  const activeCompany = (empresaName || "").toUpperCase();
+  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const timerRef = useRef(null);
+
+  // Reset image slider index when company changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [activeCompany]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  }, [slides.length]);
+
+  const goToSlide = (index) => {
+    setCurrentIndex(index);
+  };
+
+  // Autoplay hook
+  useEffect(() => {
+    if (isHovered || slides.length <= 1) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      nextSlide();
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [nextSlide, isHovered, slides.length]);
+
+  if (!slides || slides.length === 0) return null;
+
+  return (
+    <SliderSection>
+      <SliderContainer
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <SliderTrack activeIndex={currentIndex}>
+          {slides.map((slide, idx) => (
+            <Slide key={idx}>
+              <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
+              <SlideOverlay />
+              <SlideContent>
+                <SlideTitle>{slide.title}</SlideTitle>
+                <SlideSubtitle>{slide.subtitle}</SlideSubtitle>
+              </SlideContent>
+            </Slide>
+          ))}
+        </SliderTrack>
+
+        {slides.length > 1 && (
+          <>
+            <SliderDots>
+              {slides.map((_, idx) => (
+                <SliderDot
+                  key={idx}
+                  active={currentIndex === idx}
+                  onClick={() => goToSlide(idx)}
+                  aria-label={`Ir a diapositiva ${idx + 1}`}
+                />
+              ))}
+            </SliderDots>
+          </>
+        )}
+      </SliderContainer>
+    </SliderSection>
+  );
+};
+
 const Catalog = () => {
   const { empresaName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, isSeller, isVisualizacion } = useAuth();
+  const { user, isSeller } = useAuth();
   const {
     loadProductsForEmpresa,
     catalogByEmpresa,
@@ -692,9 +1021,7 @@ const Catalog = () => {
     loadProductsForMultipleCompanies,
     getProductsForCompanies,
   } = useProductCatalog();
-  const [pendingRestore, setPendingRestore] = useState(null);
-  const [initialSort, setInitialSort] = useState("default");
-  const [restoreApplied, setRestoreApplied] = useState(false);
+  const initialSort = "default";
 
   // Guardar la URL actual del catálogo en localStorage para "Seguir comprando"
   useEffect(() => {
@@ -725,7 +1052,14 @@ const Catalog = () => {
     } else if (empresaName && !catalogByEmpresa[empresaName]) {
       loadProductsForEmpresa(empresaName);
     }
-  }, [empresaName, user, loadProductsForMultipleCompanies, isSeller]);
+  }, [
+    empresaName,
+    user,
+    loadProductsForMultipleCompanies,
+    isSeller,
+    catalogByEmpresa,
+    loadProductsForEmpresa,
+  ]);
 
   // Función para actualizar la URL - MERGE con parámetros existentes
   const updateURL = useCallback(
@@ -797,6 +1131,7 @@ const Catalog = () => {
     loading,
     isAtProductView,
     currentStep,
+    currentStepOptions,
     searchQuery,
     selectLinea,
     selectFilterValue,
@@ -806,9 +1141,6 @@ const Catalog = () => {
     goToAdditionalFilter,
     handleSearchChange,
     goToFilterStep,
-    isInitialized,
-    setSelectedValues,
-    setCurrentStepIndex,
     selectedLinea,
     availableLines,
     filteredProducts,
@@ -880,9 +1212,6 @@ const Catalog = () => {
     );
   };
 
-  const handleBackToCatalog = () => {
-    // Ya no necesitamos limpiar selectedProduct ya que no lo usamos
-  };
 
   const handleAdditionalFilterSelect = (filterId, value) => {
     applyAdditionalFilter(filterId, value);
@@ -1128,10 +1457,10 @@ const Catalog = () => {
     );
   }
 
-  // Pantalla de bienvenida cuando no hay línea seleccionada
-  if (!selectedLinea) {
-    return (
-      <CatalogContainer>
+  // Helper to render the specific view content
+  const renderCatalogContent = () => {
+    if (!selectedLinea) {
+      return (
         <MainContent>
           <WelcomeScreen>
             <WelcomeHeader>
@@ -1184,16 +1513,58 @@ const Catalog = () => {
             )}
           </WelcomeScreen>
         </MainContent>
-      </CatalogContainer>
-    );
-  }
+      );
+    }
 
-  // Ya no necesitamos verificar selectedProduct ya que la navegación es directa
+    if (isAtProductView) {
+      return (
+        <>
+          <CatalogBreadcrumb
+            selectedLinea={selectedLinea}
+            selectedValues={selectedValues}
+            availableLines={availableLines}
+            onLineaSelect={handleBreadcrumbLineaSelect}
+            onFilterSelect={handleBreadcrumbFilterSelect}
+            onProductsSelect={handleBreadcrumbProductsSelect}
+            currentStep={currentStep}
+            flowConfig={flowConfig}
+            isAtProductView={isAtProductView}
+          />
 
-  // Pantalla de productos cuando se han completado todos los filtros
-  if (isAtProductView) {
+          <MainContentProducts>
+            <ContentWithFilters>
+              <AdditionalFilters
+                filters={additionalFilters}
+                selectedValues={selectedValues}
+                searchQuery={searchQuery}
+                onFilterSelect={handleAdditionalFilterSelect}
+                onClearFilter={handleAdditionalFilterClear}
+                onClearAllFilters={handleClearAllAdditionalFilters}
+                onSearchChange={handleSearchChange}
+              />
+              <ProductGridView
+                products={filteredProducts}
+                catalogState={{
+                  selectedLinea,
+                  selectedValues,
+                  availableLines,
+                  flowConfig,
+                  searchQuery,
+                }}
+                onProductSelect={handleProductSelect}
+                initialSort={initialSort}
+                loading={loading}
+                empresaName={empresaName}
+                onReloadProducts={reloadProductsForEmpresa}
+              />
+            </ContentWithFilters>
+          </MainContentProducts>
+        </>
+      );
+    }
+
     return (
-      <CatalogContainer>
+      <>
         <CatalogBreadcrumb
           selectedLinea={selectedLinea}
           selectedValues={selectedValues}
@@ -1206,72 +1577,33 @@ const Catalog = () => {
           isAtProductView={isAtProductView}
         />
 
-        <MainContentProducts>
-          <ContentWithFilters>
-            <AdditionalFilters
-              filters={additionalFilters}
-              selectedValues={selectedValues}
-              searchQuery={searchQuery}
-              onFilterSelect={handleAdditionalFilterSelect}
-              onClearFilter={handleAdditionalFilterClear}
-              onClearAllFilters={handleClearAllAdditionalFilters}
-              onSearchChange={handleSearchChange}
+        <MainContent>
+          {loading ? (
+            <LoadingContainer>
+              <RenderLoader
+                size="64px"
+                showSpinner={true}
+                floatingSpinner={true}
+              />
+              <LoadingText>Cargando productos...</LoadingText>
+            </LoadingContainer>
+          ) : (
+            <FilterCards
+              step={currentStep}
+              options={currentStepOptions}
+              selectedValue={selectedValues[currentStep?.id]}
+              onSelect={handleFilterSelect}
             />
-            <ProductGridView
-              products={filteredProducts}
-              catalogState={{
-                selectedLinea,
-                selectedValues,
-                availableLines,
-                flowConfig,
-                searchQuery,
-              }}
-              onProductSelect={handleProductSelect}
-              initialSort={initialSort}
-              loading={loading}
-              empresaName={empresaName}
-              onReloadProducts={reloadProductsForEmpresa}
-            />
-          </ContentWithFilters>
-        </MainContentProducts>
-      </CatalogContainer>
+          )}
+        </MainContent>
+      </>
     );
-  }
+  };
 
-  // Pantalla de filtros en cascada
   return (
     <CatalogContainer>
-      <CatalogBreadcrumb
-        selectedLinea={selectedLinea}
-        selectedValues={selectedValues}
-        availableLines={availableLines}
-        onLineaSelect={handleBreadcrumbLineaSelect}
-        onFilterSelect={handleBreadcrumbFilterSelect}
-        onProductsSelect={handleBreadcrumbProductsSelect}
-        currentStep={currentStep}
-        flowConfig={flowConfig}
-        isAtProductView={isAtProductView}
-      />
-
-      <MainContent>
-        {loading ? (
-          <LoadingContainer>
-            <RenderLoader
-              size="64px"
-              showSpinner={true}
-              floatingSpinner={true}
-            />
-            <LoadingText>Cargando productos...</LoadingText>
-          </LoadingContainer>
-        ) : (
-          <FilterCards
-            step={currentStep}
-            options={currentStepOptions}
-            selectedValue={selectedValues[currentStep?.id]}
-            onSelect={handleFilterSelect}
-          />
-        )}
-      </MainContent>
+      <ImageSlider empresaName={empresaName} />
+      {renderCatalogContent()}
     </CatalogContainer>
   );
 };
