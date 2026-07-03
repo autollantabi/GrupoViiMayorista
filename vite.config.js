@@ -23,7 +23,7 @@ export default defineConfig({
         "child-src 'self' blob:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
-        "img-src 'self' data: blob: https://*.mapbox.com https://*.r2.dev https://placehold.co",
+        "img-src 'self' data: blob: https://*.mapbox.com https://*.r2.dev https://placehold.co https://images.unsplash.com",
         "connect-src 'self' https://*.mapbox.com https://*.r2.dev http://192.168.0.68:3102 http://localhost:3102",
         "frame-ancestors 'self'",
         "base-uri 'self'",

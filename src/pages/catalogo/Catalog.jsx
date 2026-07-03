@@ -687,7 +687,7 @@ const COMPANY_SLIDES = {
       subtitle: "Seguridad, control y durabilidad garantizada para tu vehículo"
     },
     {
-      url: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1600&h=450&q=80",
+      url: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=1600&h=450&q=80",
       title: "El Stock Más Completo",
       subtitle: "Distribución directa a nivel nacional con precios de distribuidor"
     }

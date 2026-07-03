@@ -168,7 +168,7 @@ const SortContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 
   @media (max-width: 1024px) {
@@ -226,6 +226,25 @@ const SelectsContainer = styled.div`
   @media (max-width: 768px) {
     justify-content: center;
     width: 100%;
+  }
+`;
+
+const PaginationContainerTop = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  align-self: stretch;
+  margin-bottom: 5px;
+
+  @media (max-width: 768px) {
+    margin-top: 20px;
+    padding-top: 16px;
+    gap: 12px;
   }
 `;
 
@@ -333,6 +352,7 @@ const PaginationPagesContainer = styled.div`
   max-width: 100%;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  justify-content: flex-end;
 
   /* Ocultar scrollbar en webkit */
   &::-webkit-scrollbar {
@@ -1163,6 +1183,36 @@ const ProductGridView = ({
             </SelectsContainer>
           )}
         </SortContainer>
+
+        {/* Paginación */}
+        {processedProducts &&
+          processedProducts.totalItems > 0 &&
+          processedProducts.totalPages > 1 && (
+            <PaginationContainerTop>
+              {/* Botones de páginas con scroll horizontal */}
+              <PaginationPagesContainer ref={paginationContainerRef}>
+                {Array.from(
+                  { length: processedProducts.totalPages },
+                  (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <PaginationButton
+                        key={pageNum}
+                        data-page={pageNum}
+                        $isActive={currentPage === pageNum}
+                        onClick={() => {
+                          setCurrentPage(pageNum);
+                          setPageInput(pageNum.toString());
+                        }}
+                      >
+                        {pageNum}
+                      </PaginationButton>
+                    );
+                  }
+                )}
+              </PaginationPagesContainer>
+            </PaginationContainerTop>
+          )}
 
         <ProductsGrid>
           {processedProducts.items.map((product, index) => (
