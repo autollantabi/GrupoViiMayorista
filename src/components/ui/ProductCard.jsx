@@ -1292,14 +1292,17 @@ const ProductCard = ({
                   {product.empresa || product.empresaId}
                 </Enterprise>
               </BrandEnterpriseContainer>
-              <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
+
+              {product.stock > 0 && (
+                <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
                 {/* {product.stock > 0 && product.stock < 100 && (
                   <StockDot $inStock={product.stock > 0} />
                 )} */}
                 <StockText $inStock={product.stock > 0} $lowStock={false}>
                   {renderStockContent()}
                 </StockText>
-              </StockIndicator>
+              </StockIndicator> 
+              )}
             </TopRow>
 
             <ProductName onClick={handleViewDetails} $restricted={restricted}>
@@ -1369,7 +1372,7 @@ const ProductCard = ({
                             Unidades disponibles en {product.originalData.DMA_INVENTARIO.dias} días
                           </span>
                         </div>
-                      ) : "Sin Stock"
+                      ) : "Sin Stock por el momento"
                       : quantityInCart >= product.stock
                         ? "Stock máximo en carrito"
                         : isAddingToCart
