@@ -618,7 +618,7 @@ export function CartProvider({ children }) {
         let newCart;
         if (existingProductIndex >= 0) {
           const currentItem = prevCart[existingProductIndex];
-          const totalRequested = currentItem.quantity + quantity;
+          const totalRequested = quantity;
           const availableStock = productData.stock || 0;
 
           // Validar contra stock
@@ -687,8 +687,7 @@ export function CartProvider({ children }) {
 
         let newCart;
         if (existingProductIndex >= 0) {
-          const currentItem = prevCart[existingProductIndex];
-          const totalRequested = currentItem.quantity + quantity;
+          const totalRequested = quantity;
           const availableStock = dataToSave.stock || 0;
 
           let finalQuantity = totalRequested;

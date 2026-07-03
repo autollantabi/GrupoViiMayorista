@@ -2310,7 +2310,8 @@ const Carrito = () => {
       ECOVALOR: groupEcovalor,
       TOTAL: totalConIva,
       PRODUCTOS: productsToProcess,
-      SOURCE: clientSource || ""
+      SOURCE: clientSource || "",
+      // FORMA_PAGO: formaPago,
     };
 
     // Agregar PROFORMA_HEADER si el usuario es VENDEDOR B2B

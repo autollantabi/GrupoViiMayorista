@@ -1034,15 +1034,17 @@ const ProductCard = ({
   const cartItem = cart.find((item) => item?.id === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
-  // Asegurar que la cantidad no exceda el stock disponible (restando lo que ya hay en el carrito)
   useEffect(() => {
-    const maxAvailable = (product.stock || 0) - quantityInCart;
-    if (quantity > maxAvailable && maxAvailable > 0) {
-      setQuantity(maxAvailable);
-    } else if (maxAvailable <= 0 && quantity > 0) {
-      setQuantity(0);
-    }
-  }, [product.stock, quantityInCart, quantity]);
+  const maxAvailable = (product.stock || 0) - quantityInCart;
+  const clampedMax = Math.max(maxAvailable, 0);
+
+  const desiredQuantity =
+    quantityInCart > 0
+      ? Math.min(quantityInCart, clampedMax > 0 ? quantityInCart : 0)
+      : Math.min(1, clampedMax);
+
+  setQuantity(desiredQuantity);
+}, [product.id, product.stock, quantityInCart]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -1106,9 +1108,14 @@ const ProductCard = ({
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
+
     if (isAddingToCart || restricted) return; // Evitar múltiples clics y productos restringidos
 
+    if(quantityInCart == quantity)
+      return;
+    
     setIsAddingToCart(true);
+
     try {
       const result = await addToCart(product, quantity);
       if (result?.success) {
@@ -1295,13 +1302,13 @@ const ProductCard = ({
 
               {product.stock > 0 && (
                 <StockIndicator $inStock={product.stock > 0} $lowStock={false}>
-                {/* {product.stock > 0 && product.stock < 100 && (
+                  {/* {product.stock > 0 && product.stock < 100 && (
                   <StockDot $inStock={product.stock > 0} />
                 )} */}
-                <StockText $inStock={product.stock > 0} $lowStock={false}>
-                  {renderStockContent()}
-                </StockText>
-              </StockIndicator> 
+                  <StockText $inStock={product.stock > 0} $lowStock={false}>
+                    {renderStockContent()}
+                  </StockText>
+                </StockIndicator>
               )}
             </TopRow>
 
@@ -1358,11 +1365,7 @@ const ProductCard = ({
             {(isClient || isSeller) && !isVisualizacion && (
               <ButtonContainer>
                 <Button
-                  leftIconName={
-                    quantityInCart > 0 && !isButtonHovered
-                      ? "FaCheck"
-                      : "FaCartShopping"
-                  }
+                  leftIconName={"FaCartShopping"}
                   text={
                     product.stock === 0
                       ? product.originalData?.DMA_INVENTARIO?.dias != null ? (
