@@ -23,6 +23,7 @@ import CoordinadorHomeComponent from "../pages/coordinadora/CoordinadorHomeCompo
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import CoordinadorAdminComponent from "../pages/admin/CoordinadorAdminComponent";
 import AdminDashboardComponent from "../pages/admin/AdminDashboardComponent";
+import BannersAdministration from "../pages/admin/BannersAdministration";
 // Importaciones de páginas de reencauche
 import ReencaucheHome from "../pages/reencauche/ReencaucheHome";
 import ClientesReencauche from "../pages/reencauche/ClientesReencauche";
@@ -183,6 +184,11 @@ export const adminRoutes = [
   {
     path: ROUTES.ADMIN.COORDINADOR_ADMIN,
     element: <CoordinadorAdminComponent />,
+    allowedRoles: [ROLES.ADMIN],
+  },
+  {
+    path: ROUTES.ADMIN.BANNERS,
+    element: <BannersAdministration />,
     allowedRoles: [ROLES.ADMIN],
   },
   // ... otras rutas

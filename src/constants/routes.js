@@ -8,6 +8,7 @@ export const ROUTES = {
     DASHBOARD_ADMIN: "/admin/dashboard",
     USER_ADMIN: "/admin/usuarios",
     COORDINADOR_ADMIN: "/admin/coordinadores",
+    BANNERS: "/admin/banners",
     // Otras rutas de admin...
   },
   COORDINADOR: {

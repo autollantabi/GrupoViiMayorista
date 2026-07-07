@@ -20,6 +20,8 @@ import { ROLES } from "../../constants/roles";
 import { api_addresses_createAddress } from "../../api/users/apiAddresses";
 import MapSelector from "../../components/ui/MapSelector";
 import { reverseGeocode } from "../../utils/reverseGeocoding";
+import { api_banners_getByTipo } from "../../api/banners/apiBanners";
+
 
 const PageTitle = styled.div`
   display: flex;
@@ -306,81 +308,6 @@ const SummarySidebar = styled.div`
   }
 `;
 
-const COMPANY_SLIDES = {
-  AUTOLLANTA: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Llantas Premium de Alta Gama",
-      subtitle: "Seguridad, control y durabilidad garantizada para tu vehículo"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "El Stock Más Completo",
-      subtitle: "Distribución directa a nivel nacional con precios de distribuidor"
-    }
-  ],
-  MAXXIMUNDO: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Lubricantes de Alta Tecnología",
-      subtitle: "Protección superior contra el desgaste en condiciones extremas"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "Distribución Directa",
-      subtitle: "Lubricantes premium para todo tipo de motor"
-    }
-  ],
-  STOX: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Logística Inteligente y Abastecimiento",
-      subtitle: "Socio estratégico de tu negocio con entregas a tiempo"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "Soluciones Industriales Integrales",
-      subtitle: "Optimiza tus operaciones con productos de alto rendimiento"
-    }
-  ],
-  IKONIX: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Tecnología Automotriz Innovadora",
-      subtitle: "Accesorios inteligentes y equipamiento de última generación"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "Sistemas de Iluminación Avanzados",
-      subtitle: "Visibilidad perfecta y seguridad para viajes nocturnos"
-    }
-  ],
-  AUTOMAX: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Servicios Especializados Automotrices",
-      subtitle: "Garantía de calidad con tecnología de punta en cada componente"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "Rendimiento Deportivo y Urbano",
-      subtitle: "Encuentra la combinación ideal para cualquier tipo de terreno"
-    }
-  ],
-  DEFAULT: [
-    {
-      url: "https://placehold.co/500x500",
-      title: "Portal Mayorista Grupo VII",
-      subtitle: "Tu canal de distribución oficial para llantas, lubricantes y repuestos"
-    },
-    {
-      url: "https://placehold.co/500x500",
-      title: "Variedad, Stock y Calidad Garantizada",
-      subtitle: "Los mejores precios del mercado con soporte especializado"
-    }
-  ]
-};
-
 const CartSliderSection = styled.div`
   width: 100%;
   box-sizing: border-box;
@@ -558,12 +485,52 @@ const CartSliderDot = styled.button`
   }
 `;
 
-const CartImageSlider = ({ empresaName }) => {
+const CartImageSlider = ({ empresaName, banners = [] }) => {
   const activeCompany = (empresaName || "").toUpperCase();
-  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
+  const [slides, setSlides] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const getImageUrl = (imagePath) => {
+      if (!imagePath) return "";
+      const baseUrl = import.meta.env.VITE_API_IMAGES_URL || "";
+      const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+      const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+      return `${cleanBase}${cleanPath}`;
+    };
+
+    // Filtramos los banners de esta empresa o para todas
+    const filtered = banners.filter(
+      (b) =>
+        b.DBN_ACTIVO &&
+        (b.DBN_EMPRESA || "").toUpperCase() === activeCompany
+    );
+
+    const mapped = filtered.map((b) => ({
+      url: getImageUrl(b.DBN_RUTAIMAGEN),
+      title: b.DBN_TITULO,
+      subtitle: b.DBN_DESCRIPCION,
+      link: b.DBN_URL
+    }));
+
+    if (mapped.length === 0) {
+      const global = banners.filter(
+        (b) => b.DBN_ACTIVO && (!b.DBN_EMPRESA || b.DBN_EMPRESA.toUpperCase() === "TODAS")
+      );
+      const mappedGlobal = global.map((b) => ({
+        url: getImageUrl(b.DBN_RUTAIMAGEN),
+        title: b.DBN_TITULO,
+        subtitle: b.DBN_DESCRIPCION,
+        link: b.DBN_URL
+      }));
+
+      setSlides(mappedGlobal);
+    } else {
+      setSlides(mapped);
+    }
+  }, [banners, activeCompany]);
 
   // Reset image slider index when company changes
   useEffect(() => {
@@ -1732,6 +1699,21 @@ const Carrito = () => {
   const navigate = useNavigate();
   const { theme } = useAppTheme();
   const { user, isSeller, isB2BSeller } = useAuth(); // Obtenemos el usuario actual e info de rol
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const response = await api_banners_getByTipo('Carrito');
+        if (response.success && Array.isArray(response.data)) {
+          setBanners(response.data);
+        }
+      } catch (error) {
+        console.error("Error loading carrousel banners:", error);
+      }
+    };
+    loadBanners();
+  }, []);
 
   const getClientName = () => {
     if (isSeller) {
@@ -2982,7 +2964,7 @@ const Carrito = () => {
               </ProcessingOverlay>
             )}
           </OrderSummary>
-          <CartImageSlider empresaName={selectedCompany} />
+          <CartImageSlider empresaName={selectedCompany} banners={banners} />
         </SummarySidebar>
 
       </CartLayout>

@@ -17,6 +17,7 @@ import RenderLoader from "../../components/ui/RenderLoader";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { api_email_solicitudEmpresa } from "../../api/email/apiEmail";
+import { api_banners_getByTipo } from "../../api/banners/apiBanners";
 
 const CatalogContainer = styled.div`
   background: ${({ theme }) => theme.colors.background};
@@ -679,79 +680,6 @@ const BackLink = styled.a`
   }
 `;
 
-const COMPANY_SLIDES = {
-  AUTOLLANTA: [
-    {
-      url: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Llantas Premium de Alta Gama",
-      subtitle: "Seguridad, control y durabilidad garantizada para tu vehículo"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "El Stock Más Completo",
-      subtitle: "Distribución directa a nivel nacional con precios de distribuidor"
-    }
-  ],
-  MAXXIMUNDO: [
-    {
-      url: "https://placehold.co/1024x90",
-    },
-    {
-      url: "https://placehold.co/1024x90",
-      title: "Lubricantes de Alta Tecnología",
-      subtitle: "Protección superior contra el desgaste en condiciones extremas"
-    }
-  ],
-  STOX: [
-    {
-      url: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Logística Inteligente y Abastecimiento",
-      subtitle: "Socio estratégico de tu negocio con entregas a tiempo"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Soluciones Industriales Integrales",
-      subtitle: "Optimiza tus operaciones con productos de alto rendimiento"
-    }
-  ],
-  IKONIX: [
-    {
-      url: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Tecnología Automotriz Innovadora",
-      subtitle: "Accesorios inteligentes y equipamiento de última generación"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Sistemas de Iluminación Avanzados",
-      subtitle: "Visibilidad perfecta y seguridad para viajes nocturnos"
-    }
-  ],
-  AUTOMAX: [
-    {
-      url: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Servicios Especializados Automotrices",
-      subtitle: "Garantía de calidad con tecnología de punta en cada componente"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1562620644-856c4faee402?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Rendimiento Deportivo y Urbano",
-      subtitle: "Encuentra la combinación ideal para cualquier tipo de terreno"
-    }
-  ],
-  DEFAULT: [
-    {
-      url: "https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Portal Mayorista Grupo VII",
-      subtitle: "Tu canal de distribución oficial para llantas, lubricantes y repuestos"
-    },
-    {
-      url: "https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&w=1600&h=450&q=80",
-      title: "Variedad, Stock y Calidad Garantizada",
-      subtitle: "Los mejores precios del mercado con soporte especializado"
-    }
-  ]
-};
-
 const SliderSection = styled.div`
   width: 100%;
   padding: 0.5rem 2rem 0.5rem;
@@ -931,12 +859,52 @@ const SliderDot = styled.button`
   }
 `;
 
-const ImageSlider = ({ empresaName }) => {
+const ImageSlider = ({ empresaName, banners = [] }) => {
   const activeCompany = (empresaName || "").toUpperCase();
-  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
+  const [slides, setSlides] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const getImageUrl = (imagePath) => {
+      if (!imagePath) return "";
+      const baseUrl = import.meta.env.VITE_API_IMAGES_URL || "";
+      const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+      const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+      return `${cleanBase}${cleanPath}`;
+    };
+
+    // Filtramos los banners de esta empresa o para todas
+    const filtered = banners.filter(
+      (b) => 
+        b.DBN_ACTIVO && 
+        (b.DBN_EMPRESA || "").toUpperCase() === activeCompany
+    );
+
+    const mapped = filtered.map((b) => ({
+      url: getImageUrl(b.DBN_RUTAIMAGEN),
+      title: b.DBN_TITULO,
+      subtitle: b.DBN_DESCRIPCION,
+      link: b.DBN_URL
+    }));
+
+    if (mapped.length === 0) {
+      const global = banners.filter(
+        (b) => b.DBN_ACTIVO && (!b.DBN_EMPRESA || b.DBN_EMPRESA.toUpperCase() === "TODAS")
+      );
+      const mappedGlobal = global.map((b) => ({
+        url: getImageUrl(b.DBN_RUTAIMAGEN),
+        title: b.DBN_TITULO,
+        subtitle: b.DBN_DESCRIPCION,
+        link: b.DBN_URL
+      }));
+
+      setSlides(mappedGlobal);
+    } else {
+      setSlides(mapped);
+    }
+  }, [banners, activeCompany]);
 
   // Reset image slider index when company changes
   useEffect(() => {
@@ -1013,6 +981,22 @@ const Catalog = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isSeller } = useAuth();
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const response = await api_banners_getByTipo('Catalogo');
+        if (response.success && Array.isArray(response.data)) {
+          setBanners(response.data);
+        }
+      } catch (error) {
+        console.error("Error loading catalogo banners:", error);
+      }
+    };
+    loadBanners();
+  }, []);
+
   const {
     loadProductsForEmpresa,
     catalogByEmpresa,
@@ -1577,7 +1561,7 @@ const Catalog = () => {
           isAtProductView={isAtProductView}
           empresaName={empresaName}
         />
-        
+
 
         <MainContent>
           {loading ? (
@@ -1604,7 +1588,7 @@ const Catalog = () => {
 
   return (
     <CatalogContainer>
-      <ImageSlider empresaName={empresaName} />
+      <ImageSlider empresaName={empresaName} banners={banners} />
       {renderCatalogContent()}
     </CatalogContainer>
   );

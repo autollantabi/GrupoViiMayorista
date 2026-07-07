@@ -322,6 +322,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [accessSections, setAccessSections] = useState([]);
   const isB2CSeller = user?.ROLE_NAME === ROLES.VENDEDOR_B2C;
+  const isAdmin = user?.ROLE_NAME === ROLES.ADMIN;
 
 
   // Verificar si estamos en el home
@@ -397,7 +398,11 @@ export default function Header() {
 
 
   const handleGoToHome = () => {
-    navigate("/");
+    if (isAdmin) {
+      navigate(ROUTES.ADMIN.DASHBOARD_ADMIN);
+    } else {
+      navigate("/");
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -505,12 +510,20 @@ export default function Header() {
 
         <NavigationMenu>
           <NavLink
-            $active={false}
-            onClick={() => handleNavigateAndScroll("#inicio")}
+            $active={isAdmin ? location.pathname === ROUTES.ADMIN.DASHBOARD_ADMIN : false}
+            onClick={() => isAdmin ? handleGoToHome() : handleNavigateAndScroll("#inicio")}
           >
             Inicio
           </NavLink>
-          {!isSeller && (
+          {isAdmin && (
+            <NavLink
+              $active={location.pathname === ROUTES.ADMIN.BANNERS}
+              onClick={() => handleNavClick(ROUTES.ADMIN.BANNERS)}
+            >
+              Banners
+            </NavLink>
+          )}
+          {!isSeller && !isAdmin && (
             <NavLink
               $active={false}
               onClick={() => handleNavigateAndScroll("#empresas-grid")}
@@ -518,7 +531,7 @@ export default function Header() {
               Catálogos
             </NavLink>
           )}
-          {hasAppShellAccess && (
+          {!isAdmin && hasAppShellAccess && (
             <NavLink
               $active={false}
               onClick={() => handleNavigateAndScroll("#club-shell-maxx")}
@@ -526,7 +539,7 @@ export default function Header() {
               Club Shell Maxx
             </NavLink>
           )}
-          {hasReencaucheAccess && (
+          {!isAdmin && hasReencaucheAccess && (
             <NavLink
               $active={false}
               onClick={() => handleNavigateAndScroll("#bonos-haohua")}
@@ -534,7 +547,7 @@ export default function Header() {
               Bonos Haohua
             </NavLink>
           )}
-          {hasXCoinAccess && (
+          {!isAdmin && hasXCoinAccess && (
             <NavLink
               $active={false}
               onClick={() => handleNavigateAndScroll("#xcoin")}
@@ -663,15 +676,28 @@ export default function Header() {
 
         <MobileMenuContent>
           <UserMenuItem
-            $active={location.pathname === ROUTES.ECOMMERCE.HOME}
+            $active={isAdmin ? location.pathname === ROUTES.ADMIN.DASHBOARD_ADMIN : location.pathname === ROUTES.ECOMMERCE.HOME}
             onClick={() => {
-              handleNavClick(ROUTES.ECOMMERCE.HOME);
+              if (isAdmin) {
+                handleNavClick(ROUTES.ADMIN.DASHBOARD_ADMIN);
+              } else {
+                handleNavClick(ROUTES.ECOMMERCE.HOME);
+              }
             }}
           >
             <RenderIcon name="FaHouse" size={16} />
             Inicio
           </UserMenuItem>
-          {!isSeller && (
+          {isAdmin && (
+            <UserMenuItem
+              $active={location.pathname === ROUTES.ADMIN.BANNERS}
+              onClick={() => handleNavClick(ROUTES.ADMIN.BANNERS)}
+            >
+              <RenderIcon name="FaImages" size={16} />
+              Banners
+            </UserMenuItem>
+          )}
+          {!isSeller && !isAdmin && (
             <UserMenuItem
               onClick={() => {
                 handleNavigateAndScroll("#empresas-grid");

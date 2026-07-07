@@ -221,7 +221,7 @@ const LoadingContainer = styled.div`
 
 const AdminDashboardComponent = () => {
   const { theme } = useAppTheme();
-  const { user } = useAuth();
+  useAuth();
   const navigate = useNavigate();
 
   // Estados
@@ -450,6 +450,20 @@ const AdminDashboardComponent = () => {
                 <ActionTitle>Administrar Coordinadores</ActionTitle>
                 <ActionDescription>
                   Gestionar coordinadores y sus empresas asignadas
+                </ActionDescription>
+              </ActionContent>
+            </ActionCard>
+
+            <ActionCard
+              onClick={() => navigateToSection(ROUTES.ADMIN.BANNERS)}
+            >
+              <ActionIcon color={theme.colors.primary}>
+                <RenderIcon name="FaImages" size={16} />
+              </ActionIcon>
+              <ActionContent>
+                <ActionTitle>Administrar Banners</ActionTitle>
+                <ActionDescription>
+                  Gestionar banners publicitarios del e-commerce
                 </ActionDescription>
               </ActionContent>
             </ActionCard>
