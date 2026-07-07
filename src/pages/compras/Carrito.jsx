@@ -20,6 +20,8 @@ import { ROLES } from "../../constants/roles";
 import { api_addresses_createAddress } from "../../api/users/apiAddresses";
 import MapSelector from "../../components/ui/MapSelector";
 import { reverseGeocode } from "../../utils/reverseGeocoding";
+import { useNuvei } from "../../hooks/useNuevi";
+import { api_generate_payment_reference } from "../../api/payments/apiPayments";
 
 const PageTitle = styled.div`
   display: flex;
@@ -869,7 +871,6 @@ const NewAddressButton = styled(Button)`
 // Nuevos estilos para las pestañas de empresas
 const CompanyTabs = styled.div`
   display: flex;
-  overflow-x: auto;
   margin-bottom: 2rem;
   border-bottom: 2px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
@@ -1733,15 +1734,15 @@ const Carrito = () => {
   const { theme } = useAppTheme();
   const { user, isSeller, isB2BSeller } = useAuth(); // Obtenemos el usuario actual e info de rol
 
-  const getClientName = () => {
+  const getClientNameForSeller = () => {
     if (isSeller) {
       const sellerData = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
       return sellerData.clientName || "CLIENTE GENERAL";
     }
     return null;
   };
-  const clientNameForTitle = getClientName();
 
+  const clientNameForTitle = getClientNameForSeller();
 
   // Estados para manejar direcciones
   const [addresses, setAddresses] = useState([]);
@@ -1783,6 +1784,36 @@ const Carrito = () => {
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showConfirmAddressModal, setShowConfirmAddressModal] = useState(false);
+
+  const [paymentMethod, setPaymentMethod] = useState("CREDIT");
+
+  const handleNuveiSuccess = useCallback(async (transaction) => {
+    if (transaction.status !== "success" || transaction.status_detail !== 3) {
+      toast.error("El pago no fue aprobado. Intente nuevamente.");
+      console.warn("Transacción no aprobada:", transaction);
+      return;
+    }
+
+    // Verificar el pago realizado 
+    
+
+    toast.success("Pago aprobado correctamente");
+  }, []);
+
+  const handleNuveiError = useCallback((error) => {
+    toast.error("El pago no pudo procesarse. Intente nuevamente.");
+    console.error("Error Nuvei:", error);
+  }, []);
+
+  const handleNuveiClose = useCallback(() => {
+    setIsProcessingOrders(false);
+  }, []);
+
+  const { openCheckout } = useNuvei({
+    onSuccess: handleNuveiSuccess,
+    onError: handleNuveiError,
+    onClose: handleNuveiClose,
+  });
 
   // Nueva función para confirmar el pago de una línea
   const handleLineCheckoutClick = (company, line) => {
@@ -2311,7 +2342,7 @@ const Carrito = () => {
       TOTAL: totalConIva,
       PRODUCTOS: productsToProcess,
       SOURCE: clientSource || "",
-      // FORMA_PAGO: formaPago,
+      PAYMENT_METHOD: paymentMethod,
     };
 
     // Agregar PROFORMA_HEADER si el usuario es VENDEDOR B2B
@@ -2332,7 +2363,6 @@ const Carrito = () => {
       }
     }
 
-
     const responseOrder = await api_order_createOrder(orderToProcess);
 
 
@@ -2345,114 +2375,154 @@ const Carrito = () => {
 
   // Función para procesar una línea específica de una empresa
   const handleCheckoutSingleLine = async (company, line) => {
-    try {
-      const companyData = groupedCart[company];
-      if (!companyData || !companyData.lines[line]) {
-        throw new Error("No se encontró información para esta línea");
+
+    if (paymentMethod === "CREDIT_CARD") {
+      try {
+        setIsProcessingOrders(true);
+
+        const totalConIva = calculateLineTotalWithIVA(company, line); // 👈 usar la función
+
+        const payload = {
+          order: {
+            amount: parseFloat(totalConIva.toFixed(2)),
+            description: `Pedido ${company} - ${line}`,
+            dev_reference: `REF-${Date.now()}`,
+            taxable_amount: 0,
+            tax_percentage: 0,
+            vat: 0
+          },
+          user: {
+            id: user.ACCOUNT_USER,
+            email: user.EMAIL,
+          },
+        };
+
+        const result = await api_generate_payment_reference(payload);
+
+        if (!result.success) {
+          throw new Error(result.error || "No se pudo generar la referencia de pago");
+        }
+
+        setIsProcessingOrders(false);
+        openCheckout(result.data.reference);
+
+      } catch (error) {
+        console.error(`Error al procesar pago con tarjeta para ${company} - ${line}:`, error);
+        toast.error(`Error al procesar pago: ${error.message}`);
+        setIsProcessingOrders(false);
       }
+      return;
+    }
+    else {
+      try {
+        const companyData = groupedCart[company];
+        if (!companyData || !companyData.lines[line]) {
+          throw new Error("No se encontró información para esta línea");
+        }
 
-      setCurrentProcessingCompany(`${company} - ${line}`);
-      setIsProcessingOrders(true);
-      setTotalOrdersToProcess(1);
-      setCompletedOrders(0);
+        setCurrentProcessingCompany(`${company} - ${line}`);
+        setIsProcessingOrders(true);
+        setTotalOrdersToProcess(1);
+        setCompletedOrders(0);
 
-      const lineDataObj = companyData.lines[line];
-      const lineData = {
-        items: lineDataObj.items,
-        shippingAddressId: companyData.shippingAddressId,
-        billingAddressId: companyData.billingAddressId,
-        discountKey: lineDataObj.discountKey, // Incluir la clave de descuento
-      };
+        const lineDataObj = companyData.lines[line];
+        const lineData = {
+          items: lineDataObj.items,
+          shippingAddressId: companyData.shippingAddressId,
+          billingAddressId: companyData.billingAddressId,
+          discountKey: lineDataObj.discountKey, // Incluir la clave de descuento
+        };
 
-      const itemsIdsToDeleteFromCart = lineData.items.map(
-        (item) => item.idShoppingCartDetail
-      );
+        const itemsIdsToDeleteFromCart = lineData.items.map(
+          (item) => item.idShoppingCartDetail
+        );
 
-      await handleCheckoutSingleLineInternal(lineData, company, line);
+        await handleCheckoutSingleLineInternal(lineData, company, line);
 
-      // Solo para vendedores B2B: obtenemos los UUIDs reales desde el backend antes de borrar
-      let finalIdsToDelete = itemsIdsToDeleteFromCart;
-      if (isB2BSeller) {
+        // Solo para vendedores B2B: obtenemos los UUIDs reales desde el backend antes de borrar
+        let finalIdsToDelete = itemsIdsToDeleteFromCart;
+        if (isB2BSeller) {
 
-        const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-        const clientAccounts = stored.clientAccounts || {};
-        const clientAccount = clientAccounts[company];
+          const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
+          const clientAccounts = stored.clientAccounts || {};
+          const clientAccount = clientAccounts[company];
 
-        if (clientAccount) {
-          const cartResult = await api_cart_createCarrito(clientAccount, company);
-          if (cartResult?.success && cartResult?.data?.details) {
-            // IMPORTANTE: Filtrar los detalles devueltos por la API para que solo coincidan con los productos 
-            // de la línea actual que estamos procesando. De lo contrario, borraríamos todo el carrito de la empresa.
-            const currentLineProductCodes = lineData.items.map(item => item.id);
+          if (clientAccount) {
+            const cartResult = await api_cart_createCarrito(clientAccount, company);
+            if (cartResult?.success && cartResult?.data?.details) {
+              // IMPORTANTE: Filtrar los detalles devueltos por la API para que solo coincidan con los productos 
+              // de la línea actual que estamos procesando. De lo contrario, borraríamos todo el carrito de la empresa.
+              const currentLineProductCodes = lineData.items.map(item => item.id);
 
-            finalIdsToDelete = cartResult.data.details
-              .filter(detail => currentLineProductCodes.includes(detail.ID_PRODUCT))
-              .map(detail => detail.ID_SHOPPING_CART_DETAIL);
+              finalIdsToDelete = cartResult.data.details
+                .filter(detail => currentLineProductCodes.includes(detail.ID_PRODUCT))
+                .map(detail => detail.ID_SHOPPING_CART_DETAIL);
 
+            }
+          }
+
+          // Si por alguna razón finalIdsToDelete quedó vacío o inválido, usamos el fallback
+          if (!finalIdsToDelete || finalIdsToDelete.length === 0 || finalIdsToDelete.some(id => !id)) {
+            finalIdsToDelete = itemsIdsToDeleteFromCart.filter(id => id);
           }
         }
 
-        // Si por alguna razón finalIdsToDelete quedó vacío o inválido, usamos el fallback
-        if (!finalIdsToDelete || finalIdsToDelete.length === 0 || finalIdsToDelete.some(id => !id)) {
-          finalIdsToDelete = itemsIdsToDeleteFromCart.filter(id => id);
-        }
-      }
-
-      // Verificación final de que tengamos IDs para borrar para evitar el error 400
-      if (!Array.isArray(finalIdsToDelete) || finalIdsToDelete.length === 0) {
-        // No lanzamos error para permitir que el flujo de éxito continúe si el pedido se creó
-      } else {
-        const responseDelete = await api_cart_deleteProductsFromCart(
-          finalIdsToDelete
-        );
-        if (!responseDelete.success) {
-          throw new Error(
-            responseDelete.message ||
-            "Error al eliminar los productos del carrito"
+        // Verificación final de que tengamos IDs para borrar para evitar el error 400
+        if (!Array.isArray(finalIdsToDelete) || finalIdsToDelete.length === 0) {
+          // No lanzamos error para permitir que el flujo de éxito continúe si el pedido se creó
+        } else {
+          const responseDelete = await api_cart_deleteProductsFromCart(
+            finalIdsToDelete
           );
+          if (!responseDelete.success) {
+            throw new Error(
+              responseDelete.message ||
+              "Error al eliminar los productos del carrito"
+            );
+          }
         }
+
+        // Deshabilitar la recarga automática del carrito mientras mostramos el modal
+        skipCartLoadRef.current = true;
+
+        // Primero mostrar el modal de éxito ANTES de eliminar items del estado local
+        // Esto evita que el componente se re-renderice con carrito vacío y oculte el modal
+        setCompletedOrders(1);
+        setIsProcessingOrders(false);
+        setShowSuccessCard(true);
+
+        // Guardar el grupo que se procesó para limpiarlo cuando se cierre el modal
+        setLastProcessedCompanies([`${company}_${line}`]);
+
+        // Esperar un momento para que el modal se muestre completamente
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Ahora eliminar los items del estado local usando idShoppingCartDetail
+        // para evitar que se reintroduzcan al recargar
+        if (removeFromCartByDetailIds) {
+          removeFromCartByDetailIds(itemsIdsToDeleteFromCart);
+        }
+
+        // Esperar un momento para que el backend procese la eliminación
+        await new Promise((resolve) => setTimeout(resolve, 700));
+
+        // Recargar el carrito desde la API reemplazando completamente (forceReplace = true)
+        // Esto evita que se reintroduzcan productos que ya fueron eliminados
+        // Hacerlo después de mostrar el modal para no interferir con el estado del modal
+        await loadCartFromAPI(true);
+
+        // Rehabilitar la recarga automática después de un momento
+        setTimeout(() => {
+          skipCartLoadRef.current = false;
+        }, 2000);
+      } catch (error) {
+        console.error(
+          `Error al procesar pedido para ${company} - ${line}:`,
+          error
+        );
+        toast.error(`Error al procesar pedido: ${error.message}`);
+        setIsProcessingOrders(false);
       }
-
-      // Deshabilitar la recarga automática del carrito mientras mostramos el modal
-      skipCartLoadRef.current = true;
-
-      // Primero mostrar el modal de éxito ANTES de eliminar items del estado local
-      // Esto evita que el componente se re-renderice con carrito vacío y oculte el modal
-      setCompletedOrders(1);
-      setIsProcessingOrders(false);
-      setShowSuccessCard(true);
-
-      // Guardar el grupo que se procesó para limpiarlo cuando se cierre el modal
-      setLastProcessedCompanies([`${company}_${line}`]);
-
-      // Esperar un momento para que el modal se muestre completamente
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // Ahora eliminar los items del estado local usando idShoppingCartDetail
-      // para evitar que se reintroduzcan al recargar
-      if (removeFromCartByDetailIds) {
-        removeFromCartByDetailIds(itemsIdsToDeleteFromCart);
-      }
-
-      // Esperar un momento para que el backend procese la eliminación
-      await new Promise((resolve) => setTimeout(resolve, 700));
-
-      // Recargar el carrito desde la API reemplazando completamente (forceReplace = true)
-      // Esto evita que se reintroduzcan productos que ya fueron eliminados
-      // Hacerlo después de mostrar el modal para no interferir con el estado del modal
-      await loadCartFromAPI(true);
-
-      // Rehabilitar la recarga automática después de un momento
-      setTimeout(() => {
-        skipCartLoadRef.current = false;
-      }, 2000);
-    } catch (error) {
-      console.error(
-        `Error al procesar pedido para ${company} - ${line}:`,
-        error
-      );
-      toast.error(`Error al procesar pedido: ${error.message}`);
-      setIsProcessingOrders(false);
     }
   };
 
@@ -2472,7 +2542,179 @@ const Carrito = () => {
     navigate(getCatalogUrl());
   };
 
+  const ClientSummaryCard = () => {
+    if (!user) return null;
 
+    return (
+      <div style={{
+        padding: "0.875rem 1rem",
+        borderRadius: "10px",
+        border: `1px solid ${theme.colors.border}`,
+        backgroundColor: theme.mode === "dark"
+          ? `${theme.colors.background}80`
+          : `${theme.colors.background}`,
+        marginBottom: "1rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.35rem"
+      }}>
+        <div style={{
+          fontSize: "0.75rem",
+          fontWeight: 600,
+          color: theme.colors.textSecondary,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em"
+        }}>
+          Cliente
+        </div>
+        <div style={{
+          fontWeight: 700,
+          fontSize: "0.95rem",
+          color: theme.colors.text
+        }}>
+          {user.NAME_USER}
+        </div>
+        <div style={{
+          fontSize: "0.85rem",
+          color: theme.colors.textSecondary,
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem"
+        }}>
+          <RenderIcon name="FaEnvelope" size={12} />
+          {user.EMAIL}
+        </div>
+      </div>
+    );
+  };
+
+  const PaymentMethodSelector = ({ value, onChange }) => {
+    return (
+      <div style={{
+        padding: "1rem",
+        borderRadius: "10px",
+        border: `1px solid ${theme.colors.border}`,
+        backgroundColor: theme.mode === "dark"
+          ? `${theme.colors.background}80`
+          : `${theme.colors.background}`,
+        marginBottom: "1rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75rem"
+      }}>
+        <div style={{
+          fontSize: "0.75rem",
+          fontWeight: 600,
+          color: theme.colors.textSecondary,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em"
+        }}>
+          Forma de pago
+        </div>
+
+        {[
+          { id: "CREDIT", label: "Crédito", icon: "FaFileInvoiceDollar" },
+          { id: "CREDIT_CARD", label: "Tarjeta de crédito", icon: "FaCreditCard" },
+        ].map((option) => (
+          <label
+            key={option.id}
+            onClick={() => onChange(option.id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              padding: "0.75rem 1rem",
+              borderRadius: "8px",
+              border: `2px solid ${value === option.id ? theme.colors.primary : theme.colors.border}`,
+              backgroundColor: value === option.id
+                ? theme.mode === "dark"
+                  ? `${theme.colors.primary}15`
+                  : `${theme.colors.primary}08`
+                : "transparent",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value={option.id}
+              checked={value === option.id}
+              onChange={() => onChange(option.id)}
+              style={{ accentColor: theme.colors.primary, width: "16px", height: "16px" }}
+            />
+            <RenderIcon
+              name={option.icon}
+              size={16}
+              color={value === option.id ? theme.colors.primary : theme.colors.textSecondary}
+            />
+            <span style={{
+              fontWeight: value === option.id ? 600 : 400,
+              fontSize: "0.95rem",
+              color: value === option.id ? theme.colors.primary : theme.colors.text,
+            }}>
+              {option.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    );
+  };
+
+  const calculateLineTotalWithIVA = (company, line) => {
+    const companyData = groupedCart[company];
+    if (!companyData?.lines[line]) return 0;
+
+    const lineData = companyData.lines[line];
+
+    const offerData = isB2BSeller
+      ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}")
+      : null;
+
+    const extraProductDiscounts = offerData?.items || {};
+    const extraTotalDiscountPct = offerData?.total || 0;
+    const preview = offerData?.previews?.[company];
+
+    const itemsWithIVA = lineData.items.map((item) => {
+      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS
+        ?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+      const extraDiscount = extraProductDiscounts[item.id] || 0;
+      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
+      const totalPct = (promoDiscount + extraDiscount) / 100;
+
+      const discountedPrice = item.price * (1 - totalPct);
+
+      let clientDiscountPct = 0;
+      if (preview?.DESCUENTO_CLIENTE) {
+        const lineaItem = (item.lineaNegocio || "").toUpperCase();
+        clientDiscountPct = lineaItem === "LUBRICANTES"
+          ? preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0
+          : preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+      } else {
+        const discountKey = lineData.discountKey || line;
+        const potentialDiscount = user?.DESCUENTOS?.[company];
+        clientDiscountPct = potentialDiscount?.[discountKey]
+          ?? (typeof potentialDiscount === "number" ? potentialDiscount : 0);
+      }
+
+      const priceWithIVA = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
+      const finalPriceIVA = priceWithIVA * (1 - clientDiscountPct / 100);
+
+      return finalPriceIVA * item.quantity;
+    });
+
+    const subtotalFinalWithIVA = itemsWithIVA.reduce((acc, val) => acc + val, 0);
+    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+
+    let groupEcovalor = 0;
+    lineData.items.forEach(item => {
+      const lineaItem = (item.lineaNegocio || "").toUpperCase();
+      if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
+      else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+    });
+
+    return subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+  };
   return (
     <PageContainer style={{ padding: "16px" }}>
       <PageTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -2807,6 +3049,7 @@ const Carrito = () => {
         <SummarySidebar>
           <OrderSummary>
             <SummaryTitle>Resumen del pedido</SummaryTitle>
+            <ClientSummaryCard />
 
             <Button
               text="Seguir comprando"
@@ -2941,6 +3184,13 @@ const Carrito = () => {
                 )}
               </>
             )}
+
+            <PaymentMethodSelector
+              value={paymentMethod}
+              onChange={(val) => {
+                setPaymentMethod(val);
+              }}
+            />
             {showConfirmModal && (
               <ProcessingOverlay>
                 <ProcessingCard>

@@ -97,9 +97,10 @@ Si el login falla, se muestra mensaje (toast) y no se guarda sesión.
 2. **Detalle de producto:** Usuario abre un producto. Se carga con ProductCatalogContext (getProductByCodigo o similar) y se muestra detalle. Solo CLIENTE puede añadir al carrito.
 3. **Añadir al carrito:** CartContext `addItem`. Si ya existe carrito para esa empresa (cartId), se actualiza vía `api_cart_updateCarrito`; si no, se puede crear o sincronizar en la siguiente operación (loadCartFromAPI, syncCartToAPI).
 4. **Carrito:** Página Carrito muestra ítems; usuario puede modificar cantidades o eliminar. CartContext usa api/cart (getCarrito, updateCarrito, deleteDetail). Totales con IVA y descuentos (constants/taxes, user.DESCUENTOS).
-5. **Persistencia y Recuperación**: El sistema utiliza `sessionStorage` para hidratar el `barcodePriceMap` inmediatamente en cada recarga, evitando que los precios se reseteen a cero. Además, cuenta con un **recovery guard** para detectar y sincronizar "productos fantasma" que pudieran aparecer en el backend sin estar en el estado local.
-6. **Crear pedido:** Desde Carrito (o flujo de checkout), se sincroniza carrito con API si aplica y se llama a `api_order_createOrder` con los datos del pedido. Tras éxito, se limpia o actualiza carrito y se redirige a detalle de pedido o listado (Mis Pedidos).
-7. **Pantalla de Carga (Loading Screen):** Para prevenir interacciones con productos sin precio o durante la sincronización, se implementa un `LoadingOverlay` premium a pantalla completa. Este bloquea la interfaz mientras se hidratan los precios y se valida el estado del carrito.
+5. **Checkout** Pagina Carrito muestra información del cliente (nombre, correo) y selección para la forma de pago (sólo dos formas de pago (crédito y tarjeta de crédito)) selección de la dirección de envío por empresa y la dirección de facturación por empresa.
+6. **Persistencia y Recuperación**: El sistema utiliza `sessionStorage` para hidratar el `barcodePriceMap` inmediatamente en cada recarga, evitando que los precios se reseteen a cero. Además, cuenta con un **recovery guard** para detectar y sincronizar "productos fantasma" que pudieran aparecer en el backend sin estar en el estado local.
+7. **Crear pedido:** Desde Carrito (o flujo de checkout), se sincroniza carrito con API si aplica y se llama a `api_order_createOrder` con los datos del pedido. Tras éxito, se limpia o actualiza carrito y se redirige a detalle de pedido o listado (Mis Pedidos).
+8. **Pantalla de Carga (Loading Screen):** Para prevenir interacciones con productos sin precio o durante la sincronización, se implementa un `LoadingOverlay` premium a pantalla completa. Este bloquea la interfaz mientras se hidratan los precios y se valida el estado del carrito.
 
 ---
 
