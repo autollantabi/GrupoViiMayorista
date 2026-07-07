@@ -356,6 +356,17 @@ const CartSlide = styled.div`
   justify-content: center;
 `;
 
+const CartSlideLink = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+`;
+
 const CartSliderImage = styled.img`
   width: 100%;
   height: 100%;
@@ -485,6 +496,12 @@ const CartSliderDot = styled.button`
   }
 `;
 
+const isSafeUrl = (url) => {
+  if (!url) return false;
+  const trimmed = url.trim().toLowerCase();
+  return trimmed.startsWith("http://") || trimmed.startsWith("https://") || url.startsWith("/");
+};
+
 const CartImageSlider = ({ empresaName, banners = [] }) => {
   const activeCompany = (empresaName || "").toUpperCase();
   const [slides, setSlides] = useState([]);
@@ -576,13 +593,28 @@ const CartImageSlider = ({ empresaName, banners = [] }) => {
         <CartSliderTrack activeIndex={currentIndex}>
           {slides.map((slide, idx) => (
             <CartSlide key={idx}>
-              <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
-              <CartSlideOverlay />
-              {(slide.title || slide.subtitle) && (
-                <CartSlideContent>
-                  {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
-                  {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
-                </CartSlideContent>
+              {slide.link && isSafeUrl(slide.link) ? (
+                <CartSlideLink href={slide.link} target="_blank" rel="noopener noreferrer">
+                  <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
+                  <CartSlideOverlay />
+                  {(slide.title || slide.subtitle) && (
+                    <CartSlideContent>
+                      {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
+                      {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
+                    </CartSlideContent>
+                  )}
+                </CartSlideLink>
+              ) : (
+                <>
+                  <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
+                  <CartSlideOverlay />
+                  {(slide.title || slide.subtitle) && (
+                    <CartSlideContent>
+                      {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
+                      {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
+                    </CartSlideContent>
+                  )}
+                </>
               )}
             </CartSlide>
           ))}

@@ -741,6 +741,16 @@ const Slide = styled.div`
   align-items: center;
 `;
 
+const SlideLink = styled.a`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+`;
+
 const SliderImage = styled.img`
   width: 100%;
   height: 100%;
@@ -859,6 +869,12 @@ const SliderDot = styled.button`
   }
 `;
 
+const isSafeUrl = (url) => {
+  if (!url) return false;
+  const trimmed = url.trim().toLowerCase();
+  return trimmed.startsWith("http://") || trimmed.startsWith("https://") || url.startsWith("/");
+};
+
 const ImageSlider = ({ empresaName, banners = [] }) => {
   const activeCompany = (empresaName || "").toUpperCase();
   const [slides, setSlides] = useState([]);
@@ -946,12 +962,25 @@ const ImageSlider = ({ empresaName, banners = [] }) => {
         <SliderTrack activeIndex={currentIndex}>
           {slides.map((slide, idx) => (
             <Slide key={idx}>
-              <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
-              <SlideOverlay />
-              <SlideContent>
-                <SlideTitle>{slide.title}</SlideTitle>
-                <SlideSubtitle>{slide.subtitle}</SlideSubtitle>
-              </SlideContent>
+              {slide.link && isSafeUrl(slide.link) ? (
+                <SlideLink href={slide.link} target="_blank" rel="noopener noreferrer">
+                  <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
+                  <SlideOverlay />
+                  <SlideContent>
+                    <SlideTitle>{slide.title}</SlideTitle>
+                    <SlideSubtitle>{slide.subtitle}</SlideSubtitle>
+                  </SlideContent>
+                </SlideLink>
+              ) : (
+                <>
+                  <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
+                  <SlideOverlay />
+                  <SlideContent>
+                    <SlideTitle>{slide.title}</SlideTitle>
+                    <SlideSubtitle>{slide.subtitle}</SlideSubtitle>
+                  </SlideContent>
+                </>
+              )}
             </Slide>
           ))}
         </SliderTrack>
