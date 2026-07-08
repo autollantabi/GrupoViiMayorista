@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../context/AppThemeContext";
 import PageContainer from "../../components/layout/PageContainer";
 import DataTable from "../../components/ui/Table";
-import DatePicker from "../../components/ui/DatePicker";
 import Button from "../../components/ui/Button";
 import RenderIcon from "../../components/ui/RenderIcon";
+import RenderLoader from "../../components/ui/RenderLoader";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { api_get_estado_cuenta } from "../../api/estadoCuenta/apiEstadoCuenta";
 
 // Importar los logos para las empresas (logo light como fue solicitado)
 import MaxximundoLight from "../../assets/enterprises/MaxximundoLight.png";
@@ -341,120 +342,14 @@ const formatDate = (dateStr) => {
   return `${day}/${month}/${year}`;
 };
 
-// Datos simulados (mock data) organizados por empresa para evitar cruces
-const mockInvoices = [
-  {
-    numero: "FAC-10045",
-    empresa: "MAXXIMUNDO",
-    fechaCreacion: "2026-05-10",
-    fechaVencimiento: "2026-06-10",
-    cuota: "1 de 1",
-    valorCuota: 1500.00,
-    abono: 1500.00,
-    saldoCuota: 0.00,
-    saldoFactura: 0.00,
-    totalFactura: 1500.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-10082",
-    empresa: "MAXXIMUNDO",
-    fechaCreacion: "2026-06-01",
-    fechaVencimiento: "2026-07-01",
-    cuota: "1 de 2",
-    valorCuota: 600.00,
-    abono: 200.00,
-    saldoCuota: 400.00,
-    saldoFactura: 1000.00,
-    totalFactura: 1200.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-10082",
-    empresa: "MAXXIMUNDO",
-    fechaCreacion: "2026-06-01",
-    fechaVencimiento: "2026-08-01",
-    cuota: "2 de 2",
-    valorCuota: 600.00,
-    abono: 0.00,
-    saldoCuota: 600.00,
-    saldoFactura: 1000.00,
-    totalFactura: 1200.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-10115",
-    empresa: "MAXXIMUNDO",
-    fechaCreacion: "2026-06-12",
-    fechaVencimiento: "2026-07-05",
-    cuota: "1 de 1",
-    valorCuota: 850.50,
-    abono: 0.00,
-    saldoCuota: 850.50,
-    saldoFactura: 850.50,
-    totalFactura: 850.50,
-    protesto: 45.00
-  },
-  {
-    numero: "FAC-20190",
-    empresa: "STOX",
-    fechaCreacion: "2026-07-01",
-    fechaVencimiento: "2026-08-01",
-    cuota: "1 de 1",
-    valorCuota: 2100.00,
-    abono: 500.00,
-    saldoCuota: 1600.00,
-    saldoFactura: 1600.00,
-    totalFactura: 2100.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-30204",
-    empresa: "IKONIX",
-    fechaCreacion: "2026-07-05",
-    fechaVencimiento: "2026-08-05",
-    cuota: "1 de 2",
-    valorCuota: 900.00,
-    abono: 0.00,
-    saldoCuota: 900.00,
-    saldoFactura: 1800.00,
-    totalFactura: 1800.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-30204",
-    empresa: "IKONIX",
-    fechaCreacion: "2026-07-05",
-    fechaVencimiento: "2026-09-05",
-    cuota: "2 de 2",
-    valorCuota: 900.00,
-    abono: 0.00,
-    saldoCuota: 900.00,
-    saldoFactura: 1800.00,
-    totalFactura: 1800.00,
-    protesto: 0.00
-  },
-  {
-    numero: "FAC-40010",
-    empresa: "AUTOLLANTA",
-    fechaCreacion: "2026-06-20",
-    fechaVencimiento: "2026-07-20",
-    cuota: "1 de 1",
-    valorCuota: 1250.00,
-    abono: 250.00,
-    saldoCuota: 1000.00,
-    saldoFactura: 1000.00,
-    totalFactura: 1250.00,
-    protesto: 0.00
-  }
-];
+
 
 export default function EstadoCuenta() {
   const { user } = useAuth();
   const { theme } = useAppTheme();
   const navigate = useNavigate();
 
-  // Establecer la fecha de corte por defecto como la fecha actual local
+  // Establecer la fecha de consulta/corte por defecto como la fecha actual local
   const todayStr = useMemo(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -463,27 +358,56 @@ export default function EstadoCuenta() {
     return `${yyyy}-${mm}-${dd}`;
   }, []);
 
-  const [cutoffDate, setCutoffDate] = useState(todayStr);
   const [selectedCompany, setSelectedCompany] = useState("");
+  const [apiData, setApiData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Meta-información del informe (vendedor, fecha/hora) simulando llegada desde el endpoint
+  // Meta-información del informe (vendedor, fecha/hora)
   const [reportMeta, setReportMeta] = useState({
     vendedorAsignado: "JOHANNA MARULANDA",
     fechaHoraInforme: new Date().toLocaleString("es-EC")
   });
 
-  // Manejador para recargar la información (simulando petición al endpoint con la fecha de corte)
-  const handleReload = () => {
-    return new Promise((resolve) => {
-      // Simular retraso de red
-      setTimeout(() => {
-        setReportMeta({
-          vendedorAsignado: "JOHANNA MARULANDA",
+  // Función común para cargar el estado de cuenta
+  const fetchEstadoCuenta = useCallback(async (company) => {
+    if (!company) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const accountId = user?.ACCOUNT_USER || "";
+      const response = await api_get_estado_cuenta(company, accountId);
+      if (response.success) {
+        setApiData(response.data);
+        setReportMeta(prev => ({
+          ...prev,
           fechaHoraInforme: new Date().toLocaleString("es-EC")
-        });
-        resolve();
-      }, 800);
-    });
+        }));
+      } else {
+        setError(response.message);
+        setApiData([]);
+      }
+    } catch {
+      setError("Error al cargar la información del estado de cuenta.");
+      setApiData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.ACCOUNT_USER]);
+
+  // Cargar información al seleccionar empresa o cambiar el usuario
+  useEffect(() => {
+    if (!selectedCompany) {
+      setApiData([]);
+      setError(null);
+      return;
+    }
+    fetchEstadoCuenta(selectedCompany);
+  }, [selectedCompany, fetchEstadoCuenta]);
+
+  // Manejador para recargar la información
+  const handleReload = async () => {
+    await fetchEstadoCuenta(selectedCompany);
   };
 
   // Cargar imagen de forma asíncrona para jsPDF
@@ -528,7 +452,7 @@ export default function EstadoCuenta() {
       doc.text("Fecha de corte:", 14, 32);
 
       doc.setFont("helvetica", "normal");
-      const formattedCorte = formatDate(cutoffDate);
+      const formattedCorte = formatDate(todayStr);
       doc.text(formattedCorte, 42, 32);
       // Dibujar línea debajo del valor de fecha de corte
       doc.setDrawColor(180, 180, 180);
@@ -598,7 +522,7 @@ export default function EstadoCuenta() {
 
       // 5. Tabla de contenido
       const headers = [
-        ["Número", "Creación", "Vencimiento", "Días Ven.", "Cuota", "Valor cuota", "Abono", "Saldo Cuota", "Saldo Factura", "Total Factura", "Protesto"]
+        ["Número", "Fecha Factura", "Vencimiento", "Días Ven.", "Cuota", "Valor cuota", "Abono", "Saldo Cuota", "Saldo Factura", "Total Factura", "Protesto"]
       ];
 
       const body = processedData.map(item => [
@@ -606,7 +530,7 @@ export default function EstadoCuenta() {
         formatDate(item.fechaCreacion),
         formatDate(item.fechaVencimiento),
         item.diasVencidos,
-        item.cuota.replace(" de ", "/").split("/")[0] || item.cuota, // Mostrar cuota de forma corta "1"
+        item.cuota.replace(" de ", "/").split("/")[0] || item.cuota,
         formatCurrency(item.valorCuota).replace("US$", ""),
         formatCurrency(item.abono).replace("US$", ""),
         formatCurrency(item.saldoCuota).replace("US$", ""),
@@ -660,7 +584,7 @@ export default function EstadoCuenta() {
         },
         columnStyles: {
           0: { cellWidth: 26 }, // Número
-          1: { cellWidth: 16 }, // Creación
+          1: { cellWidth: 16 }, // Fecha Factura
           2: { cellWidth: 16 }, // Vencimiento
           3: { cellWidth: 12, halign: "center" }, // Días Ven.
           4: { cellWidth: 10, halign: "center" }, // Cuota
@@ -704,37 +628,70 @@ export default function EstadoCuenta() {
     }
   };
 
-  // Filtrar y calcular la información según la fecha de corte y la empresa seleccionada
+  // Procesar y mapear la información de la API para la tabla
   const processedData = useMemo(() => {
-    if (!cutoffDate || !selectedCompany) return [];
+    if (!selectedCompany || !apiData || apiData.length === 0) return [];
 
-    const targetDate = new Date(cutoffDate);
-    targetDate.setHours(23, 59, 59, 999);
-
-    return mockInvoices
-      .filter((item) => {
-        const itemDate = new Date(item.fechaCreacion);
-        return item.empresa === selectedCompany && itemDate <= targetDate;
-      })
-      .map((item) => {
-        // Calcular días vencidos con respecto a la fecha de corte (firmados, según template)
-        const dueDate = new Date(item.fechaVencimiento);
-        const cutDate = new Date(cutoffDate);
-        const timeDiff = cutDate.getTime() - dueDate.getTime();
-        const diasVencidos = Math.floor(timeDiff / (1000 * 3600 * 24));
-
-        return {
-          ...item,
-          diasVencidos
+    // Agrupar por número de documento para calcular la cuota máxima y el saldo total de la factura
+    const docsMap = {};
+    apiData.forEach((item) => {
+      const docNum = item.HCAD_NUMERODOCUMENTO;
+      if (!docNum) return;
+      if (!docsMap[docNum]) {
+        docsMap[docNum] = {
+          maxCuota: 0,
+          saldoFactura: 0,
         };
-      });
-  }, [cutoffDate, selectedCompany]);
+      }
+      const valorCuota = Number(item.HCAD_CUOTATOTAL) || 0;
+      const abono = Number(item.HCAD_MONTOPAGADO) || 0;
+      const saldoCuota = valorCuota - abono;
+
+      docsMap[docNum].maxCuota = Math.max(docsMap[docNum].maxCuota, item.HCAD_NUMEROCUOTA || 1);
+      docsMap[docNum].saldoFactura += saldoCuota;
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return apiData.map((item) => {
+      const docNum = item.HCAD_NUMERODOCUMENTO || "-";
+
+      // Limpiar y parsear fechas
+      const fechaCreacionRaw = item.HCAD_FECHADOCUMENTO ? item.HCAD_FECHADOCUMENTO.split("T")[0].split(" ")[0] : "";
+      const fechaVencimientoRaw = item.HCAD_FECHAVENCIMIENTO ? item.HCAD_FECHAVENCIMIENTO.split("T")[0].split(" ")[0] : "";
+
+      const dueDate = new Date(fechaVencimientoRaw);
+      dueDate.setHours(0, 0, 0, 0);
+
+      const timeDiff = today.getTime() - dueDate.getTime();
+      const diasVencidos = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+      const valorCuota = Number(item.HCAD_CUOTATOTAL) || 0;
+      const abono = Number(item.HCAD_MONTOPAGADO) || 0;
+      const saldoCuota = valorCuota - abono;
+
+      return {
+        numero: docNum,
+        lineaNegocio: item.HCAD_LINEANEGOCIO || "",
+        fechaCreacion: fechaCreacionRaw,
+        fechaVencimiento: fechaVencimientoRaw,
+        diasVencidos: isNaN(diasVencidos) ? 0 : diasVencidos,
+        cuota: `${item.HCAD_NUMEROCUOTA || 1} de ${docsMap[docNum]?.maxCuota || 1}`,
+        valorCuota,
+        abono,
+        saldoCuota,
+        saldoFactura: docsMap[docNum]?.saldoFactura || 0,
+        totalFactura: Number(item.HCAD_TOTAL_DOCUMENTO) || 0,
+        protesto: Number(item.HCAD_PROTESTO) || 0,
+      };
+    });
+  }, [selectedCompany, apiData]);
 
   // Cálculos de totales consolidados para las tarjetas KPI
   const kpiTotals = useMemo(() => {
     return processedData.reduce(
       (acc, item) => {
-        acc.totalValorCuota += item.valorCuota;
         acc.totalAbono += item.abono;
         acc.totalSaldoCuota += item.saldoCuota;
         acc.totalProtesto += item.protesto;
@@ -744,7 +701,6 @@ export default function EstadoCuenta() {
         return acc;
       },
       {
-        totalValorCuota: 0,
         totalAbono: 0,
         totalSaldoCuota: 0,
         totalProtesto: 0,
@@ -761,7 +717,7 @@ export default function EstadoCuenta() {
       sortable: true
     },
     {
-      header: "Creación",
+      header: "Fecha Factura",
       field: "fechaCreacion",
       sortable: true,
       dataType: "date",
@@ -910,20 +866,12 @@ export default function EstadoCuenta() {
 
         <FiltersSection>
           <div className="filter-item-wrapper">
-            <DatePicker
-              label="Fecha de Corte"
-              value={cutoffDate}
-              onChange={(e) => setCutoffDate(e.target.value)}
-              fullWidth
-            />
-          </div>
-
-          <div className="filter-item-wrapper">
             <label className="select-label">Empresa</label>
             <select
               value={selectedCompany}
               onChange={(e) => setSelectedCompany(e.target.value)}
               className="select-input"
+              disabled={loading}
             >
               <option value="">Seleccione una empresa...</option>
               {user?.EMPRESAS?.map((emp) => (
@@ -948,7 +896,7 @@ export default function EstadoCuenta() {
               variant="outlined"
               leftIconName="FaRotate"
               iconSize={16}
-              disabled={!selectedCompany}
+              disabled={!selectedCompany || loading}
             />
             <Button
               text="Descargar PDF"
@@ -956,12 +904,22 @@ export default function EstadoCuenta() {
               variant="solid"
               leftIconName="FaFilePdf"
               iconSize={16}
-              disabled={!selectedCompany || processedData.length === 0}
+              disabled={!selectedCompany || processedData.length === 0 || loading}
             />
           </div>
         </FiltersSection>
 
-        {!selectedCompany ? (
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "5rem 2rem" }}>
+            <RenderLoader text="Cargando estado de cuenta..." showSpinner />
+          </div>
+        ) : error ? (
+          <EmptyStateContainer style={{ borderColor: `${theme.colors.error}40` }}>
+            <RenderIcon name="FaTriangleExclamation" size={48} color={theme.colors.error} />
+            <h3 style={{ color: theme.colors.error }}>Error al cargar</h3>
+            <p>{error}</p>
+          </EmptyStateContainer>
+        ) : !selectedCompany ? (
           <EmptyStateContainer>
             <RenderIcon name="FaBuilding" size={48} color={theme.colors.primary} />
             <h3>Selecciona una Empresa</h3>
@@ -970,16 +928,6 @@ export default function EstadoCuenta() {
         ) : (
           <>
             <CardsGrid>
-              <KPICard $color={theme.colors.primary} $bgColor={`${theme.colors.primary}15`}>
-                <div className="icon-box">
-                  <RenderIcon name="FaFileInvoiceDollar" size={24} color={theme.colors.primary} />
-                </div>
-                <div className="card-content">
-                  <span className="card-label">Total Valor Cuota</span>
-                  <span className="card-value">{formatCurrency(kpiTotals.totalValorCuota)}</span>
-                </div>
-              </KPICard>
-
               <KPICard $color={theme.colors.success} $bgColor={`${theme.colors.success}15`}>
                 <div className="icon-box">
                   <RenderIcon name="FaHandHoldingDollar" size={24} color={theme.colors.success} />
@@ -1025,7 +973,7 @@ export default function EstadoCuenta() {
             <OwedFooterCard>
               <div className="text-side">
                 <h3>Resumen Total a Pagar</h3>
-                <p>Suma consolidada de saldos pendientes de cuotas registradas hasta el corte ({cutoffDate ? formatDate(cutoffDate) : "-"}).</p>
+                <p>Suma consolidada de saldos pendientes de cuotas registradas al día de hoy ({todayStr ? formatDate(todayStr) : "-"}).</p>
               </div>
               <div className="amount-side">
                 {formatCurrency(kpiTotals.totalSaldoCuota)}
