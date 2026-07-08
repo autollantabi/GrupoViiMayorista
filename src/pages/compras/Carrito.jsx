@@ -1187,64 +1187,6 @@ const MemoizedProductImage = memo(({ src, alt }) => {
 });
 MemoizedProductImage.displayName = "MemoizedProductImage";
 
-const CartImageSlider = ({ empresaName }) => {
-  const activeCompany = (empresaName || "").toUpperCase();
-  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => { setCurrentIndex(0); }, [activeCompany]);
-
-  const nextSlide = useCallback(() => {
-    setCurrentIndex(prev => (prev === slides.length - 1 ? 0 : prev + 1));
-  }, [slides.length]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentIndex(prev => (prev === 0 ? slides.length - 1 : prev - 1));
-  }, [slides.length]);
-
-  useEffect(() => {
-    if (isHovered || slides.length <= 1) { if (timerRef.current) clearInterval(timerRef.current); return; }
-    timerRef.current = setInterval(nextSlide, 5000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [nextSlide, isHovered, slides.length]);
-
-  if (!slides || slides.length === 0) return null;
-
-  return (
-    <CartSliderSection>
-      <CartSliderContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-        <CartSliderTrack activeIndex={currentIndex}>
-          {slides.map((slide, idx) => (
-            <CartSlide key={idx}>
-              <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
-              <CartSlideOverlay />
-              {(slide.title || slide.subtitle) && (
-                <CartSlideContent>
-                  {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
-                  {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
-                </CartSlideContent>
-              )}
-            </CartSlide>
-          ))}
-        </CartSliderTrack>
-        {slides.length > 1 && (
-          <>
-            <CartSliderArrow direction="left" onClick={prevSlide} aria-label="Anterior"><RenderIcon name="FaChevronLeft" size={16} /></CartSliderArrow>
-            <CartSliderArrow direction="right" onClick={nextSlide} aria-label="Siguiente"><RenderIcon name="FaChevronRight" size={16} /></CartSliderArrow>
-            <CartSliderDots>
-              {slides.map((_, idx) => (
-                <CartSliderDot key={idx} active={currentIndex === idx} onClick={() => setCurrentIndex(idx)} aria-label={`Ir a diapositiva ${idx + 1}`} />
-              ))}
-            </CartSliderDots>
-          </>
-        )}
-      </CartSliderContainer>
-    </CartSliderSection>
-  );
-};
-
 const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate, extraDiscount = 0, isB2BSeller = false }) => {
   const maxStock = item?.stock || 0;
   const quantityIntervalRef = useRef(null);
