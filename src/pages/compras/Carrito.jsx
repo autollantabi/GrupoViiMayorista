@@ -21,7 +21,12 @@ import { api_addresses_createAddress } from "../../api/users/apiAddresses";
 import MapSelector from "../../components/ui/MapSelector";
 import { reverseGeocode } from "../../utils/reverseGeocoding";
 import { api_banners_getByTipo } from "../../api/banners/apiBanners";
+import { useNuvei } from "../../hooks/useNuevi";
+import { api_generate_payment_reference, api_verify_transaction } from "../../api/payments/apiPayments";
 
+// ─────────────────────────────────────────────
+// STYLED COMPONENTS
+// ─────────────────────────────────────────────
 
 const PageTitle = styled.div`
   display: flex;
@@ -65,13 +70,6 @@ const CartEmptyState = styled.div`
     padding: 3rem 1.5rem;
     border-radius: 16px;
   }
-`;
-
-const EmptyCartIcon = styled.div`
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const EmptyCartText = styled.p`
@@ -219,8 +217,7 @@ const ItemPricing = styled.div`
 
 const ItemPrice = styled.div`
   font-weight: bold;
-  color: ${({ theme, $subtotal }) =>
-    $subtotal ? theme.colors.text : theme.colors.primary};
+  color: ${({ theme, $subtotal }) => ($subtotal ? theme.colors.text : theme.colors.primary)};
   font-size: ${({ $subtotal }) => ($subtotal ? "0.9rem" : "1.2rem")};
   text-decoration: ${({ $subtotal }) => ($subtotal ? "line-through" : "none")};
 `;
@@ -252,13 +249,8 @@ const QuantityButton = styled(Button)`
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   opacity: ${({ disabled }) => (disabled ? 0.7 : 1)};
 
-  &:first-child {
-    border-radius: 4px 0 0 4px;
-  }
-
-  &:last-child {
-    border-radius: 0 4px 4px 0;
-  }
+  &:first-child { border-radius: 4px 0 0 4px; }
+  &:last-child  { border-radius: 0 4px 4px 0; }
 
   &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.colors.background};
@@ -314,14 +306,8 @@ const CartSliderSection = styled.div`
   animation: fadeIn 0.8s ease-out;
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 `;
 
@@ -372,17 +358,13 @@ const CartSliderImage = styled.img`
   height: 100%;
   object-fit: cover;
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   z-index: 1;
 `;
 
 const CartSlideOverlay = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: ${({ theme }) =>
     theme.mode === "dark"
       ? "linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(15, 23, 42, 0.85) 100%)"
@@ -393,8 +375,7 @@ const CartSlideOverlay = styled.div`
 const CartSlideContent = styled.div`
   position: absolute;
   bottom: 2rem;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   z-index: 3;
   padding: 0 2rem;
   color: ${({ theme }) => theme.colors.text};
@@ -448,7 +429,7 @@ const CartSliderArrow = styled.button`
   cursor: pointer;
   backdrop-filter: blur(8px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  left: ${({ direction }) => (direction === "left" ? "1rem" : "auto")};
+  left:  ${({ direction }) => (direction === "left" ? "1rem" : "auto")};
   right: ${({ direction }) => (direction === "right" ? "1rem" : "auto")};
 
   &:hover {
@@ -457,15 +438,11 @@ const CartSliderArrow = styled.button`
     transform: translateY(-50%) scale(1.08);
     box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}40`};
   }
-
-  &:active {
-    transform: translateY(-50%) scale(0.95);
-  }
+  &:active { transform: translateY(-50%) scale(0.95); }
 
   @media (max-width: 768px) {
-    width: 32px;
-    height: 32px;
-    left: ${({ direction }) => (direction === "left" ? "0.5rem" : "auto")};
+    width: 32px; height: 32px;
+    left:  ${({ direction }) => (direction === "left" ? "0.5rem" : "auto")};
     right: ${({ direction }) => (direction === "right" ? "0.5rem" : "auto")};
   }
 `;
@@ -485,15 +462,14 @@ const CartSliderDot = styled.button`
   height: 6px;
   border-radius: 3px;
   background: ${({ active, theme }) =>
-    active ? theme.colors.primary : theme.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.2)"};
+    active
+      ? theme.colors.primary
+      : theme.mode === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"};
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
 
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary};
-    opacity: 0.8;
-  }
+  &:hover { background: ${({ theme }) => theme.colors.primary}; opacity: 0.8; }
 `;
 
 const isSafeUrl = (url) => {
@@ -682,33 +658,11 @@ const TotalRow = styled(SummaryRow)`
   font-size: 1.1rem;
 `;
 
-const StockWarning = styled.div`
-  color: ${({ theme }) => theme.colors.error};
-  font-size: 0.85rem;
-  margin: 4px 0 8px;
-  font-weight: 500;
-`;
-
-const StockInfo = styled.div`
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 0.8rem;
-  margin-top: 6px;
-`;
-
 const CartStockText = styled.span`
   color: ${({ theme }) => theme.colors.textLight};
   font-size: 0.85rem;
   margin: 6px 0;
   display: block;
-`;
-
-const StockAlertBanner = styled.div`
-  background-color: ${({ theme }) => theme.colors.errorLight || "#FFEBEE"};
-  color: ${({ theme }) => theme.colors.error};
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.8rem;
 `;
 
 const ShippingSection = styled.div`
@@ -749,13 +703,10 @@ const SectionTitle = styled.h2`
 `;
 
 const AddressCard = styled.div`
-  border: 2px solid
-    ${({ theme, selected }) =>
+  border: 2px solid ${({ theme, selected }) =>
     selected
       ? theme.colors.primary
-      : theme.mode === "dark"
-        ? `${theme.colors.border}40`
-        : `${theme.colors.border}30`};
+      : theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
   border-radius: 16px;
   padding: 1.25rem;
   margin-bottom: 1rem;
@@ -765,56 +716,30 @@ const AddressCard = styled.div`
   gap: 1rem;
   background-color: ${({ theme, selected }) =>
     selected
-      ? theme.mode === "dark"
-        ? `${theme.colors.primary}15`
-        : `${theme.colors.primary}08`
-      : theme.mode === "dark"
-        ? `${theme.colors.background}80`
-        : "transparent"};
+      ? theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}08`
+      : theme.mode === "dark" ? `${theme.colors.background}80` : "transparent"};
   transition: all 0.3s ease;
   box-shadow: ${({ theme, selected }) =>
     selected
-      ? theme.mode === "dark"
-        ? "0 4px 16px rgba(0, 0, 0, 0.15)"
-        : "0 4px 16px rgba(0, 0, 0, 0.08)"
+      ? theme.mode === "dark" ? "0 4px 16px rgba(0,0,0,0.15)" : "0 4px 16px rgba(0,0,0,0.08)"
       : "none"};
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-    theme.mode === "dark"
-      ? `${theme.colors.primary}12`
-      : `${theme.colors.primary}08`};
+    theme.mode === "dark" ? `${theme.colors.primary}12` : `${theme.colors.primary}08`};
     transform: translateY(-2px);
     box-shadow: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "0 6px 20px rgba(0, 0, 0, 0.2)"
-      : "0 6px 20px rgba(0, 0, 0, 0.1)"};
+    theme.mode === "dark" ? "0 6px 20px rgba(0,0,0,0.2)" : "0 6px 20px rgba(0,0,0,0.1)"};
   }
 
-  @media (max-width: 768px) {
-    padding: 1rem;
-    border-radius: 12px;
-  }
+  @media (max-width: 768px) { padding: 1rem; border-radius: 12px; }
 `;
 
-const AddressInfo = styled.div`
-  flex: 1;
-`;
-
-const AddressName = styled.div`
-  font-weight: bold;
-  margin-bottom: 4px;
-`;
-
-const AddressDetails = styled.div`
-  font-size: 0.9rem;
-`;
-
-const AddressActions = styled.div`
-  display: flex;
-  gap: 8px;
-`;
+const AddressInfo = styled.div` flex: 1; `;
+const AddressName = styled.div` font-weight: bold; margin-bottom: 4px; `;
+const AddressDetails = styled.div` font-size: 0.9rem; `;
+const AddressActions = styled.div` display: flex; gap: 8px; `;
 
 const IconButton = styled(Button)`
   background: none;
@@ -826,9 +751,7 @@ const IconButton = styled(Button)`
   padding: 6px;
   color: ${({ theme }) => theme.colors.primary};
 
-  &:hover {
-    color: ${({ theme }) => theme.colors.primaryDark || theme.colors.primary};
-  }
+  &:hover { color: ${({ theme }) => theme.colors.primaryDark || theme.colors.primary}; }
 `;
 
 const NewAddressButton = styled(Button)`
@@ -852,23 +775,16 @@ const NewAddressButton = styled(Button)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-    theme.mode === "dark"
-      ? `${theme.colors.primary}15`
-      : `${theme.colors.primary}08`};
+    theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}08`};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}20`};
   }
 
-  @media (max-width: 768px) {
-    padding: 0.875rem;
-    border-radius: 10px;
-  }
+  @media (max-width: 768px) { padding: 0.875rem; border-radius: 10px; }
 `;
 
-// Nuevos estilos para las pestañas de empresas
 const CompanyTabs = styled.div`
   display: flex;
-  overflow-x: auto;
   margin-bottom: 2rem;
   border-bottom: 2px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
@@ -878,8 +794,7 @@ const CompanyTabs = styled.div`
   &::after {
     content: "";
     position: absolute;
-    bottom: -2px;
-    left: 0;
+    bottom: -2px; left: 0;
     height: 2px;
     background: ${({ theme }) =>
     theme.mode === "dark"
@@ -889,19 +804,15 @@ const CompanyTabs = styled.div`
     pointer-events: none;
   }
 
-  @media (max-width: 768px) {
-    margin-bottom: 1.5rem;
-  }
+  @media (max-width: 768px) { margin-bottom: 1.5rem; }
 `;
 
 const CompanyTab = styled.button`
   padding: 0.875rem 1.5rem;
   background: none;
   border: none;
-  border-bottom: 3px solid
-    ${({ theme, $active }) => ($active ? theme.colors.primary : "transparent")};
-  color: ${({ theme, $active }) =>
-    $active ? theme.colors.primary : theme.colors.textSecondary};
+  border-bottom: 3px solid ${({ theme, $active }) => ($active ? theme.colors.primary : "transparent")};
+  color: ${({ theme, $active }) => ($active ? theme.colors.primary : theme.colors.textSecondary)};
   font-weight: ${({ $active }) => ($active ? "600" : "500")};
   font-size: 0.95rem;
   cursor: pointer;
@@ -911,17 +822,13 @@ const CompanyTab = styled.button`
   position: relative;
   background: ${({ theme, $active }) =>
     $active
-      ? theme.mode === "dark"
-        ? `${theme.colors.primary}10`
-        : `${theme.colors.primary}08`
+      ? theme.mode === "dark" ? `${theme.colors.primary}10` : `${theme.colors.primary}08`
       : "transparent"};
 
   &::before {
     content: "";
     position: absolute;
-    bottom: -3px;
-    left: 0;
-    right: 0;
+    bottom: -3px; left: 0; right: 0;
     height: 3px;
     background: ${({ theme }) => theme.colors.primary};
     transform: ${({ $active }) => ($active ? "scaleX(1)" : "scaleX(0)")};
@@ -932,18 +839,11 @@ const CompanyTab = styled.button`
     color: ${({ theme }) => theme.colors.primary};
     background: ${({ theme, $active }) =>
     !$active
-      ? theme.mode === "dark"
-        ? `${theme.colors.primary}08`
-        : `${theme.colors.primary}05`
-      : theme.mode === "dark"
-        ? `${theme.colors.primary}15`
-        : `${theme.colors.primary}12`};
+      ? theme.mode === "dark" ? `${theme.colors.primary}08` : `${theme.colors.primary}05`
+      : theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}12`};
   }
 
-  @media (max-width: 768px) {
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-  }
+  @media (max-width: 768px) { padding: 0.75rem 1rem; font-size: 0.85rem; }
 `;
 
 const CompanySummary = styled.div`
@@ -959,15 +859,10 @@ const CompanySummary = styled.div`
   &:hover {
     border-color: ${({ theme }) => `${theme.colors.primary}50`};
     box-shadow: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "0 4px 16px rgba(0, 0, 0, 0.15)"
-      : "0 4px 16px rgba(0, 0, 0, 0.08)"};
+    theme.mode === "dark" ? "0 4px 16px rgba(0,0,0,0.15)" : "0 4px 16px rgba(0,0,0,0.08)"};
   }
 
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    border-radius: 12px;
-  }
+  @media (max-width: 768px) { padding: 1.25rem; border-radius: 12px; }
 `;
 
 const CompanyName = styled.div`
@@ -1004,35 +899,26 @@ const EmptyAddressState = styled.div`
   min-height: 100px;
   gap: 0.75rem;
 
-  @media (max-width: 768px) {
-    padding: 1.5rem 1rem;
-    border-radius: 12px;
-    min-height: 80px;
-  }
+  @media (max-width: 768px) { padding: 1.5rem 1rem; border-radius: 12px; min-height: 80px; }
 `;
 
-// Agrega estas definiciones de componentes styled después de EmptyAddressState y antes de CompanyCheckoutButton
 const ProcessingOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
 `;
 
 const ProcessingCard = styled.div`
   position: fixed;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: 20px;
   box-shadow: ${({ theme }) =>
     theme.mode === "dark"
-      ? "0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 25px rgba(0, 0, 0, 0.3)"
-      : "0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 25px rgba(0, 0, 0, 0.15)"};
+      ? "0 20px 60px rgba(0,0,0,0.4), 0 8px 25px rgba(0,0,0,0.3)"
+      : "0 20px 60px rgba(0,0,0,0.2), 0 8px 25px rgba(0,0,0,0.15)"};
   padding: 2.5rem;
   width: 90%;
   max-width: 450px;
@@ -1041,11 +927,7 @@ const ProcessingCard = styled.div`
   border: 1px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
 
-  @media (max-width: 768px) {
-    padding: 2rem 1.5rem;
-    border-radius: 16px;
-    max-width: 90%;
-  }
+  @media (max-width: 768px) { padding: 2rem 1.5rem; border-radius: 16px; max-width: 90%; }
 `;
 
 const ProcessingTitle = styled.h3`
@@ -1064,14 +946,9 @@ const ProcessingMessage = styled.p`
 
 const LoadingOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "rgba(10, 11, 14, 0.85)"
-      : "rgba(255, 255, 255, 0.85)"};
+    theme.mode === "dark" ? "rgba(10, 11, 14, 0.85)" : "rgba(255, 255, 255, 0.85)"};
   backdrop-filter: blur(10px);
   z-index: 9999;
   display: flex;
@@ -1093,9 +970,7 @@ const LoadingContent = styled.div`
   background: ${({ theme }) => theme.colors.surface};
   border-radius: 24px;
   box-shadow: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "0 20px 50px rgba(0, 0, 0, 0.4)"
-      : "0 20px 50px rgba(0, 0, 0, 0.1)"};
+    theme.mode === "dark" ? "0 20px 50px rgba(0,0,0,0.4)" : "0 20px 50px rgba(0,0,0,0.1)"};
   border: 1px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
 `;
@@ -1136,17 +1011,11 @@ const LineTitle = styled.h3`
   font-size: clamp(1rem, 2.5vw, 1.2rem);
   font-weight: 700;
   box-shadow: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-      : "0 2px 8px rgba(0, 0, 0, 0.04)"};
+    theme.mode === "dark" ? "0 2px 8px rgba(0,0,0,0.1)" : "0 2px 8px rgba(0,0,0,0.04)"};
   border: 1px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
 
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.25rem;
-    border-radius: 12px;
-    font-size: 1rem;
-  }
+  @media (max-width: 768px) { padding: 0.875rem 1.25rem; border-radius: 12px; font-size: 1rem; }
 `;
 
 const FormField = styled.div`
@@ -1172,9 +1041,7 @@ const FormInput = styled.input`
   outline: none;
   transition: border-color 0.2s;
 
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
-  }
+  &:focus { border-color: ${({ theme }) => theme.colors.primary}; }
 `;
 
 const CompanyCheckoutButton = styled(Button)`
@@ -1189,20 +1056,50 @@ const CompanyCheckoutButton = styled(Button)`
   box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}30`};
 
   &:hover:not(:disabled) {
-    background-color: ${({ theme }) =>
-    theme.colors.primaryDark || theme.colors.primary};
+    background-color: ${({ theme }) => theme.colors.primaryDark || theme.colors.primary};
     transform: translateY(-2px);
     box-shadow: 0 6px 16px ${({ theme }) => `${theme.colors.primary}40`};
   }
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
+  &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 `;
 
-// Componente memoizado para la imagen del producto en el carrito
+// ─────────────────────────────────────────────
+// HELPERS (fuera del componente)
+// ─────────────────────────────────────────────
+
+const mapLineaToDiscountKey = (lineaNegocio) => {
+  if (!lineaNegocio) return null;
+  const u = lineaNegocio.toUpperCase().trim();
+  if (u === "LLANTAS" || u === "LLANTAS MOTO") return "LLANTAS";
+  if (u === "HERRAMIENTAS") return "HERRAMIENTAS";
+  if (u === "LUBRICANTES") return "LUBRICANTES";
+  return u;
+};
+
+const getDisplayLineName = (lineaNegocio) => {
+  if (!lineaNegocio) return "DEFAULT";
+  const u = lineaNegocio.toUpperCase().trim();
+  if (u === "LLANTAS MOTO") return "MOTO";
+  return u;
+};
+
+const findBestAvailableAddress = (addresses, company, type) => {
+  const defaultForCompany = addresses.find(a => a.type === type && a.isDefault && a.empresa === company);
+  if (defaultForCompany) return defaultForCompany.id;
+  const anyForCompany = addresses.find(a => a.type === type && a.empresa === company);
+  if (anyForCompany) return anyForCompany.id;
+  const defaultGlobal = addresses.find(a => a.type === type && a.isDefault);
+  if (defaultGlobal) return defaultGlobal.id;
+  const anyAddress = addresses.find(a => a.type === type);
+  if (anyAddress) return anyAddress.id;
+  return null;
+};
+
+// ─────────────────────────────────────────────
+// SUB-COMPONENTES
+// ─────────────────────────────────────────────
+
 const MemoizedProductImage = memo(({ src, alt }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -1210,66 +1107,39 @@ const MemoizedProductImage = memo(({ src, alt }) => {
   const imgRef = useRef(null);
   const currentSrcRef = useRef(null);
 
-  // Construir la URL completa de la imagen - usar tal cual si ya es URL completa
   const imageSrc = useMemo(() => {
     if (!src) return "";
     const trimmed = src.trim();
     if (!trimmed) return "";
-    // Si ya es una URL completa, usarla tal cual sin modificar
-    if (/^https?:\/\//i.test(trimmed)) {
-      return trimmed;
-    }
-    // Si no, construir la URL con baseLinkImages
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return `${baseLinkImages}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
   }, [src]);
 
   const handleImageLoad = useCallback(() => {
-    // Solo procesar si es la misma imagen que estamos esperando
-    if (currentSrcRef.current === imageSrc) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      setImageLoading(false);
-      setImageError(false);
-    }
+    if (currentSrcRef.current !== imageSrc) return;
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    setImageLoading(false);
+    setImageError(false);
   }, [imageSrc]);
 
   const handleImageError = useCallback(() => {
-    // Solo procesar si es la misma imagen que estamos esperando
-    if (currentSrcRef.current === imageSrc) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      setImageLoading(false);
-      setImageError(true);
-    }
+    if (currentSrcRef.current !== imageSrc) return;
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    setImageLoading(false);
+    setImageError(true);
   }, [imageSrc]);
 
-  // Resetear estados cuando cambia la src
   useEffect(() => {
-    // Limpiar timeout anterior si existe
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     if (imageSrc) {
       currentSrcRef.current = imageSrc;
       setImageError(false);
       setImageLoading(true);
-
-      // Establecer timeout de 10 segundos como respaldo
       const currentSrc = imageSrc;
       timeoutRef.current = setTimeout(() => {
-        // Solo marcar como error si todavía estamos esperando esta misma src
-        setImageLoading((prevLoading) => {
-          if (prevLoading && currentSrcRef.current === currentSrc) {
-            setImageError(true);
-            return false;
-          }
-          return prevLoading;
+        setImageLoading(prev => {
+          if (prev && currentSrcRef.current === currentSrc) { setImageError(true); return false; }
+          return prev;
         });
       }, 10000);
     } else {
@@ -1277,24 +1147,13 @@ const MemoizedProductImage = memo(({ src, alt }) => {
       setImageLoading(false);
       setImageError(true);
     }
-
-    // Cleanup
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
+    return () => { if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; } };
   }, [imageSrc]);
 
-  // Verificar si la imagen ya está cargada después de renderizar (para imágenes en caché)
   useEffect(() => {
     if (imgRef.current && imageSrc && imageLoading) {
       const img = imgRef.current;
-      // Si la imagen ya está completa, disparar onLoad
-      if (img.complete && img.naturalWidth > 0 && currentSrcRef.current === imageSrc) {
-        handleImageLoad();
-      }
+      if (img.complete && img.naturalWidth > 0 && currentSrcRef.current === imageSrc) handleImageLoad();
     }
   }, [imageSrc, imageLoading, handleImageLoad]);
 
@@ -1326,257 +1185,191 @@ const MemoizedProductImage = memo(({ src, alt }) => {
     </>
   );
 });
-
 MemoizedProductImage.displayName = "MemoizedProductImage";
 
-const CartItem = ({
-  item,
-  handleQuantityChange,
-  removeFromCart,
-  theme,
-  navigate,
-  extraDiscount = 0,
-  isB2BSeller = false,
-}) => {
+const CartImageSlider = ({ empresaName }) => {
+  const activeCompany = (empresaName || "").toUpperCase();
+  const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => { setCurrentIndex(0); }, [activeCompany]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex(prev => (prev === slides.length - 1 ? 0 : prev + 1));
+  }, [slides.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentIndex(prev => (prev === 0 ? slides.length - 1 : prev - 1));
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (isHovered || slides.length <= 1) { if (timerRef.current) clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(nextSlide, 5000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [nextSlide, isHovered, slides.length]);
+
+  if (!slides || slides.length === 0) return null;
+
+  return (
+    <CartSliderSection>
+      <CartSliderContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+        <CartSliderTrack activeIndex={currentIndex}>
+          {slides.map((slide, idx) => (
+            <CartSlide key={idx}>
+              <CartSliderImage src={slide.url} alt={slide.title || "Slide"} loading="lazy" />
+              <CartSlideOverlay />
+              {(slide.title || slide.subtitle) && (
+                <CartSlideContent>
+                  {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
+                  {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
+                </CartSlideContent>
+              )}
+            </CartSlide>
+          ))}
+        </CartSliderTrack>
+        {slides.length > 1 && (
+          <>
+            <CartSliderArrow direction="left" onClick={prevSlide} aria-label="Anterior"><RenderIcon name="FaChevronLeft" size={16} /></CartSliderArrow>
+            <CartSliderArrow direction="right" onClick={nextSlide} aria-label="Siguiente"><RenderIcon name="FaChevronRight" size={16} /></CartSliderArrow>
+            <CartSliderDots>
+              {slides.map((_, idx) => (
+                <CartSliderDot key={idx} active={currentIndex === idx} onClick={() => setCurrentIndex(idx)} aria-label={`Ir a diapositiva ${idx + 1}`} />
+              ))}
+            </CartSliderDots>
+          </>
+        )}
+      </CartSliderContainer>
+    </CartSliderSection>
+  );
+};
+
+const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate, extraDiscount = 0, isB2BSeller = false }) => {
   const maxStock = item?.stock || 0;
   const quantityIntervalRef = useRef(null);
   const currentQuantityRef = useRef(item.quantity);
   const mouseDownExecutedRef = useRef(false);
 
-  // Actualizar el ref cuando cambia la cantidad del item
-  useEffect(() => {
-    currentQuantityRef.current = item.quantity;
-  }, [item.quantity]);
+  useEffect(() => { currentQuantityRef.current = item.quantity; }, [item.quantity]);
 
-  // Calcular precio con descuentos aplicados (promo + extra de vendedor)
   const promoDiscount = item?.promotionalDiscount || 0;
   const totalDiscountPct = (Number(promoDiscount) + Number(extraDiscount)) / 100;
   const discountedPrice = item.price * (1 - totalDiscountPct);
-
-  // Calcular precio con IVA incluido
-  const priceWithIVA = calculatePriceWithIVA(
-    discountedPrice,
-    item.iva || TAXES.IVA_PERCENTAGE
-  );
-
+  const priceWithIVA = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
   const subTotal = priceWithIVA * item.quantity;
+  const maxQuantity = maxStock || 0;
 
   const handleItemClick = () => {
-    const empresaId = item.empresaId || "";
-    navigate(`/productos/${encodeURIComponent(empresaId)}/${item.id}`, {
-      state: {
-        product: item, // Pasar el producto completo
-        empresaId: item.empresaId,
-        prevUrl: "/carrito", // URL del carrito para el botón de regreso
-      },
+    navigate(`/productos/${encodeURIComponent(item.empresaId || "")}/${item.id}`, {
+      state: { product: item, empresaId: item.empresaId, prevUrl: "/carrito" },
     });
   };
 
-  // Calcular el máximo de cantidad basado en el stock disponible
-  const maxQuantity = maxStock || 0;
+  const clearQuantityInterval = () => {
+    if (!quantityIntervalRef.current) return;
+    if (typeof quantityIntervalRef.current === "number") clearTimeout(quantityIntervalRef.current);
+    else clearInterval(quantityIntervalRef.current);
+    quantityIntervalRef.current = null;
+  };
 
-  // Funciones para manejar el mantenimiento presionado del botón
   const handleDecreaseMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Marcar que mouseDown ya ejecutó la acción
+    e.preventDefault(); e.stopPropagation();
     mouseDownExecutedRef.current = true;
-
-    // Limpiar cualquier timeout de clic
-    if (quantityIntervalRef.current) {
-      if (typeof quantityIntervalRef.current === "number") {
-        clearTimeout(quantityIntervalRef.current);
-      } else {
-        clearInterval(quantityIntervalRef.current);
-      }
-      quantityIntervalRef.current = null;
-    }
-
-    if (item.quantity > 1) {
-      handleQuantityChange(item.id, item.quantity - 1);
-    }
-
-    // Iniciar intervalo después de un pequeño delay
+    clearQuantityInterval();
+    if (item.quantity > 1) handleQuantityChange(item.id, item.quantity - 1);
     quantityIntervalRef.current = setTimeout(() => {
       const interval = setInterval(() => {
-        const currentQuantity = currentQuantityRef.current;
-        if (currentQuantity > 1) {
-          const newQuantity = currentQuantity - 1;
-          currentQuantityRef.current = newQuantity;
-          handleQuantityChange(item.id, newQuantity);
-        } else {
-          clearInterval(interval);
-          quantityIntervalRef.current = null;
-        }
-      }, 150); // Repetir cada 150ms
-
+        const q = currentQuantityRef.current;
+        if (q > 1) { currentQuantityRef.current = q - 1; handleQuantityChange(item.id, q - 1); }
+        else { clearInterval(interval); quantityIntervalRef.current = null; }
+      }, 150);
       quantityIntervalRef.current = interval;
-    }, 500); // Delay inicial de 500ms
+    }, 500);
   };
 
   const handleIncreaseMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Marcar que mouseDown ya ejecutó la acción
+    e.preventDefault(); e.stopPropagation();
     mouseDownExecutedRef.current = true;
-
-    // Limpiar cualquier timeout de clic
-    if (quantityIntervalRef.current) {
-      if (typeof quantityIntervalRef.current === "number") {
-        clearTimeout(quantityIntervalRef.current);
-      } else {
-        clearInterval(quantityIntervalRef.current);
-      }
-      quantityIntervalRef.current = null;
-    }
-
-    if (item.quantity < maxQuantity) {
-      handleQuantityChange(item.id, item.quantity + 1);
-    }
-
-    // Iniciar intervalo después de un pequeño delay
+    clearQuantityInterval();
+    if (item.quantity < maxQuantity) handleQuantityChange(item.id, item.quantity + 1);
     quantityIntervalRef.current = setTimeout(() => {
       const interval = setInterval(() => {
-        const currentQuantity = currentQuantityRef.current;
-        if (currentQuantity < maxQuantity) {
-          const newQuantity = currentQuantity + 1;
-          currentQuantityRef.current = newQuantity;
-          handleQuantityChange(item.id, newQuantity);
-        } else {
-          clearInterval(interval);
-          quantityIntervalRef.current = null;
-        }
-      }, 150); // Repetir cada 150ms
-
+        const q = currentQuantityRef.current;
+        if (q < maxQuantity) { currentQuantityRef.current = q + 1; handleQuantityChange(item.id, q + 1); }
+        else { clearInterval(interval); quantityIntervalRef.current = null; }
+      }, 150);
       quantityIntervalRef.current = interval;
-    }, 500); // Delay inicial de 500ms
+    }, 500);
   };
 
   const handleQuantityButtonMouseUp = () => {
-    // Limpiar timeout si aún no se ejecutó
-    if (quantityIntervalRef.current) {
-      if (typeof quantityIntervalRef.current === "number") {
-        clearTimeout(quantityIntervalRef.current);
-      } else {
-        clearInterval(quantityIntervalRef.current);
-      }
-      quantityIntervalRef.current = null;
-    }
-
-    // Resetear el flag después de un delay para que onClick no se ejecute
-    // si mouseDown ya ejecutó la acción
-    setTimeout(() => {
-      mouseDownExecutedRef.current = false;
-    }, 200);
+    clearQuantityInterval();
+    setTimeout(() => { mouseDownExecutedRef.current = false; }, 200);
   };
 
-  const handleQuantityButtonMouseLeave = () => {
-    // Limpiar cuando el mouse sale del botón
-    handleQuantityButtonMouseUp();
-  };
-
-  // Limpiar intervalos al desmontar
   useEffect(() => {
-    return () => {
-      if (quantityIntervalRef.current) {
-        if (typeof quantityIntervalRef.current === "number") {
-          clearTimeout(quantityIntervalRef.current);
-        } else {
-          clearInterval(quantityIntervalRef.current);
-        }
-      }
-    };
+    return () => { clearQuantityInterval(); };
   }, []);
-
-  // Componente memoizado para manejar la imagen con fallback
-  // Se mueve fuera del render para evitar recrearlo en cada cambio de cantidad
 
   return (
     <CartItemContainer>
       <MemoizedProductImage src={item?.image} alt={item?.name} />
-
       <ItemDetails>
         <ItemName onClick={handleItemClick}>{item?.name}</ItemName>
         <ItemBrand>{item?.brand}</ItemBrand>
-
-        {/* Indicador de stock disponible */}
         <CartStockText>
           {maxStock === 0
             ? "Sin Stock"
             : maxStock > 100
               ? "+100 Unidades Disponibles"
-              : `${maxStock} Unidad${maxStock !== 1 ? "es" : ""} Disponible${maxStock !== 1 ? "s" : ""
-              }`}
+              : `${maxStock} Unidad${maxStock !== 1 ? "es" : ""} Disponible${maxStock !== 1 ? "s" : ""}`}
         </CartStockText>
-
         {maxStock > 0 && (
           <ItemQuantityControl>
             <QuantityButton
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Solo ejecutar si mouseDown no ejecutó la acción ya
-                if (!mouseDownExecutedRef.current) {
-                  handleQuantityChange(item.id, item.quantity - 1);
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!mouseDownExecutedRef.current) handleQuantityChange(item.id, item.quantity - 1); }}
               onMouseDown={handleDecreaseMouseDown}
               onMouseUp={handleQuantityButtonMouseUp}
-              onMouseLeave={handleQuantityButtonMouseLeave}
+              onMouseLeave={handleQuantityButtonMouseUp}
               onTouchStart={handleDecreaseMouseDown}
               onTouchEnd={handleQuantityButtonMouseUp}
               disabled={item.quantity <= 1}
-              text={"-"}
-              size="small"
+              text="-" size="small"
               style={{ display: isB2BSeller ? "none" : "flex" }}
             />
-
             <QuantityInput
               type="number"
               id={`quantity-cart-${item.id}`}
               name={`quantity-cart-${item.id}`}
-              min="1"
-              max={maxQuantity}
+              min="1" max={maxQuantity}
               value={item.quantity}
               onChange={(e) => {
-                const newQuantity = parseInt(e.target.value) || 1;
-                // Limitar al máximo disponible
-                const limitedQuantity = Math.min(newQuantity, maxQuantity);
-                handleQuantityChange(item.id, limitedQuantity);
+                const limited = Math.min(parseInt(e.target.value) || 1, maxQuantity);
+                handleQuantityChange(item.id, limited);
               }}
               autoComplete="off"
               disabled={isB2BSeller}
               style={{
                 borderLeft: isB2BSeller ? "1px solid" : "none",
                 borderRight: isB2BSeller ? "1px solid" : "none",
-                borderRadius: isB2BSeller ? "4px" : "0"
+                borderRadius: isB2BSeller ? "4px" : "0",
               }}
             />
             <QuantityButton
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Solo ejecutar si mouseDown no ejecutó la acción ya
-                if (!mouseDownExecutedRef.current) {
-                  handleQuantityChange(item.id, item.quantity + 1);
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!mouseDownExecutedRef.current) handleQuantityChange(item.id, item.quantity + 1); }}
               onMouseDown={handleIncreaseMouseDown}
               onMouseUp={handleQuantityButtonMouseUp}
-              onMouseLeave={handleQuantityButtonMouseLeave}
+              onMouseLeave={handleQuantityButtonMouseUp}
               onTouchStart={handleIncreaseMouseDown}
               onTouchEnd={handleQuantityButtonMouseUp}
               disabled={item.quantity >= maxQuantity}
-              text={"+"}
-              size="small"
+              text="+" size="small"
               style={{ display: isB2BSeller ? "none" : "flex" }}
             />
           </ItemQuantityControl>
         )}
       </ItemDetails>
-
       <ItemPricing>
         <ItemPrice>${subTotal.toFixed(2)}</ItemPrice>
         {(promoDiscount > 0 || extraDiscount > 0) && (
@@ -1588,10 +1381,10 @@ const CartItem = ({
         {!isB2BSeller && (
           <Button
             onClick={() => removeFromCart(item.id, item.empresaId)}
-            text={"Eliminar"}
+            text="Eliminar"
             color={theme.colors.error}
             size="small"
-            backgroundColor={"transparent"}
+            backgroundColor="transparent"
             style={{ marginTop: "auto" }}
           />
         )}
@@ -1600,97 +1393,23 @@ const CartItem = ({
   );
 };
 
-// Función para mapear la línea de producto a la clave de descuento
-const mapLineaToDiscountKey = (lineaNegocio) => {
-  if (!lineaNegocio) return null;
-
-  const lineaUpper = lineaNegocio.toUpperCase().trim();
-
-  // LLANTAS y LLANTAS MOTO mapean a LLANTAS
-  if (lineaUpper === "LLANTAS" || lineaUpper === "LLANTAS MOTO") {
-    return "LLANTAS";
-  }
-
-  // HERRAMIENTAS mapea a HERRAMIENTAS
-  if (lineaUpper === "HERRAMIENTAS") {
-    return "HERRAMIENTAS";
-  }
-
-  // LUBRICANTES mapea a LUBRICANTES
-  if (lineaUpper === "LUBRICANTES") {
-    return "LUBRICANTES";
-  }
-
-  // Para otras líneas, usar el nombre tal cual
-  return lineaUpper;
-};
-
-// Función para obtener el nombre de visualización de la línea
-const getDisplayLineName = (lineaNegocio) => {
-  if (!lineaNegocio) return "DEFAULT";
-
-  const lineaUpper = lineaNegocio.toUpperCase().trim();
-
-  // LLANTAS MOTO se muestra como MOTO
-  if (lineaUpper === "LLANTAS MOTO") {
-    return "MOTO";
-  }
-
-  // Para otras líneas, usar el nombre tal cual
-  return lineaUpper;
-};
-
-// Añadir esta función para encontrar la mejor dirección disponible
-const findBestAvailableAddress = (addresses, company, type) => {
-  // 1. Buscar predeterminada para esta empresa
-  const defaultForCompany = addresses.find(
-    (addr) => addr.type === type && addr.isDefault && addr.empresa === company
-  );
-  if (defaultForCompany) return defaultForCompany.id;
-
-  // 2. Buscar cualquier dirección de este tipo para esta empresa
-  const anyForCompany = addresses.find(
-    (addr) => addr.type === type && addr.empresa === company
-  );
-  if (anyForCompany) return anyForCompany.id;
-
-  // 3. Buscar predeterminada global
-  const defaultGlobal = addresses.find(
-    (addr) => addr.type === type && addr.isDefault
-  );
-  if (defaultGlobal) return defaultGlobal.id;
-
-  // 4. Buscar cualquier dirección de este tipo
-  const anyAddress = addresses.find((addr) => addr.type === type);
-  if (anyAddress) return anyAddress.id;
-
-  // No hay direcciones disponibles
-  return null;
-};
-
 const ResolvedAddress = ({ address }) => {
   const [resolvedText, setResolvedText] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const resolve = async () => {
-      // Priorizar coordenadas si existen
       const lat = address.LATITUDE || address.latitude;
       const lng = address.LONGITUDE || address.longitude;
-      const hasCoords = lat && lng && lat !== "" && lng !== "";
-
-      if (hasCoords) {
-        setLoading(true);
-        try {
-          const result = await reverseGeocode(lng, lat);
-          if (result && result.address) {
-            setResolvedText(result.address);
-          }
-        } catch (error) {
-          console.error("Error resolving address:", error);
-        } finally {
-          setLoading(false);
-        }
+      if (!lat || !lng || lat === "" || lng === "") return;
+      setLoading(true);
+      try {
+        const result = await reverseGeocode(lng, lat);
+        if (result?.address) setResolvedText(result.address);
+      } catch (error) {
+        console.error("Error resolving address:", error);
+      } finally {
+        setLoading(false);
       }
     };
     resolve();
@@ -1701,7 +1420,7 @@ const ResolvedAddress = ({ address }) => {
   if (resolvedText) {
     return (
       <>
-        <div style={{ fontWeight: '500', color: '#2196f3', fontSize: '0.75rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ fontWeight: 500, color: "#2196f3", fontSize: "0.75rem", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
           <RenderIcon name="FaMapMarkerAlt" size={10} />
           Ubicación seleccionada por mapa
         </div>
@@ -1712,11 +1431,15 @@ const ResolvedAddress = ({ address }) => {
 
   return (
     <>
-      {address.street || address.STREET} {address.number || address.NUMBER || ""} {address.city || address.CITY},{" "}
-      {address.state || address.STATE}
+      {address.street || address.STREET} {address.number || address.NUMBER || ""}{" "}
+      {address.city || address.CITY}, {address.state || address.STATE}
     </>
   );
 };
+
+// ─────────────────────────────────────────────
+// COMPONENTE PRINCIPAL
+// ─────────────────────────────────────────────
 
 const Carrito = () => {
   const {
@@ -1725,9 +1448,10 @@ const Carrito = () => {
     updateQuantity,
     isLoading,
     isHydrating,
-    loadCartFromAPI, // Función para cargar el carrito
-    removeFromCartByDetailIds, // Función para eliminar por idShoppingCartDetail
+    loadCartFromAPI,
+    removeFromCartByDetailIds,
   } = useCart();
+
   const navigate = useNavigate();
   const { theme } = useAppTheme();
   const { user, isSeller, isB2BSeller } = useAuth(); // Obtenemos el usuario actual e info de rol
@@ -1747,122 +1471,379 @@ const Carrito = () => {
     loadBanners();
   }, []);
 
-  const getClientName = () => {
-    if (isSeller) {
-      const sellerData = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-      return sellerData.clientName || "CLIENTE GENERAL";
-    }
-    return null;
-  };
-  const clientNameForTitle = getClientName();
-
-
-  // Estados para manejar direcciones
+  // ── Estados ──────────────────────────────
   const [addresses, setAddresses] = useState([]);
-
-  // Estados para agrupar el carrito por empresa (y dentro por línea)
   const [groupedCart, setGroupedCart] = useState({});
   const [selectedCompany, setSelectedCompany] = useState(null);
-
-  // Agregar estos nuevos estados para el proceso de checkout
   const [isProcessingOrders, setIsProcessingOrders] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [currentProcessingCompany, setCurrentProcessingCompany] = useState("");
+  const [currentProcessingCompany, setCurrentProcessingCompany] = useState(""); // eslint-disable-line no-unused-vars
   const [completedOrders, setCompletedOrders] = useState(0);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [totalOrdersToProcess, setTotalOrdersToProcess] = useState(0);
-  // eslint-disable-next-line no-unused-vars
-  const [lastProcessedCompanies, setLastProcessedCompanies] = useState([]);
-
+  const [totalOrdersToProcess, setTotalOrdersToProcess] = useState(0);   // eslint-disable-line no-unused-vars
+  const [lastProcessedCompanies, setLastProcessedCompanies] = useState([]);  // eslint-disable-line no-unused-vars
   const [companyToCheckout, setCompanyToCheckout] = useState(null);
-  const skipCartLoadRef = useRef(false); // Ref para evitar recargar el carrito cuando el modal está visible
-
-  // Estados para modales
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-  // Estados para el modal de selección de direcciones (solo para vendedores)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [addressModalType, setAddressModalType] = useState("S"); // "S" para envío, "B" para facturación
+  const [addressModalType, setAddressModalType] = useState("S");
   const [addressModalCompany, setAddressModalCompany] = useState(null);
-
-  // Estados para creación de dirección (B2B)
   const [isCreateAddressModalOpen, setIsCreateAddressModalOpen] = useState(false);
-  const [newAddressData, setNewAddressData] = useState({
-    country: "EC",
-    state: "",
-    city: "",
-    street: ""
-  });
+  const [newAddressData, setNewAddressData] = useState({ country: "EC", state: "", city: "", street: "" });
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showConfirmAddressModal, setShowConfirmAddressModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("CREDIT");
 
-  // Nueva función para confirmar el pago de una línea
-  const handleLineCheckoutClick = (company, line) => {
-    setCompanyToCheckout(`${company}_${line}`);
-    setShowConfirmModal(true);
-  };
-
-  // El carrito se carga automáticamente desde CartContext cuando el usuario está disponible
-  // Solo cargar manualmente cuando sea necesario (después de checkout, etc.)
-
+  // ── Refs ─────────────────────────────────
+  const skipCartLoadRef = useRef(false);
   const loadingAddressesRef = useRef(false);
   const lastLoadedAccountRef = useRef(null);
+  const pendingCheckoutRef = useRef(null); // Guarda { company, line } mientras Nuvei procesa
 
-  // Cargar direcciones del usuario o del cliente (si es vendedor)
-  const loadAddresses = async (force = false) => {
+  // ── Helpers internos ─────────────────────
+  const getClientNameForSeller = () => {
+    if (!isSeller) return null;
+    const stored = JSON.parse(sessionStorage.getItem("sellerCartData") || "{}");
+    return stored.clientName || "CLIENTE GENERAL";
+  };
+  const clientNameForTitle = getClientNameForSeller();
+
+  const getCatalogUrl = () => {
+    const lastCatalogUrl = localStorage.getItem("lastCatalogUrl");
+    if (isSeller) {
+      if (lastCatalogUrl && lastCatalogUrl.includes("/vendedor")) return lastCatalogUrl;
+      return ROUTES.VENDEDOR.OFERTA;
+    }
+    return lastCatalogUrl || ROUTES.ECOMMERCE.SELECCION_EMPRESA;
+  };
+
+  const calculateLineTotalWithIVA = useCallback((company, line) => {
+    const companyData = groupedCart[company];
+    if (!companyData?.lines[line]) return 0;
+
+    const lineData = companyData.lines[line];
+    const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+    const extraProductDiscounts = offerData?.items || {};
+    const extraTotalDiscountPct = offerData?.total || 0;
+    const preview = offerData?.previews?.[company];
+
+    const totals = lineData.items.map((item) => {
+      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+      const extraDiscount = extraProductDiscounts[item.id] || 0;
+      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
+      const totalPct = (promoDiscount + extraDiscount) / 100;
+      const discountedPrice = item.price * (1 - totalPct);
+
+      let clientDiscountPct = 0;
+      if (preview?.DESCUENTO_CLIENTE) {
+        const lineaItem = (item.lineaNegocio || "").toUpperCase();
+        clientDiscountPct = lineaItem === "LUBRICANTES"
+          ? preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0
+          : preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+      } else {
+        const discountKey = lineData.discountKey || line;
+        const potentialDiscount = user?.DESCUENTOS?.[company];
+        clientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === "number" ? potentialDiscount : 0);
+      }
+
+      const priceWithIVA = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
+      return priceWithIVA * (1 - clientDiscountPct / 100) * item.quantity;
+    });
+
+    const subtotalFinalWithIVA = totals.reduce((acc, val) => acc + val, 0);
+    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+
+    let groupEcovalor = 0;
+    lineData.items.forEach(item => {
+      const l = (item.lineaNegocio || "").toUpperCase();
+      if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
+      else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+    });
+
+    return subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+  }, [groupedCart, isB2BSeller, user]);
+
+  // ── 1. handleCheckoutSingleLineInternal ──
+  const handleCheckoutSingleLineInternal = useCallback(async (lineData, company, displayLine) => {
+    if (!lineData?.items?.length) throw new Error("No se encontró información para esta línea");
+    if (!lineData.shippingAddressId || !lineData.billingAddressId) throw new Error("Faltan direcciones para esta línea");
+
+    const shippingAddress = addresses.find(a => a.id === lineData.shippingAddressId);
+    const billingAddress = addresses.find(a => a.id === lineData.billingAddressId);
+
+    const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+    const extraProductDiscounts = offerData?.items || {};
+    const extraTotalDiscountPct = offerData?.total || 0;
+    const preview = offerData?.previews?.[company];
+
+    const itemsWithIVA = lineData.items.map((item) => {
+      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+      const extraDiscount = extraProductDiscounts[item.id] || 0;
+      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
+      const totalPct = (promoDiscount + extraDiscount) / 100;
+      const discountedPrice = item.price * (1 - totalPct);
+
+      const linea = (item.lineaNegocio || "").toUpperCase();
+      let clientDiscountPct = 0;
+      if (preview?.DESCUENTO_CLIENTE) {
+        clientDiscountPct = linea === "LUBRICANTES"
+          ? preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0
+          : preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+      } else {
+        const discountKey = lineData.discountKey || displayLine;
+        const potentialDiscount = user?.DESCUENTOS?.[company];
+        clientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === "number" ? potentialDiscount : 0);
+      }
+
+      const priceAfterClientDiscount = discountedPrice * (1 - clientDiscountPct / 100);
+      const priceWithIVA = calculatePriceWithIVA(priceAfterClientDiscount, item.iva || TAXES.IVA_PERCENTAGE);
+      return { ...item, priceWithIVA, totalWithIVA: priceWithIVA * item.quantity };
+    });
+
+    const subtotalFinalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalWithIVA, 0);
+    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+    const totalConIvaSinEcovalor = subtotalFinalWithIVA - totalExtraDiscountValue;
+
+    let groupEcovalor = 0;
+    lineData.items.forEach(item => {
+      const l = (item.lineaNegocio || "").toUpperCase();
+      if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
+      else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+    });
+
+    const totalConIva = totalConIvaSinEcovalor + groupEcovalor;
+
+    let accountUser = user.ACCOUNT_USER;
+    if (isSeller) {
+      const stored = JSON.parse(sessionStorage.getItem("sellerCartData") || "{}");
+      accountUser = stored.clientAccounts?.[company] || user.ACCOUNT_USER;
+    }
+
+    const productsToProcess = lineData.items.map((item) => {
+      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+      const productData = {
+        PRODUCT_CODE: item.id,
+        QUANTITY: item.quantity,
+        PRICE: item.price,
+        PROMOTIONAL_DISCOUNT: (Number(item.promotionalDiscount) || 0) + productSapDiscount,
+      };
+      if (isB2BSeller) productData.EXTRA_DISCOUNT = extraProductDiscounts[item.id] || 0;
+      return productData;
+    });
+
+    const spancopCodeStr = sessionStorage.getItem("CODIGO_DATOS_SPANCOP");
+    const proformaHeaderStr = sessionStorage.getItem("PROFORMA_HEADER");
+    const clientSource = sessionStorage.getItem("SOURCE") || "";
+
+    const orderToProcess = {
+      ENTERPRISE: company,
+      ACCOUNT_USER: accountUser,
+      SHIPPING_ADDRESS_ID: parseInt(shippingAddress.id),
+      BILLING_ADDRESS_ID: parseInt(billingAddress.id),
+      SUBTOTAL: subtotalFinalWithIVA / (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100),
+      ADITIONAL_DISCOUNT: 0,
+      OFFER_TOTAL_DISCOUNT: extraTotalDiscountPct,
+      EXTRA_DISCOUNT: isB2BSeller ? extraTotalDiscountPct : 0,
+      ECOVALOR: groupEcovalor,
+      TOTAL: totalConIva,
+      PRODUCTOS: productsToProcess,
+      SOURCE: clientSource,
+      PAYMENT_METHOD: paymentMethod,
+      // Datos de transacción Nuvei (solo cuando se paga con tarjeta)
+      ...(lineData.transaction && lineData.card && {
+        TRANSACTION_DATA: {
+          TRANSACTION_ID: lineData.transaction.id,
+          TRANSACTION_STATUS: lineData.transaction.status,
+          TRANSACTION_CURRENT_STATUS: lineData.transaction.current_status,
+          TRANSACTION_AMOUNT: lineData.transaction.amount,
+          TRANSACTION_AUTHORIZATION_CODE: lineData.transaction.authorization_code,
+          CARD_TYPE: lineData.card.type,
+          CARD_LAST_FOUR: lineData.card.number,
+          CARD_EXPIRY_YEAR: lineData.card.expiry_year,
+          CARD_EXPIRY_MONTH: lineData.card.expiry_month,
+        }
+      })
+    };
+
+    if (isB2BSeller && proformaHeaderStr) {
+      const proformaId = parseInt(proformaHeaderStr);
+      if (!isNaN(proformaId)) orderToProcess.PROFORMA_HEADER = proformaId;
+    }
+
+    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B && spancopCodeStr) {
+      const spancopCode = parseInt(spancopCodeStr);
+      if (!isNaN(spancopCode)) orderToProcess.CODE_SPANCOP = spancopCode;
+    }
+
+    const responseOrder = await api_order_createOrder(orderToProcess);
+    if (!responseOrder.success) throw new Error(responseOrder.message || "Error al procesar el pedido");
+    return responseOrder;
+
+  }, [addresses, isB2BSeller, isSeller, user, paymentMethod]);
+
+  // ── 2. processLineOrder (función compartida) ──
+  const processLineOrder = useCallback(async (company, line, paymentData = null) => {
+    const companyData = groupedCart[company];
+    if (!companyData || !companyData.lines[line]) throw new Error("No se encontró información para esta línea");
+
+    setCurrentProcessingCompany(`${company} - ${line}`);
+    setIsProcessingOrders(true);
+    setTotalOrdersToProcess(1);
+    setCompletedOrders(0);
+
+    const lineDataObj = companyData.lines[line];
+    const lineData = {
+      items: lineDataObj.items,
+      shippingAddressId: companyData.shippingAddressId,
+      billingAddressId: companyData.billingAddressId,
+      discountKey: lineDataObj.discountKey,
+      ...(paymentData && {
+        transaction: paymentData.transaction,
+        card: paymentData.card,
+      }),
+    };
+
+    const itemsIdsToDeleteFromCart = lineData.items.map(i => i.idShoppingCartDetail);
+
+    await handleCheckoutSingleLineInternal(lineData, company, line);
+
+    let finalIdsToDelete = itemsIdsToDeleteFromCart;
+    if (isB2BSeller) {
+      const stored = JSON.parse(sessionStorage.getItem("sellerCartData") || "{}");
+      const clientAccount = stored.clientAccounts?.[company];
+      if (clientAccount) {
+        const cartResult = await api_cart_createCarrito(clientAccount, company);
+        if (cartResult?.success && cartResult?.data?.details) {
+          const currentLineCodes = lineData.items.map(i => i.id);
+          finalIdsToDelete = cartResult.data.details
+            .filter(d => currentLineCodes.includes(d.ID_PRODUCT))
+            .map(d => d.ID_SHOPPING_CART_DETAIL);
+        }
+      }
+      if (!finalIdsToDelete?.length || finalIdsToDelete.some(id => !id)) {
+        finalIdsToDelete = itemsIdsToDeleteFromCart.filter(Boolean);
+      }
+    }
+
+    if (Array.isArray(finalIdsToDelete) && finalIdsToDelete.length > 0) {
+      const responseDelete = await api_cart_deleteProductsFromCart(finalIdsToDelete);
+      if (!responseDelete.success) throw new Error(responseDelete.message || "Error al eliminar los productos del carrito");
+    }
+
+    skipCartLoadRef.current = true;
+    setCompletedOrders(1);
+    setIsProcessingOrders(false);
+    setShowSuccessCard(true);
+    setLastProcessedCompanies([`${company}_${line}`]);
+
+    await new Promise(r => setTimeout(r, 300));
+    if (removeFromCartByDetailIds) removeFromCartByDetailIds(itemsIdsToDeleteFromCart);
+
+    await new Promise(r => setTimeout(r, 700));
+    await loadCartFromAPI(true);
+
+    setTimeout(() => { skipCartLoadRef.current = false; }, 2000);
+
+  }, [groupedCart, isB2BSeller, removeFromCartByDetailIds, loadCartFromAPI, handleCheckoutSingleLineInternal]);
+
+  // ── 3. Handlers de Nuvei ─────────────────
+  const handleNuveiSuccess = useCallback(async (transaction) => {
+    try {
+      if (transaction.status !== "success" || transaction.status_detail !== 3) {
+        toast.error("El pago no fue aprobado. Intente nuevamente.");
+        console.warn("Transacción no aprobada:", transaction);
+        return;
+      }
+
+      if (!transaction.id) {
+        toast.error("El pago no fue realizado correctamente. Intente nuevamente.");
+        return;
+      }
+
+      const result = await api_verify_transaction(transaction.id);
+      if (result.data.transaction.status !== "success" || result.data.transaction.status_detail !== 3) {
+        toast.error("El pago no pudo verificarse. Intente nuevamente.");
+        return;
+      }
+
+      toast.success("Pago aprobado correctamente");
+
+      const pending = pendingCheckoutRef.current;
+      if (!pending) {
+        toast.error("No se encontró el contexto del pedido.");
+        return;
+      }
+
+      await processLineOrder(pending.company, pending.line, {
+        transaction: result.data.transaction,
+        card: result.data.card || null,
+      });
+
+      pendingCheckoutRef.current = null;
+
+    } catch (error) {
+      console.error("Error al procesar respuesta de Nuvei:", error);
+      toast.error("Error al confirmar el pago.");
+      setIsProcessingOrders(false);
+    }
+  }, [processLineOrder]);
+
+  const handleNuveiError = useCallback((error) => {
+    toast.error("El pago no pudo procesarse. Intente nuevamente.");
+    console.error("Error Nuvei:", error);
+  }, []);
+
+  const handleNuveiClose = useCallback(() => {
+    setIsProcessingOrders(false);
+  }, []);
+
+  const { openCheckout } = useNuvei({
+    onSuccess: handleNuveiSuccess,
+    onError: handleNuveiError,
+    onClose: handleNuveiClose,
+  });
+
+  // ── Cargar direcciones ────────────────────
+  const loadAddresses = useCallback(async (force = false) => {
     if (!user || (loadingAddressesRef.current && !force)) return;
-
     let userAddresses = [];
 
     try {
       if (isSeller) {
-        // Para vendedores, obtener direcciones.
-        // Se envía una sola vez para el primer cliente/empresa encontrado, asegurando el ACCOUNT_USER completo.
-        const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-        const clientAccounts = stored.clientAccounts || {};
-        const entries = Object.entries(clientAccounts);
+        const stored = JSON.parse(sessionStorage.getItem("sellerCartData") || "{}");
+        const entries = Object.entries(stored.clientAccounts || {});
+        if (!entries.length) return;
 
-        if (entries.length > 0) {
-          const [empresa, account] = entries[0];
-
-          // Evitar recargar si es la misma cuenta (a menos que se fuerce)
-          if (!force && lastLoadedAccountRef.current === account && addresses.length > 0) return;
-
-          loadingAddressesRef.current = true;
-          const response = await api_vendedores_getDirecciones(account, isB2BSeller ? "AUTOLLANTA" : empresa);
-
-          if (response.success && Array.isArray(response.data)) {
-            userAddresses = response.data.map((addr) => ({
-              id: addr.ID.toString(),
-              name: addr.TYPE.trim().toUpperCase() === "S" ? "ENVIO" : "FACTURACION",
-              street: addr.STREET,
-              number: "",
-              city: addr.CITY,
-              state: addr.STATE,
-              zipCode: "",
-              phone: "",
-              isDefault: addr.PREDETERMINED,
-              type: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
-              internalType: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
-              empresa: addr.EMPRESA,
-              origen: addr.ORIGIN,
-              LATITUDE: addr.LATITUDE,
-              LONGITUDE: addr.LONGITUDE,
-            }));
-            lastLoadedAccountRef.current = account;
-          }
-        }
-      } else if (user.DIRECCIONES) {
-        // Evitar recargar si es el mismo usuario (a menos que se fuerce)
-        if (!force && lastLoadedAccountRef.current === user.ACCOUNT_USER && addresses.length > 0) return;
+        const [empresa, account] = entries[0];
+        if (!force && lastLoadedAccountRef.current === account && addresses.length > 0) return;
 
         loadingAddressesRef.current = true;
-        // Obtener todas las direcciones y aplanarlas en un solo array
-        const allAddresses = Object.values(user.DIRECCIONES).flat();
+        const response = await api_vendedores_getDirecciones(account, isB2BSeller ? "AUTOLLANTA" : empresa);
 
-        userAddresses = allAddresses.map((addr) => ({
+        if (response.success && Array.isArray(response.data)) {
+          userAddresses = response.data.map(addr => ({
+            id: addr.ID.toString(),
+            name: addr.TYPE.trim().toUpperCase() === "S" ? "ENVIO" : "FACTURACION",
+            street: addr.STREET,
+            number: "",
+            city: addr.CITY,
+            state: addr.STATE,
+            zipCode: "",
+            phone: "",
+            isDefault: addr.PREDETERMINED,
+            type: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
+            internalType: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
+            empresa: addr.EMPRESA,
+            origen: addr.ORIGIN,
+            LATITUDE: addr.LATITUDE,
+            LONGITUDE: addr.LONGITUDE,
+          }));
+          lastLoadedAccountRef.current = account;
+        }
+      } else if (user.DIRECCIONES) {
+        if (!force && lastLoadedAccountRef.current === user.ACCOUNT_USER && addresses.length > 0) return;
+        loadingAddressesRef.current = true;
+
+        userAddresses = Object.values(user.DIRECCIONES).flat().map(addr => ({
           id: addr.ID.toString(),
           name: addr.CLASIFICATION,
           street: addr.STREET,
@@ -1881,208 +1862,80 @@ const Carrito = () => {
         lastLoadedAccountRef.current = user.ACCOUNT_USER;
       }
 
-      if (userAddresses.length > 0) {
-        setAddresses(userAddresses);
-      }
+      if (userAddresses.length > 0) setAddresses(userAddresses);
     } catch (error) {
       console.error("Error al cargar direcciones:", error);
     } finally {
       loadingAddressesRef.current = false;
     }
-  };
-
-  useEffect(() => {
-    loadAddresses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isSeller]);
+  }, [user, isSeller, isB2BSeller]);
 
-  // Agrupar items del carrito por empresa (y dentro por línea)
-  // No ejecutar si el modal de éxito está visible para evitar interferencias
+  useEffect(() => { loadAddresses(); }, [loadAddresses]);
+
+  // ── Agrupar carrito ───────────────────────
   useEffect(() => {
-    // No agrupar si el modal está visible o si estamos procesando
-    if (showSuccessCard || isProcessingOrders) {
-      return;
-    }
+    if (showSuccessCard || isProcessingOrders) return;
 
-    const groupByCompany = () => {
-      const grouped = {};
+    const grouped = {};
+    cart.forEach((item) => {
+      const company = item.empresaId || "Sin empresa";
+      const displayLine = getDisplayLineName(item.lineaNegocio || "DEFAULT");
+      const discountKey = mapLineaToDiscountKey(item.lineaNegocio) || "DEFAULT";
 
-      cart.forEach((item) => {
-        const company = item.empresaId || "Sin empresa";
-        const lineaNegocio = item.lineaNegocio || "DEFAULT";
-        // Usar el nombre de visualización (LLANTAS MOTO se muestra como MOTO)
-        const displayLine = getDisplayLineName(lineaNegocio);
-        // Usar la clave de descuento para cálculos
-        const discountKey = mapLineaToDiscountKey(lineaNegocio) || "DEFAULT";
+      if (!grouped[company]) {
+        grouped[company] = {
+          items: [], lines: {}, total: 0,
+          shippingAddressId: groupedCart[company]?.shippingAddressId || null,
+          billingAddressId: groupedCart[company]?.billingAddressId || null,
+        };
+      }
+      if (!grouped[company].lines[displayLine]) {
+        grouped[company].lines[displayLine] = { items: [], total: 0, discountKey };
+      }
+      grouped[company].items.push(item);
+      grouped[company].lines[displayLine].items.push(item);
+      grouped[company].total += item.price * item.quantity;
+      grouped[company].lines[displayLine].total += item.price * item.quantity;
+    });
 
-        if (!grouped[company]) {
-          // Verificar si ya existía esta empresa en el agrupamiento anterior
-          // y mantener sus direcciones seleccionadas
-          grouped[company] = {
-            items: [],
-            lines: {}, // Agrupar por línea dentro de la empresa (usando línea original)
-            total: 0,
-            // Mantener las direcciones previamente seleccionadas si existían
-            shippingAddressId: groupedCart[company]?.shippingAddressId || null,
-            billingAddressId: groupedCart[company]?.billingAddressId || null,
-          };
-        }
+    Object.keys(grouped).forEach(company => {
+      const sort = (a, b) => (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
+      grouped[company].items.sort(sort);
+      Object.keys(grouped[company].lines).forEach(line => { grouped[company].lines[line].items.sort(sort); });
 
-        // Agrupar por línea original (para visualización separada)
-        if (!grouped[company].lines[displayLine]) {
-          grouped[company].lines[displayLine] = {
-            items: [],
-            total: 0,
-            discountKey: discountKey, // Guardar la clave de descuento para usar en cálculos
-          };
-        }
-
-        grouped[company].items.push(item);
-        grouped[company].lines[displayLine].items.push(item);
-        grouped[company].total += item.price * item.quantity;
-        grouped[company].lines[displayLine].total += item.price * item.quantity;
-      });
-
-      // Ordenar productos alfabéticamente por nombre dentro de cada empresa y línea
-      Object.keys(grouped).forEach((company) => {
-        grouped[company].items.sort((a, b) => {
-          const nameA = (a.name || "").toLowerCase();
-          const nameB = (b.name || "").toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-
-        Object.keys(grouped[company].lines).forEach((line) => {
-          grouped[company].lines[line].items.sort((a, b) => {
-            const nameA = (a.name || "").toLowerCase();
-            const nameB = (b.name || "").toLowerCase();
-            return nameA.localeCompare(nameB);
-          });
-        });
-      });
-
-      // Asignar direcciones predeterminadas solo para empresas nuevas o sin dirección seleccionada
       if (addresses.length > 0) {
-        Object.keys(grouped).forEach((company) => {
-          // Solo asignar direcciones predeterminadas si no hay una ya seleccionada
-          if (!grouped[company].shippingAddressId) {
-            grouped[company].shippingAddressId = findBestAvailableAddress(
-              addresses,
-              company,
-              "S"
-            );
-          }
-
-          if (!grouped[company].billingAddressId) {
-            grouped[company].billingAddressId = findBestAvailableAddress(
-              addresses,
-              company,
-              "B"
-            );
-          }
-        });
+        if (!grouped[company].shippingAddressId)
+          grouped[company].shippingAddressId = findBestAvailableAddress(addresses, company, "S");
+        if (!grouped[company].billingAddressId)
+          grouped[company].billingAddressId = findBestAvailableAddress(addresses, company, "B");
       }
+    });
 
-      setGroupedCart(grouped);
-
-      // Actualizar selectedCompany si es necesario
-      if (Object.keys(grouped).length > 0) {
-        if (!selectedCompany || !grouped[selectedCompany]) {
-          setSelectedCompany(Object.keys(grouped)[0]);
-        }
-      }
-    };
-
-    groupByCompany();
+    setGroupedCart(grouped);
+    if (Object.keys(grouped).length > 0 && (!selectedCompany || !grouped[selectedCompany])) {
+      setSelectedCompany(Object.keys(grouped)[0]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, addresses, showSuccessCard, isProcessingOrders]);
 
-  // Mostrar el overlay de carga si está cargando o hidratando
-  if (isLoading || isHydrating) {
-    return (
-      <LoadingOverlay>
-        <LoadingContent>
-          <RenderLoader size="64px" showSpinner={true} floatingSpinner={true} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <LoadingTitle>Cargando carrito</LoadingTitle>
-            <LoadingText>
-              Espere un momento mientras preparamos su pedido.
-            </LoadingText>
-          </div>
-        </LoadingContent>
-      </LoadingOverlay>
-    );
-  }
-
-  // Función para obtener la URL del catálogo a la que se debe redirigir
-  const getCatalogUrl = () => {
-    const lastCatalogUrl = localStorage.getItem("lastCatalogUrl");
-
-    // Si el usuario es vendedor
-    if (isSeller) {
-      // Si la última URL fue de vendedor, usarla. De lo contrario, ir a la oferta base.
-      if (lastCatalogUrl && lastCatalogUrl.includes("/vendedor")) {
-        return lastCatalogUrl;
-      }
-      return ROUTES.VENDEDOR.OFERTA;
-    }
-
-    // Si es cliente, usar la última URL de catálogo o ir a selección de empresa
-    return lastCatalogUrl || ROUTES.ECOMMERCE.SELECCION_EMPRESA;
-  };
-
-  // No mostrar el estado vacío si el modal de éxito está visible
-  // Esto permite que el modal se muestre incluso cuando el carrito está vacío
-  if (cart.length === 0 && !showSuccessCard) {
-    return (
-      <PageContainer style={{ padding: "16px" }}>
-        <PageTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <h1>Carrito de compras</h1>
-          </div>
-          {clientNameForTitle && (
-            <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
-              Comprando para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
-            </div>
-          )}
-        </PageTitle>
-        <CartEmptyState>
-          <RenderIcon
-            name="FaCartShopping"
-            size={40}
-            color={theme.colors.primary}
-            style={{ marginBottom: "16px" }}
-          />
-          <EmptyCartText>Tu carrito está vacío</EmptyCartText>
-          <Button
-            text="Ir al Catálogo"
-            variant="outlined"
-            onClick={() => navigate(getCatalogUrl())}
-          />
-        </CartEmptyState>
-      </PageContainer>
-    );
-  }
-
+  // ── Handlers generales ────────────────────
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity <= 0) return;
-
-    // Encontrar el ítem del carrito
-    const cartItem = cart.find((item) => item.id === id);
-    if (!cartItem) return;
-
-    // Actualizar la cantidad sin restricciones de stock
+    if (!cart.find(i => i.id === id)) return;
     updateQuantity(id, newQuantity);
+  };
+
+  const handleLineCheckoutClick = (company, line) => {
+    setCompanyToCheckout(`${company}_${line}`);
+    setShowConfirmModal(true);
   };
 
   const handleOpenAddressModal = (type, company) => {
     setAddressModalType(type);
     setAddressModalCompany(company);
-
-    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller) {
-      setIsCreateAddressModalOpen(true);
-    } else {
-      setIsAddressModalOpen(true);
-    }
+    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller) setIsCreateAddressModalOpen(true);
+    else setIsAddressModalOpen(true);
   };
 
   const handleCreateAddressSubmit = () => {
@@ -2090,24 +1943,19 @@ const Carrito = () => {
       toast.warning("Por favor completa todos los campos requeridos");
       return;
     }
-
-    // Validación obligatoria de mapa para envío y facturación
     if (!selectedLocation) {
       toast.warning("Por favor selecciona una ubicación en el mapa");
       return;
     }
-
     setShowConfirmAddressModal(true);
   };
 
   const executeCreateAddress = async () => {
     setIsCreatingAddress(true);
     setShowConfirmAddressModal(false);
-
     try {
-      const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-      const clientAccounts = stored.clientAccounts || {};
-      const accountUser = clientAccounts[addressModalCompany] || user.ACCOUNT_USER;
+      const stored = JSON.parse(sessionStorage.getItem("sellerCartData") || "{}");
+      const accountUser = stored.clientAccounts?.[addressModalCompany] || user.ACCOUNT_USER;
 
       const payload = {
         ACCOUNT_USER: accountUser,
@@ -2132,37 +1980,34 @@ const Carrito = () => {
         setNewAddressData({ country: "EC", state: "", city: "", street: "" });
         setSelectedLocation(null);
 
-        const createdId = response.data?.data?.ID || response.data?.data?.id || response.data?.ID || response.data?.id || response.data?.insertId || Date.now().toString();
+        const createdId = (
+          response.data?.data?.ID || response.data?.data?.id ||
+          response.data?.ID || response.data?.id ||
+          response.data?.insertId || Date.now()
+        ).toString();
 
         if (!isSeller) {
-          const newRawAddr = {
-            ID: createdId,
-            CLASIFICATION: "PRINCIPAL",
+          if (!user.DIRECCIONES) user.DIRECCIONES = {};
+          if (!user.DIRECCIONES[addressModalCompany]) user.DIRECCIONES[addressModalCompany] = [];
+          user.DIRECCIONES[addressModalCompany].push({
+            ID: createdId, CLASIFICATION: "PRINCIPAL",
             TYPE: addressModalType,
             STREET: newAddressData.street.toUpperCase(),
             CITY: newAddressData.city.toUpperCase(),
             STATE: newAddressData.state.toUpperCase(),
             PREDETERMINED: false,
-            EMPRESA: addressModalCompany,
-            ORIGIN: "USER",
+            EMPRESA: addressModalCompany, ORIGIN: "USER",
             LATITUDE: selectedLocation?.lat || null,
             LONGITUDE: selectedLocation?.lng || null,
-          };
-          if (!user.DIRECCIONES) user.DIRECCIONES = {};
-          if (!user.DIRECCIONES[addressModalCompany]) user.DIRECCIONES[addressModalCompany] = [];
-          user.DIRECCIONES[addressModalCompany].push(newRawAddr);
+          });
         }
 
-        // Recargar direcciones para ver la nueva (forzando petición al endpoint)
         await loadAddresses(true);
 
         const updated = { ...groupedCart };
         if (updated[addressModalCompany]) {
-          if (addressModalType === "S") {
-            updated[addressModalCompany].shippingAddressId = createdId.toString();
-          } else {
-            updated[addressModalCompany].billingAddressId = createdId.toString();
-          }
+          if (addressModalType === "S") updated[addressModalCompany].shippingAddressId = createdId;
+          else updated[addressModalCompany].billingAddressId = createdId;
           setGroupedCart(updated);
         }
       } else {
@@ -2179,323 +2024,182 @@ const Carrito = () => {
   const handleSelectAddressFromModal = (addressId) => {
     const updated = { ...groupedCart };
     if (updated[addressModalCompany]) {
-      if (addressModalType === "S") {
-        updated[addressModalCompany].shippingAddressId = addressId;
-      } else {
-        updated[addressModalCompany].billingAddressId = addressId;
-      }
+      if (addressModalType === "S") updated[addressModalCompany].shippingAddressId = addressId;
+      else updated[addressModalCompany].billingAddressId = addressId;
     }
     setGroupedCart(updated);
     setIsAddressModalOpen(false);
     toast.success("Dirección seleccionada correctamente");
   };
 
-  // Versión interna para procesar una línea específica
-  const handleCheckoutSingleLineInternal = async (
-    lineData,
-    company,
-    displayLine
-  ) => {
-    if (!lineData || !lineData.items || lineData.items.length === 0) {
-      throw new Error("No se encontró información para esta línea");
-    }
-
-    // Verificar direcciones
-    if (!lineData.shippingAddressId || !lineData.billingAddressId) {
-      throw new Error("Faltan direcciones para esta línea");
-    }
-
-    // Preparar orden para esta línea
-    const shippingAddress = addresses.find(
-      (addr) => addr.id === lineData.shippingAddressId
-    );
-    const billingAddress = addresses.find(
-      (addr) => addr.id === lineData.billingAddressId
-    );
-
-    // Obtener descuentos extra de la oferta si es vendedor
-    const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
-
-    const extraProductDiscounts = offerData?.items || {};
-    const extraTotalDiscountPct = offerData?.total || 0;
-    const previewDiscounts = offerData?.previews || {};
-    const preview = previewDiscounts[company];
-
-    // Calcular total con IVA incluido para cada item
-    const itemsWithIVA = lineData.items.map((item) => {
-      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
-      const extraDiscount = extraProductDiscounts[item.id] || 0;
-      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
-      const totalPct = (promoDiscount + extraDiscount) / 100;
-
-      const discountedPrice = item.price * (1 - totalPct);
-
-      // Calcular descuento de cliente para este ítem específico
-      const linea = (item.lineaNegocio || "").toUpperCase();
-      let clientDiscountPct = 0;
-      if (preview?.DESCUENTO_CLIENTE) {
-        if (linea === "LUBRICANTES") {
-          clientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0;
-        } else {
-          clientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
-        }
-      } else {
-        const discountKey = lineData.discountKey || displayLine;
-        const potentialDiscount = user?.DESCUENTOS?.[company];
-        clientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === 'number' ? potentialDiscount : 0);
-      }
-
-      const priceAfterClientDiscount = discountedPrice * (1 - clientDiscountPct / 100);
-      const priceWithIVA = calculatePriceWithIVA(
-        priceAfterClientDiscount,
-        item.iva || TAXES.IVA_PERCENTAGE
-      );
-
-      // Guardamos la diferencia para el reporte o lógica posterior si fuera necesario
-      // Pero aquí lo que importa es el TOTAL final enviado a la API
-
-      return {
-        ...item,
-        priceWithIVA,
-        totalWithIVA: priceWithIVA * item.quantity,
-      };
-    });
-
-    // Subtotal con IVA incluido (esto ya incluye descuentos de producto y cliente)
-    const subtotalFinalWithIVA = itemsWithIVA.reduce(
-      (acc, item) => acc + item.totalWithIVA,
-      0
-    );
-
-    // Aplicar descuento extra al TOTAL (vendedor)
-    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
-    const totalConIvaSinEcovalor = subtotalFinalWithIVA - totalExtraDiscountValue;
-
-    let groupEcovalor = 0;
-    lineData.items.forEach(item => {
-      const lineaItem = (item.lineaNegocio || "").toUpperCase();
-      if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
-      else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
-    });
-
-    const totalConIva = totalConIvaSinEcovalor + groupEcovalor;
-
-    // Obtener el ACCOUNT_USER correcto
-    let accountUser = user.ACCOUNT_USER;
-    if (isSeller) {
-
-      const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-      const clientAccounts = stored.clientAccounts || {};
-      accountUser = clientAccounts[company] || user.ACCOUNT_USER;
-    }
-
-    const productsToProcess = lineData.items.map((item) => {
-      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
-      const productData = {
-        PRODUCT_CODE: item.id,
-        QUANTITY: item.quantity,
-        PRICE: item.price,
-        PROMOTIONAL_DISCOUNT: (Number(item.promotionalDiscount) || 0) + productSapDiscount,
-      };
-
-      if (isB2BSeller) {
-        productData.EXTRA_DISCOUNT = extraProductDiscounts[item.id] || 0;
-      }
-
-      return productData;
-    });
-
-    // Obtener CODE_SPANCOP y PROFORMA_HEADER de sessionStorage
-    const spancopCodeStr = sessionStorage.getItem("CODIGO_DATOS_SPANCOP");
-    const proformaHeaderStr = sessionStorage.getItem("PROFORMA_HEADER");
-
-    // Obtener SOURCE de sessionStorage
-    const clientSource = sessionStorage.getItem("SOURCE") || "";
-
-    const orderToProcess = {
-      ENTERPRISE: company,
-      ACCOUNT_USER: accountUser,
-      SHIPPING_ADDRESS_ID: parseInt(shippingAddress.id),
-      BILLING_ADDRESS_ID: parseInt(billingAddress.id),
-      SUBTOTAL: subtotalFinalWithIVA / (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100), // Aproximación del subtotal neto
-      ADITIONAL_DISCOUNT: 0, // No mandamos descuento de línea plano, ya va en el precio/subtotal
-      OFFER_TOTAL_DISCOUNT: extraTotalDiscountPct,
-      EXTRA_DISCOUNT: isB2BSeller ? extraTotalDiscountPct : 0,
-      ECOVALOR: groupEcovalor,
-      TOTAL: totalConIva,
-      PRODUCTOS: productsToProcess,
-      SOURCE: clientSource || "",
-      // FORMA_PAGO: formaPago,
-    };
-
-    // Agregar PROFORMA_HEADER si el usuario es VENDEDOR B2B
-    if (isB2BSeller && proformaHeaderStr) {
-
-      const proformaId = parseInt(proformaHeaderStr);
-      if (!isNaN(proformaId)) {
-        orderToProcess.PROFORMA_HEADER = proformaId;
-      }
-    }
-
-
-    // Agregar CODE_SPANCOP solo si el usuario es VENDEDOR B2B y existe en sessionStorage
-    if (user?.ROLE_NAME === ROLES.VENDEDOR_B2B && spancopCodeStr !== null && spancopCodeStr !== undefined && spancopCodeStr !== "") {
-      const spancopCode = parseInt(spancopCodeStr);
-      if (!isNaN(spancopCode)) {
-        orderToProcess.CODE_SPANCOP = spancopCode;
-      }
-    }
-
-
-    const responseOrder = await api_order_createOrder(orderToProcess);
-
-
-    if (!responseOrder.success) {
-      throw new Error(responseOrder.message || "Error al procesar el pedido");
-    }
-
-    return responseOrder;
-  };
-
-  // Función para procesar una línea específica de una empresa
+  // ── handleCheckoutSingleLine ──────────────
   const handleCheckoutSingleLine = async (company, line) => {
+    if (paymentMethod === "CREDIT_CARD") {
+      try {
+        setIsProcessingOrders(true);
+        const totalConIva = calculateLineTotalWithIVA(company, line);
+
+        const result = await api_generate_payment_reference({
+          order: {
+            amount: parseFloat(totalConIva.toFixed(2)),
+            description: `Pedido ${company} - ${line}`,
+            dev_reference: `REF-${Date.now()}`,
+            taxable_amount: 0,
+            tax_percentage: 0,
+            vat: 0,
+          },
+          user: { id: user.ACCOUNT_USER, email: user.EMAIL },
+        });
+
+        if (!result.success) throw new Error(result.error || "No se pudo generar la referencia de pago");
+
+        pendingCheckoutRef.current = { company, line };
+        setIsProcessingOrders(false);
+        openCheckout(result.data.reference);
+
+      } catch (error) {
+        console.error(`Error al procesar pago con tarjeta para ${company} - ${line}:`, error);
+        toast.error(`Error al procesar pago: ${error.message}`);
+        setIsProcessingOrders(false);
+      }
+      return;
+    }
+
+    // Flujo crédito
     try {
-      const companyData = groupedCart[company];
-      if (!companyData || !companyData.lines[line]) {
-        throw new Error("No se encontró información para esta línea");
-      }
-
-      setCurrentProcessingCompany(`${company} - ${line}`);
-      setIsProcessingOrders(true);
-      setTotalOrdersToProcess(1);
-      setCompletedOrders(0);
-
-      const lineDataObj = companyData.lines[line];
-      const lineData = {
-        items: lineDataObj.items,
-        shippingAddressId: companyData.shippingAddressId,
-        billingAddressId: companyData.billingAddressId,
-        discountKey: lineDataObj.discountKey, // Incluir la clave de descuento
-      };
-
-      const itemsIdsToDeleteFromCart = lineData.items.map(
-        (item) => item.idShoppingCartDetail
-      );
-
-      await handleCheckoutSingleLineInternal(lineData, company, line);
-
-      // Solo para vendedores B2B: obtenemos los UUIDs reales desde el backend antes de borrar
-      let finalIdsToDelete = itemsIdsToDeleteFromCart;
-      if (isB2BSeller) {
-
-        const stored = JSON.parse(sessionStorage.getItem('sellerCartData') || '{}');
-        const clientAccounts = stored.clientAccounts || {};
-        const clientAccount = clientAccounts[company];
-
-        if (clientAccount) {
-          const cartResult = await api_cart_createCarrito(clientAccount, company);
-          if (cartResult?.success && cartResult?.data?.details) {
-            // IMPORTANTE: Filtrar los detalles devueltos por la API para que solo coincidan con los productos 
-            // de la línea actual que estamos procesando. De lo contrario, borraríamos todo el carrito de la empresa.
-            const currentLineProductCodes = lineData.items.map(item => item.id);
-
-            finalIdsToDelete = cartResult.data.details
-              .filter(detail => currentLineProductCodes.includes(detail.ID_PRODUCT))
-              .map(detail => detail.ID_SHOPPING_CART_DETAIL);
-
-          }
-        }
-
-        // Si por alguna razón finalIdsToDelete quedó vacío o inválido, usamos el fallback
-        if (!finalIdsToDelete || finalIdsToDelete.length === 0 || finalIdsToDelete.some(id => !id)) {
-          finalIdsToDelete = itemsIdsToDeleteFromCart.filter(id => id);
-        }
-      }
-
-      // Verificación final de que tengamos IDs para borrar para evitar el error 400
-      if (!Array.isArray(finalIdsToDelete) || finalIdsToDelete.length === 0) {
-        // No lanzamos error para permitir que el flujo de éxito continúe si el pedido se creó
-      } else {
-        const responseDelete = await api_cart_deleteProductsFromCart(
-          finalIdsToDelete
-        );
-        if (!responseDelete.success) {
-          throw new Error(
-            responseDelete.message ||
-            "Error al eliminar los productos del carrito"
-          );
-        }
-      }
-
-      // Deshabilitar la recarga automática del carrito mientras mostramos el modal
-      skipCartLoadRef.current = true;
-
-      // Primero mostrar el modal de éxito ANTES de eliminar items del estado local
-      // Esto evita que el componente se re-renderice con carrito vacío y oculte el modal
-      setCompletedOrders(1);
-      setIsProcessingOrders(false);
-      setShowSuccessCard(true);
-
-      // Guardar el grupo que se procesó para limpiarlo cuando se cierre el modal
-      setLastProcessedCompanies([`${company}_${line}`]);
-
-      // Esperar un momento para que el modal se muestre completamente
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // Ahora eliminar los items del estado local usando idShoppingCartDetail
-      // para evitar que se reintroduzcan al recargar
-      if (removeFromCartByDetailIds) {
-        removeFromCartByDetailIds(itemsIdsToDeleteFromCart);
-      }
-
-      // Esperar un momento para que el backend procese la eliminación
-      await new Promise((resolve) => setTimeout(resolve, 700));
-
-      // Recargar el carrito desde la API reemplazando completamente (forceReplace = true)
-      // Esto evita que se reintroduzcan productos que ya fueron eliminados
-      // Hacerlo después de mostrar el modal para no interferir con el estado del modal
-      await loadCartFromAPI(true);
-
-      // Rehabilitar la recarga automática después de un momento
-      setTimeout(() => {
-        skipCartLoadRef.current = false;
-      }, 2000);
+      await processLineOrder(company, line);
     } catch (error) {
-      console.error(
-        `Error al procesar pedido para ${company} - ${line}:`,
-        error
-      );
+      console.error(`Error al procesar pedido para ${company} - ${line}:`, error);
       toast.error(`Error al procesar pedido: ${error.message}`);
       setIsProcessingOrders(false);
     }
   };
 
-  // Agregar función para cerrar la tarjeta de éxito e ir a Mis Pedidos
   const handleGoToOrders = async () => {
     setShowSuccessCard(false);
-    skipCartLoadRef.current = false; // Rehabilitar recarga automática
+    skipCartLoadRef.current = false;
     navigate(ROUTES.ECOMMERCE.MIS_PEDIDOS);
   };
 
-  // Agregar función para cerrar la tarjeta de éxito y seguir comprando
   const handleContinueShopping = async () => {
     setShowSuccessCard(false);
-    skipCartLoadRef.current = false; // Rehabilitar recarga automática
-
-    // Usar la función getCatalogUrl para decidir a dónde ir
+    skipCartLoadRef.current = false;
     navigate(getCatalogUrl());
   };
 
+  // ── Sub-componentes internos ──────────────
+  const ClientSummaryCard = () => {
+    if (!user) return null;
+    return (
+      <div style={{
+        padding: "0.875rem 1rem", borderRadius: "10px",
+        border: `1px solid ${theme.colors.border}`,
+        backgroundColor: theme.mode === "dark" ? `${theme.colors.background}80` : theme.colors.background,
+        marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.35rem",
+      }}>
+        <div style={{ fontSize: "0.75rem", fontWeight: 600, color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Cliente
+        </div>
+        <div style={{ fontWeight: 700, fontSize: "0.95rem", color: theme.colors.text }}>
+          {user.NAME_USER}
+        </div>
+        <div style={{ fontSize: "0.85rem", color: theme.colors.textSecondary, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <RenderIcon name="FaEnvelope" size={12} />
+          {user.EMAIL}
+        </div>
+      </div>
+    );
+  };
 
+  const PaymentMethodSelector = ({ value, onChange }) => (
+    <div style={{
+      padding: "1rem", borderRadius: "10px",
+      border: `1px solid ${theme.colors.border}`,
+      backgroundColor: theme.mode === "dark" ? `${theme.colors.background}80` : theme.colors.background,
+      marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem",
+    }}>
+      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        Forma de pago
+      </div>
+      {[
+        { id: "CREDIT", label: "Crédito", icon: "FaFileInvoiceDollar" },
+        { id: "CREDIT_CARD", label: "Tarjeta de crédito", icon: "FaCreditCard" },
+      ].map((option) => (
+        <label
+          key={option.id}
+          onClick={() => onChange(option.id)}
+          style={{
+            display: "flex", alignItems: "center", gap: "0.75rem",
+            padding: "0.75rem 1rem", borderRadius: "8px",
+            border: `2px solid ${value === option.id ? theme.colors.primary : theme.colors.border}`,
+            backgroundColor: value === option.id
+              ? theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}08`
+              : "transparent",
+            cursor: "pointer", transition: "all 0.2s ease",
+          }}
+        >
+          <input
+            type="radio" name="paymentMethod" value={option.id}
+            checked={value === option.id}
+            onChange={() => onChange(option.id)}
+            style={{ accentColor: theme.colors.primary, width: 16, height: 16 }}
+          />
+          <RenderIcon name={option.icon} size={16} color={value === option.id ? theme.colors.primary : theme.colors.textSecondary} />
+          <span style={{ fontWeight: value === option.id ? 600 : 400, fontSize: "0.95rem", color: value === option.id ? theme.colors.primary : theme.colors.text }}>
+            {option.label}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+
+  // ── Early returns ─────────────────────────
+  if (isLoading || isHydrating) {
+    return (
+      <LoadingOverlay>
+        <LoadingContent>
+          <RenderLoader size="64px" showSpinner floatingSpinner />
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <LoadingTitle>Cargando carrito</LoadingTitle>
+            <LoadingText>Espere un momento mientras preparamos su pedido.</LoadingText>
+          </div>
+        </LoadingContent>
+      </LoadingOverlay>
+    );
+  }
+
+  if (cart.length === 0 && !showSuccessCard) {
+    return (
+      <PageContainer style={{ padding: "16px" }}>
+        <PageTitle style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <h1>Carrito de compras</h1>
+          </div>
+          {clientNameForTitle && (
+            <div style={{ fontSize: "1.1rem", color: theme.colors.textSecondary, fontWeight: 500 }}>
+              Comprando para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
+            </div>
+          )}
+        </PageTitle>
+        <CartEmptyState>
+          <RenderIcon name="FaCartShopping" size={40} color={theme.colors.primary} style={{ marginBottom: 16 }} />
+          <EmptyCartText>Tu carrito está vacío</EmptyCartText>
+          <Button text="Ir al Catálogo" variant="outlined" onClick={() => navigate(getCatalogUrl())} />
+        </CartEmptyState>
+      </PageContainer>
+    );
+  }
+
+  // ── RENDER ────────────────────────────────
   return (
     <PageContainer style={{ padding: "16px" }}>
-      <PageTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <PageTitle style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <RenderIcon name="FaCartShopping" size={28} />
           <h1>Carrito de compras</h1>
         </div>
         {clientNameForTitle && (
-          <div style={{ fontSize: '1.1rem', color: theme.colors.textSecondary, fontWeight: 500 }}>
+          <div style={{ fontSize: "1.1rem", color: theme.colors.textSecondary, fontWeight: 500 }}>
             Comprando para: <span style={{ color: theme.colors.primary }}>{clientNameForTitle}</span>
           </div>
         )}
@@ -2503,166 +2207,93 @@ const Carrito = () => {
 
       {/* Pestañas de empresas */}
       <CompanyTabs>
-        {Object.keys(groupedCart).map((company) => (
-          <CompanyTab
-            key={company}
-            $active={selectedCompany === company}
-            onClick={() => setSelectedCompany(company)}
-          >
+        {Object.keys(groupedCart).map(company => (
+          <CompanyTab key={company} $active={selectedCompany === company} onClick={() => setSelectedCompany(company)}>
             {company}
           </CompanyTab>
         ))}
       </CompanyTabs>
 
       <CartLayout>
+        {/* ── Columna izquierda ── */}
         <div>
-          {/* Mostrar productos agrupados por línea dentro de la empresa seleccionada */}
-          {selectedCompany && groupedCart[selectedCompany] && (
-            <>
-              {Object.entries(groupedCart[selectedCompany].lines).map(
-                ([line, lineData]) => (
-                  <div key={line} style={{ marginBottom: "24px" }}>
-                    <LineTitle>
-                      {line}
-                    </LineTitle>
-                    <CartItemsList>
-                      {lineData.items.map((item) => {
-                        const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+          {selectedCompany && groupedCart[selectedCompany] && Object.entries(groupedCart[selectedCompany].lines).map(([line, lineData]) => (
+            <div key={line} style={{ marginBottom: 24 }}>
+              <LineTitle>{line}</LineTitle>
+              <CartItemsList>
+                {lineData.items.map(item => {
+                  const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+                  const extraDisc = offerData?.items?.[item.id] || 0;
+                  return (
+                    <CartItem
+                      key={item.id}
+                      item={item}
+                      handleQuantityChange={handleQuantityChange}
+                      removeFromCart={removeFromCart}
+                      theme={theme}
+                      navigate={navigate}
+                      extraDiscount={extraDisc}
+                      isB2BSeller={isB2BSeller}
+                    />
+                  );
+                })}
+              </CartItemsList>
+            </div>
+          ))}
 
-                        const extraDisc = offerData?.items?.[item.id] || 0;
-                        return (
-                          <CartItem
-                            key={item.id}
-                            item={item}
-                            handleQuantityChange={handleQuantityChange}
-                            removeFromCart={removeFromCart}
-                            theme={theme}
-                            navigate={navigate}
-                            extraDiscount={extraDisc}
-                            isB2BSeller={isB2BSeller}
-                          />
-                        );
-                      })}
-                    </CartItemsList>
-                  </div>
-                )
-              )}
-            </>
-          )}
-
-          {/* Sección de dirección de envío para la empresa seleccionada */}
+          {/* Dirección de envío */}
           <ShippingSection>
             <SectionTitle>
               <RenderIcon name="FaMapPin" size={20} />
               Dirección de envío para {selectedCompany}
             </SectionTitle>
 
-            {selectedCompany &&
-              addresses.filter(
-                (addr) => addr.type === "S" && (isB2BSeller ? addr.empresa === "AUTOLLANTA" : addr.empresa === selectedCompany)
-              ).length > 0 ? (
+            {selectedCompany && addresses.filter(a => a.type === "S" && (isB2BSeller ? a.empresa === "AUTOLLANTA" : a.empresa === selectedCompany)).length > 0 ? (
               <div>
                 {addresses
-                  .filter(
-                    (addr) =>
-                      addr.type === "S" && (isB2BSeller ? addr.empresa === "AUTOLLANTA" : addr.empresa === selectedCompany)
-                  )
-                  .map((address) => {
-                    const companyData = groupedCart[selectedCompany];
-                    return (
-                      <AddressCard
-                        key={address.id}
-                        selected={companyData?.shippingAddressId === address.id}
-                        onClick={() => {
-                          const updated = { ...groupedCart };
-                          if (updated[selectedCompany]) {
-                            updated[selectedCompany].shippingAddressId =
-                              address.id;
-                          }
-                          setGroupedCart(updated);
-                        }}
-                      >
-                        <AddressInfo>
-                          <AddressName>
-                            {address.name}{" "}
-                            {address.origen === "SAP" && (
-                              <span
-                                style={{
-                                  marginLeft: "8px",
-                                  fontSize: "0.75rem",
-                                  padding: "2px 6px",
-                                  backgroundColor: "transparent",
-                                  border: `solid 1px ${theme.colors.primary}`,
-                                  borderRadius: "4px",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  color: theme.colors.primary,
-                                }}
-                              >
-                                {/* <RenderIcon name="FaLock" size={10} /> */}
-                                <span>Registrada</span>
-                              </span>
-                            )}
-                          </AddressName>
-                          <AddressDetails>
-                            <ResolvedAddress address={address} />
-                            {address.isDefault && (
-                              <span
-                                style={{
-                                  marginLeft: 8,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                  color: theme.colors.success,
-                                  fontSize: "0.85rem",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <RenderIcon name="FaCircleCheck" size={12} />
-                                Predeterminada
-                              </span>
-                            )}
-                          </AddressDetails>
-                        </AddressInfo>
-                        {!isSeller && (
-                          <AddressActions>
-                            {address.origen === "SAP" ? (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toast.info(
-                                    "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
-                                  );
-                                }}
-                                style={{
-                                  color: theme.colors.textLight,
-                                }}
-                                // leftIconName={"FaLock"}
-                                size="small"
-                              />
-                            ) : (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Redirigir a la página de perfil con los parámetros para editar esta dirección
-                                  navigate(ROUTES.ECOMMERCE.PERFIL, {
-                                    state: {
-                                      activeTab: "addresses",
-                                      editAddressId: address.id,
-                                      empresa: address.empresa,
-                                    },
-                                  });
-                                }}
-                                leftIconName={"FaPencilAlt"}
-                                size="small"
-                              />
-                            )}
-                          </AddressActions>
-                        )}
-                      </AddressCard>
-                    );
-                  })}
+                  .filter(a => a.type === "S" && (isB2BSeller ? a.empresa === "AUTOLLANTA" : a.empresa === selectedCompany))
+                  .map(address => (
+                    <AddressCard
+                      key={address.id}
+                      selected={groupedCart[selectedCompany]?.shippingAddressId === address.id}
+                      onClick={() => {
+                        const updated = { ...groupedCart };
+                        if (updated[selectedCompany]) updated[selectedCompany].shippingAddressId = address.id;
+                        setGroupedCart(updated);
+                      }}
+                    >
+                      <AddressInfo>
+                        <AddressName>
+                          {address.name}
+                          {address.origen === "SAP" && (
+                            <span style={{ marginLeft: 8, fontSize: "0.75rem", padding: "2px 6px", border: `solid 1px ${theme.colors.primary}`, borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4, color: theme.colors.primary }}>
+                              Registrada
+                            </span>
+                          )}
+                        </AddressName>
+                        <AddressDetails>
+                          <ResolvedAddress address={address} />
+                          {address.isDefault && (
+                            <span style={{ marginLeft: 8, display: "inline-flex", alignItems: "center", gap: 4, color: theme.colors.success, fontSize: "0.85rem", fontWeight: 600 }}>
+                              <RenderIcon name="FaCircleCheck" size={12} /> Predeterminada
+                            </span>
+                          )}
+                        </AddressDetails>
+                      </AddressInfo>
+                      {!isSeller && (
+                        <AddressActions>
+                          {address.origen === "SAP" ? (
+                            <IconButton onClick={e => { e.stopPropagation(); toast.info("Las direcciones sincronizadas con el sistema no se pueden editar."); }} size="small" />
+                          ) : (
+                            <IconButton
+                              onClick={e => { e.stopPropagation(); navigate(ROUTES.ECOMMERCE.PERFIL, { state: { activeTab: "addresses", editAddressId: address.id, empresa: address.empresa } }); }}
+                              leftIconName="FaPencilAlt" size="small"
+                            />
+                          )}
+                        </AddressActions>
+                      )}
+                    </AddressCard>
+                  ))}
               </div>
             ) : (
               <EmptyAddressState>
@@ -2671,127 +2302,64 @@ const Carrito = () => {
               </EmptyAddressState>
             )}
 
-            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? (
-              <NewAddressButton
-                onClick={() => handleOpenAddressModal("S", selectedCompany)}
-                text={"Crear dirección de envío"}
-                size="small"
-                leftIconName={"FaPlus"}
-              />
-            ) : (
-              <NewAddressButton
-                onClick={() => handleOpenAddressModal("S", selectedCompany)}
-                text={"Seleccionar dirección de envío"}
-                size="small"
-                leftIconName={"FaPlus"}
-              />
-            )}
+            <NewAddressButton
+              onClick={() => handleOpenAddressModal("S", selectedCompany)}
+              text={user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? "Crear dirección de envío" : "Seleccionar dirección de envío"}
+              size="small" leftIconName="FaPlus"
+            />
           </ShippingSection>
 
-          {/* Sección de dirección de facturación similar a la de envío */}
-          <ShippingSection style={{ marginTop: "24px" }}>
+          {/* Dirección de facturación */}
+          <ShippingSection style={{ marginTop: 24 }}>
             <SectionTitle>
               <RenderIcon name="FaFileInvoice" size={20} />
               Dirección de facturación
             </SectionTitle>
 
-            {selectedCompany &&
-              addresses.filter(
-                (addr) => addr.type === "B" && (isB2BSeller ? addr.empresa === "AUTOLLANTA" : addr.empresa === selectedCompany)
-              ).length > 0 ? (
+            {selectedCompany && addresses.filter(a => a.type === "B" && (isB2BSeller ? a.empresa === "AUTOLLANTA" : a.empresa === selectedCompany)).length > 0 ? (
               <div>
                 {addresses
-                  .filter(
-                    (addr) =>
-                      addr.type === "B" && (isB2BSeller ? addr.empresa === "AUTOLLANTA" : addr.empresa === selectedCompany)
-                  )
-                  .map((address) => {
-                    const companyData = groupedCart[selectedCompany];
-                    return (
-                      <AddressCard
-                        key={address.id}
-                        selected={companyData?.billingAddressId === address.id}
-                        onClick={() => {
-                          const updated = { ...groupedCart };
-                          if (updated[selectedCompany]) {
-                            updated[selectedCompany].billingAddressId =
-                              address.id;
-                          }
-                          setGroupedCart(updated);
-                        }}
-                      >
-                        <AddressInfo>
-                          <AddressName>
-                            {address.name}{" "}
-                            {address.origen === "SAP" && (
-                              <span
-                                style={{
-                                  marginLeft: "8px",
-                                  fontSize: "0.75rem",
-                                  padding: "2px 6px",
-                                  backgroundColor: "transparent",
-                                  border: `solid 1px ${theme.colors.primary}`,
-                                  borderRadius: "4px",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  color: theme.colors.primary,
-                                }}
-                              >
-                                {/* <RenderIcon name="FaLock" size={10} /> */}
-                                <span>Registrada</span>
-                              </span>
-                            )}
-                          </AddressName>
-                          <AddressDetails>
-                            <ResolvedAddress address={address} />
-                            {address.isDefault && (
-                              <span
-                                style={{
-                                  marginLeft: 8,
-                                  color: theme.colors.info,
-                                }}
-                              >
-                                • Predeterminada
-                              </span>
-                            )}
-                          </AddressDetails>
-                        </AddressInfo>
-                        {!isSeller && (
-                          <AddressActions>
-                            {address.origen === "SAP" ? (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toast.info(
-                                    "Las direcciones sincronizadas con el sistema no se pueden editar. Contacta a soporte para solicitar cambios."
-                                  );
-                                }}
-                                style={{ color: theme.colors.textLight }}
-                                // leftIconName={"FaLock"}
-                                size="small"
-                              />
-                            ) : (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(ROUTES.ECOMMERCE.PERFIL, {
-                                    state: {
-                                      activeTab: "addresses",
-                                      editAddressId: address.id,
-                                      empresa: address.empresa,
-                                    },
-                                  });
-                                }}
-                                leftIconName={"FaPencilAlt"}
-                                size="small"
-                              />
-                            )}
-                          </AddressActions>
-                        )}
-                      </AddressCard>
-                    );
-                  })}
+                  .filter(a => a.type === "B" && (isB2BSeller ? a.empresa === "AUTOLLANTA" : a.empresa === selectedCompany))
+                  .map(address => (
+                    <AddressCard
+                      key={address.id}
+                      selected={groupedCart[selectedCompany]?.billingAddressId === address.id}
+                      onClick={() => {
+                        const updated = { ...groupedCart };
+                        if (updated[selectedCompany]) updated[selectedCompany].billingAddressId = address.id;
+                        setGroupedCart(updated);
+                      }}
+                    >
+                      <AddressInfo>
+                        <AddressName>
+                          {address.name}
+                          {address.origen === "SAP" && (
+                            <span style={{ marginLeft: 8, fontSize: "0.75rem", padding: "2px 6px", border: `solid 1px ${theme.colors.primary}`, borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4, color: theme.colors.primary }}>
+                              Registrada
+                            </span>
+                          )}
+                        </AddressName>
+                        <AddressDetails>
+                          <ResolvedAddress address={address} />
+                          {address.isDefault && (
+                            <span style={{ marginLeft: 8, color: theme.colors.info }}>• Predeterminada</span>
+                          )}
+                        </AddressDetails>
+                      </AddressInfo>
+                      {!isSeller && (
+                        <AddressActions>
+                          {address.origen === "SAP" ? (
+                            <IconButton onClick={e => { e.stopPropagation(); toast.info("Las direcciones sincronizadas con el sistema no se pueden editar."); }} size="small" />
+                          ) : (
+                            <IconButton
+                              onClick={e => { e.stopPropagation(); navigate(ROUTES.ECOMMERCE.PERFIL, { state: { activeTab: "addresses", editAddressId: address.id, empresa: address.empresa } }); }}
+                              leftIconName="FaPencilAlt" size="small"
+                            />
+                          )}
+                        </AddressActions>
+                      )}
+                    </AddressCard>
+                  ))}
               </div>
             ) : (
               <EmptyAddressState>
@@ -2800,197 +2368,160 @@ const Carrito = () => {
               </EmptyAddressState>
             )}
 
-            {user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? (
-              <NewAddressButton
-                onClick={() => handleOpenAddressModal("B", selectedCompany)}
-                text={"Crear dirección de facturación"}
-                leftIconName={"FaPlus"}
-                size="small"
-              />
-            ) : (
-              <NewAddressButton
-                onClick={() => handleOpenAddressModal("B", selectedCompany)}
-                text={"Seleccionar dirección de facturación"}
-                leftIconName={"FaPlus"}
-                size="small"
-              />
-            )}
+            <NewAddressButton
+              onClick={() => handleOpenAddressModal("B", selectedCompany)}
+              text={user?.ROLE_NAME === ROLES.VENDEDOR_B2B || !isSeller ? "Crear dirección de facturación" : "Seleccionar dirección de facturación"}
+              leftIconName="FaPlus" size="small"
+            />
           </ShippingSection>
         </div>
 
+        {/* ── Columna derecha (sidebar) ── */}
         <SummarySidebar>
           <OrderSummary>
             <SummaryTitle>Resumen del pedido</SummaryTitle>
+            <ClientSummaryCard />
 
             <Button
-              text="Seguir comprando"
-              variant="outlined"
-              style={{ width: "100%", marginTop: "0px", marginBottom: "12px" }}
+              text="Seguir comprando" variant="outlined"
+              style={{ width: "100%", marginTop: 0, marginBottom: 12 }}
               onClick={() => navigate(getCatalogUrl())}
             />
-            <div
-              style={{
-                borderTop: `1px solid ${theme.colors.border}`,
-                marginBottom: "12px",
-              }}
-            ></div>
-            {/* Resumen por empresa y línea */}
-            {selectedCompany && groupedCart[selectedCompany] && (
-              <>
-                {Object.entries(groupedCart[selectedCompany].lines).map(
-                  ([line, lineData]) => {
-                    const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+            <div style={{ borderTop: `1px solid ${theme.colors.border}`, marginBottom: 12 }} />
 
-                    const extraProductDiscounts = offerData?.items || {};
-                    const extraTotalDiscountPct = offerData?.total || 0;
-                    const previewDiscounts = offerData?.previews || {};
-                    const preview = previewDiscounts[selectedCompany];
+            {selectedCompany && groupedCart[selectedCompany] && Object.entries(groupedCart[selectedCompany].lines).map(([line, lineData]) => {
+              const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
+              const extraProductDiscounts = offerData?.items || {};
+              const extraTotalDiscountPct = offerData?.total || 0;
+              const preview = offerData?.previews?.[selectedCompany];
 
-                    const itemsWithIVA = lineData.items.map((item) => {
-                      const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
-                      const extraDiscount = extraProductDiscounts[item.id] || 0;
-                      const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
-                      const totalPct = (promoDiscount + extraDiscount) / 100;
+              const itemsWithIVA = lineData.items.map(item => {
+                const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
+                const extraDiscount = extraProductDiscounts[item.id] || 0;
+                const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
+                const totalPct = (promoDiscount + extraDiscount) / 100;
+                const discountedPrice = item.price * (1 - totalPct);
+                const priceWithIVABeforeClient = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
 
-                      const discountedPrice = item.price * (1 - totalPct);
-                      const priceWithIVABeforeClient = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
+                const lineaItem = (item.lineaNegocio || "").toUpperCase();
+                let itemClientDiscountPct = 0;
+                if (preview?.DESCUENTO_CLIENTE) {
+                  itemClientDiscountPct = lineaItem === "LUBRICANTES"
+                    ? preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0
+                    : preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
+                } else {
+                  const discountKey = lineData.discountKey || line;
+                  const potentialDiscount = user?.DESCUENTOS?.[selectedCompany];
+                  itemClientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === "number" ? potentialDiscount : 0);
+                }
 
-                      const lineaItem = (item.lineaNegocio || "").toUpperCase();
-                      let itemClientDiscountPct = 0;
-                      if (preview?.DESCUENTO_CLIENTE) {
-                        if (lineaItem === "LUBRICANTES") {
-                          itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT_LUBRICANTES || 0;
-                        } else {
-                          itemClientDiscountPct = preview.DESCUENTO_CLIENTE.DISCOUNT || 0;
-                        }
-                      } else {
-                        const discountKey = lineData.discountKey || line;
-                        const potentialDiscount = user?.DESCUENTOS?.[selectedCompany];
-                        itemClientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === 'number' ? potentialDiscount : 0);
-                      }
+                const discountAmt = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
+                const finalPriceIVA = priceWithIVABeforeClient - discountAmt;
+                return {
+                  ...item,
+                  totalWithIVA: finalPriceIVA * item.quantity,
+                  totalBeforeClientWithIVA: priceWithIVABeforeClient * item.quantity,
+                  discountAmt,
+                };
+              });
 
-                      const discountAmt = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
-                      const finalPriceIVA = priceWithIVABeforeClient - discountAmt;
+              const subtotalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
+              const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + i.discountAmt * i.quantity, 0);
+              const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
+              const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
-                      return {
-                        ...item,
-                        priceWithIVABeforeClient,
-                        discountAmt,
-                        finalPriceIVA,
-                        totalWithIVA: finalPriceIVA * item.quantity,
-                        totalBeforeClientWithIVA: priceWithIVABeforeClient * item.quantity,
-                      };
-                    });
+              let groupEcovalor = 0;
+              lineData.items.forEach(item => {
+                const l = (item.lineaNegocio || "").toUpperCase();
+                if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
+                else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
+              });
 
-                    const subtotalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
-                    const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + (i.discountAmt * i.quantity), 0);
-                    const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
-                    const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+              const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+              const companyData = groupedCart[selectedCompany];
 
-                    let groupEcovalor = 0;
-                    lineData.items.forEach(item => {
-                      const lineaItem = (item.lineaNegocio || "").toUpperCase();
-                      if (lineaItem === "LLANTAS") groupEcovalor += item.quantity * 1;
-                      else if (lineaItem === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
-                    });
+              return (
+                <CompanySummary key={line}>
+                  <CompanyName>{selectedCompany} {line}</CompanyName>
+                  <SummaryRow>
+                    <SummaryLabel>Subtotal ({lineData.items.length} productos)</SummaryLabel>
+                    <SummaryValue>${subtotalWithIVA.toFixed(2)}</SummaryValue>
+                  </SummaryRow>
+                  {totalClientDiscountAmount > 0 && (
+                    <SummaryRow>
+                      <SummaryLabel>Descuento Cliente {line}:</SummaryLabel>
+                      <SummaryValue>-${totalClientDiscountAmount.toFixed(2)}</SummaryValue>
+                    </SummaryRow>
+                  )}
+                  {extraTotalDiscountPct > 0 && (
+                    <SummaryRow>
+                      <SummaryLabel>Descuento Extra Oferta ({extraTotalDiscountPct}%):</SummaryLabel>
+                      <SummaryValue style={{ color: "#ef4444" }}>-${totalExtraDiscountValue.toFixed(2)}</SummaryValue>
+                    </SummaryRow>
+                  )}
+                  {groupEcovalor > 0 && (
+                    <SummaryRow>
+                      <SummaryLabel>Ecovalor:</SummaryLabel>
+                      <SummaryValue>${groupEcovalor.toFixed(2)}</SummaryValue>
+                    </SummaryRow>
+                  )}
+                  <SummaryRow>
+                    <SummaryLabel style={{ fontSize: "0.8rem", fontStyle: "italic" }}>* Precios con IVA incluido</SummaryLabel>
+                  </SummaryRow>
+                  <TotalRow>
+                    <SummaryLabel>Total</SummaryLabel>
+                    <SummaryValue $bold>${totalConIva.toFixed(2)}</SummaryValue>
+                  </TotalRow>
 
-                    const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+                  {!companyData.shippingAddressId && <ValidationWarning>Falta dirección de envío</ValidationWarning>}
+                  {!companyData.billingAddressId && <ValidationWarning>Falta dirección de facturación</ValidationWarning>}
 
-                    const companyData = groupedCart[selectedCompany];
+                  <CompanyCheckoutButton
+                    text="Proceder al pedido"
+                    color={theme.colors.white}
+                    variant="outlined" size="small"
+                    leftIconName="FaCartShopping"
+                    backgroundColor={theme.colors.primary}
+                    style={{ width: "100%" }}
+                    onClick={() => handleLineCheckoutClick(selectedCompany, line)}
+                    disabled={!companyData.shippingAddressId || !companyData.billingAddressId}
+                  />
+                </CompanySummary>
+              );
+            })}
 
-                    return (
-                      <CompanySummary key={line}>
-                        <CompanyName>{selectedCompany} {line}</CompanyName>
-                        <SummaryRow>
-                          <SummaryLabel>Subtotal ({lineData.items.length} productos)</SummaryLabel>
-                          <SummaryValue>${subtotalWithIVA.toFixed(2)}</SummaryValue>
-                        </SummaryRow>
-                        {totalClientDiscountAmount > 0 && (
-                          <SummaryRow>
-                            <SummaryLabel>Descuento Cliente {line}:</SummaryLabel>
-                            <SummaryValue>-${totalClientDiscountAmount.toFixed(2)}</SummaryValue>
-                          </SummaryRow>
-                        )}
-                        {extraTotalDiscountPct > 0 && (
-                          <SummaryRow>
-                            <SummaryLabel>Descuento Extra Oferta ({extraTotalDiscountPct}%):</SummaryLabel>
-                            <SummaryValue style={{ color: "#ef4444" }}>-${totalExtraDiscountValue.toFixed(2)}</SummaryValue>
-                          </SummaryRow>
-                        )}
-                        {groupEcovalor > 0 && (
-                          <SummaryRow>
-                            <SummaryLabel>Ecovalor:</SummaryLabel>
-                            <SummaryValue>${groupEcovalor.toFixed(2)}</SummaryValue>
-                          </SummaryRow>
-                        )}
-                        <SummaryRow>
-                          <SummaryLabel style={{ fontSize: "0.8rem", fontStyle: "italic" }}>* Precios con IVA incluido</SummaryLabel>
-                        </SummaryRow>
-                        <TotalRow>
-                          <SummaryLabel>Total</SummaryLabel>
-                          <SummaryValue $bold>${totalConIva.toFixed(2)}</SummaryValue>
-                        </TotalRow>
+            <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
 
-                        {!companyData.shippingAddressId && (
-                          <ValidationWarning>Falta dirección de envío</ValidationWarning>
-                        )}
-                        {!companyData.billingAddressId && (
-                          <ValidationWarning>Falta dirección de facturación</ValidationWarning>
-                        )}
-
-                        <CompanyCheckoutButton
-                          text={`Proceder al pedido`}
-                          color={theme.colors.white}
-                          variant="outlined"
-                          size="small"
-                          leftIconName={"FaCartShopping"}
-                          backgroundColor={theme.colors.primary}
-                          style={{ width: "100%" }}
-                          onClick={() => handleLineCheckoutClick(selectedCompany, line)}
-                          disabled={!companyData.shippingAddressId || !companyData.billingAddressId}
-                        />
-                      </CompanySummary>
-                    );
-                  }
-                )}
-              </>
-            )}
+            {/* Modal de confirmación de orden */}
             {showConfirmModal && (
               <ProcessingOverlay>
                 <ProcessingCard>
                   <ProcessingTitle>¿Está seguro que desea confirmar esta orden?</ProcessingTitle>
                   <ProcessingMessage>
                     {companyToCheckout && (() => {
-                      const [company, line] = companyToCheckout.split("_");
-                      return (
-                        <>Se generará el pedido para <b>{company} - {line}</b>.</>
-                      );
+                      const [co, li] = companyToCheckout.split("_");
+                      return <>Se generará el pedido para <b>{co} - {li}</b>.</>;
                     })()}
                   </ProcessingMessage>
                   <Button
-                    text="Confirmar"
-                    variant="solid"
+                    text="Confirmar" variant="solid"
                     backgroundColor={theme.colors.success}
-                    style={{ width: "100%", marginBottom: "12px" }}
+                    style={{ width: "100%", marginBottom: 12 }}
+                    leftIconName="FaCheck"
                     onClick={async () => {
                       setShowConfirmModal(false);
                       if (companyToCheckout) {
-                        const [company, line] = companyToCheckout.split("_");
-                        await handleCheckoutSingleLine(company, line);
+                        const [checkoutCompany, checkoutLine] = companyToCheckout.split("_");
+                        await handleCheckoutSingleLine(checkoutCompany, checkoutLine);
                         setCompanyToCheckout(null);
                       }
                     }}
-                    leftIconName="FaCheck"
                   />
                   <Button
-                    text="Cancelar"
-                    variant="outlined"
+                    text="Cancelar" variant="outlined"
                     style={{ width: "100%" }}
-                    onClick={() => {
-                      setShowConfirmModal(false);
-                      setCompanyToCheckout(null);
-                    }}
                     leftIconName="FaXmark"
+                    onClick={() => { setShowConfirmModal(false); setCompanyToCheckout(null); }}
                   />
                 </ProcessingCard>
               </ProcessingOverlay>
@@ -2998,10 +2529,9 @@ const Carrito = () => {
           </OrderSummary>
           <CartImageSlider empresaName={selectedCompany} banners={banners} />
         </SummarySidebar>
-
       </CartLayout>
 
-      {/* Agregar estos componentes al final del return para mostrar el progreso y éxito */}
+      {/* Overlay de procesamiento */}
       {isProcessingOrders && (
         <>
           <ProcessingOverlay />
@@ -3009,26 +2539,19 @@ const Carrito = () => {
             <ProcessingTitle>Procesando pedido</ProcessingTitle>
             <ProcessingMessage>Generando orden</ProcessingMessage>
             <ProgressIndicator>
-              <RenderLoader
-                size="32px"
-                showSpinner={true}
-                floatingSpinner={true}
-              />
+              <RenderLoader size="32px" showSpinner floatingSpinner />
             </ProgressIndicator>
           </ProcessingCard>
         </>
       )}
 
+      {/* Modal de éxito */}
       {showSuccessCard && (
         <>
           <ProcessingOverlay />
           <ProcessingCard>
             <SuccessIcon>
-              <RenderIcon
-                name="FaCircleCheck"
-                size={48}
-                color={theme.colors.success}
-              />
+              <RenderIcon name="FaCircleCheck" size={48} color={theme.colors.success} />
             </SuccessIcon>
             <ProcessingTitle>¡Pedido realizado con éxito!</ProcessingTitle>
             <ProcessingMessage>
@@ -3036,65 +2559,30 @@ const Carrito = () => {
                 ? `Se han generado ${completedOrders} órdenes correctamente.`
                 : "Tu pedido ha sido generado correctamente."}
             </ProcessingMessage>
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                marginBottom: "12px",
-              }}
-            >
-              <Button
-                text="Pedidos"
-                variant="solid"
-                backgroundColor={theme.colors.primary}
-                style={{ flex: 1 }}
-                onClick={handleGoToOrders}
-                leftIconName="FaListAlt"
-              />
-              <Button
-                text="Catálogo"
-                variant="outlined"
-                style={{ flex: 1 }}
-                onClick={handleContinueShopping}
-                leftIconName="FaCartShopping"
-              />
+            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+              <Button text="Pedidos" variant="solid" backgroundColor={theme.colors.primary} style={{ flex: 1 }} onClick={handleGoToOrders} leftIconName="FaListAlt" />
+              <Button text="Catálogo" variant="outlined" style={{ flex: 1 }} onClick={handleContinueShopping} leftIconName="FaCartShopping" />
             </div>
-            <Button
-              text="Volver al Carrito"
-              variant="outlined"
-              style={{ width: "100%" }}
-              onClick={() => setShowSuccessCard(false)}
-              leftIconName="FaArrowLeft"
-            />
+            <Button text="Volver al Carrito" variant="outlined" style={{ width: "100%" }} onClick={() => setShowSuccessCard(false)} leftIconName="FaArrowLeft" />
           </ProcessingCard>
         </>
       )}
+
+      {/* Modal de confirmación de dirección */}
       {showConfirmAddressModal && (
         <ProcessingOverlay style={{ zIndex: 9999 }}>
           <ProcessingCard>
             <ProcessingTitle>¿Está seguro que desea crear esta dirección?</ProcessingTitle>
             <ProcessingMessage>
-              <b style={{ color: theme.colors.error }}>Advertencia:</b> La dirección creada no podrá ser modificada posteriormente. Por favor, revise bien si los datos de la dirección son correctos.
+              <b style={{ color: theme.colors.error }}>Advertencia:</b> La dirección creada no podrá ser modificada posteriormente.
             </ProcessingMessage>
-            <Button
-              text="Sí, crear dirección"
-              variant="solid"
-              backgroundColor={theme.colors.success}
-              style={{ width: "100%", marginBottom: "12px" }}
-              onClick={executeCreateAddress}
-              leftIconName="FaCheck"
-            />
-            <Button
-              text="Revisar nuevamente"
-              variant="outlined"
-              style={{ width: "100%" }}
-              onClick={() => setShowConfirmAddressModal(false)}
-              leftIconName="FaPencilAlt"
-            />
+            <Button text="Sí, crear dirección" variant="solid" backgroundColor={theme.colors.success} style={{ width: "100%", marginBottom: 12 }} onClick={executeCreateAddress} leftIconName="FaCheck" />
+            <Button text="Revisar nuevamente" variant="outlined" style={{ width: "100%" }} onClick={() => setShowConfirmAddressModal(false)} leftIconName="FaPencilAlt" />
           </ProcessingCard>
         </ProcessingOverlay>
       )}
-      {/* Modal de selección de direcciones para vendedores */}
+
+      {/* Modal de selección de direcciones */}
       <Modal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
@@ -3102,163 +2590,89 @@ const Carrito = () => {
         titleIcon={addressModalType === "S" ? "FaMapPin" : "FaFileInvoice"}
         maxWidth="600px"
       >
-        <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-          {addresses
-            .filter(
-              (addr) =>
-                addr.type === addressModalType &&
-                addr.empresa === addressModalCompany
-            ).length > 0 ? (
-            addresses
-              .filter(
-                (addr) =>
-                  addr.type === addressModalType &&
-                  addr.empresa === addressModalCompany
-              )
-              .map((address) => (
+        <div style={{ maxHeight: 400, overflowY: "auto" }}>
+          {addresses.filter(a => a.type === addressModalType && a.empresa === addressModalCompany).length > 0
+            ? addresses
+              .filter(a => a.type === addressModalType && a.empresa === addressModalCompany)
+              .map(address => (
                 <AddressCard
                   key={address.id}
-                  selected={
-                    addressModalType === "S"
-                      ? groupedCart[addressModalCompany]?.shippingAddressId === address.id
-                      : groupedCart[addressModalCompany]?.billingAddressId === address.id
-                  }
+                  selected={addressModalType === "S"
+                    ? groupedCart[addressModalCompany]?.shippingAddressId === address.id
+                    : groupedCart[addressModalCompany]?.billingAddressId === address.id}
                   onClick={() => handleSelectAddressFromModal(address.id)}
-                  style={{ marginBottom: "12px" }}
+                  style={{ marginBottom: 12 }}
                 >
                   <AddressInfo>
                     <AddressName>
-                      {address.name}{" "}
+                      {address.name}
                       {address.origen === "SAP" && (
-                        <span
-                          style={{
-                            marginLeft: "8px",
-                            fontSize: "0.75rem",
-                            padding: "2px 6px",
-                            border: `solid 1px ${theme.colors.primary}`,
-                            borderRadius: "4px",
-                            color: theme.colors.primary,
-                          }}
-                        >
+                        <span style={{ marginLeft: 8, fontSize: "0.75rem", padding: "2px 6px", border: `solid 1px ${theme.colors.primary}`, borderRadius: 4, color: theme.colors.primary }}>
                           Registrada
                         </span>
                       )}
                     </AddressName>
                     <AddressDetails>
                       <ResolvedAddress address={address} />
-                      {address.isDefault && (
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            color: theme.colors.success,
-                            fontWeight: 600,
-                          }}
-                        >
-                          • Predeterminada
-                        </span>
-                      )}
+                      {address.isDefault && <span style={{ marginLeft: 8, color: theme.colors.success, fontWeight: 600 }}>• Predeterminada</span>}
                     </AddressDetails>
                   </AddressInfo>
                 </AddressCard>
               ))
-          ) : (
-            <div style={{ textAlign: "center", padding: "2rem", color: theme.colors.textSecondary }}>
-              No hay direcciones disponibles de este tipo ({addressModalType === "S" ? "Envío" : "Facturación"}) para esta empresa.
-            </div>
-          )}
+            : (
+              <div style={{ textAlign: "center", padding: "2rem", color: theme.colors.textSecondary }}>
+                No hay direcciones disponibles de este tipo ({addressModalType === "S" ? "Envío" : "Facturación"}) para esta empresa.
+              </div>
+            )
+          }
         </div>
         <div style={{ marginTop: "1rem", textAlign: "right" }}>
-          <Button
-            text="Cerrar"
-            variant="outlined"
-            onClick={() => setIsAddressModalOpen(false)}
-          />
+          <Button text="Cerrar" variant="outlined" onClick={() => setIsAddressModalOpen(false)} />
         </div>
       </Modal>
 
-      {/* Modal de creación de direcciones para vendedores B2B */}
+      {/* Modal de creación de dirección */}
       <Modal
         isOpen={isCreateAddressModalOpen}
-        onClose={() => {
-          setIsCreateAddressModalOpen(false);
-          setSelectedLocation(null);
-        }}
+        onClose={() => { setIsCreateAddressModalOpen(false); setSelectedLocation(null); }}
         title={addressModalType === "S" ? "Crear Dirección de Envío" : "Crear Dirección de Facturación"}
         titleIcon={addressModalType === "S" ? "FaMapPin" : "FaFileInvoice"}
         maxWidth="500px"
         footer={
-          <div style={{ display: "flex", gap: "12px", width: "100%" }}>
-            <Button
-              text="Cancelar"
-              variant="outlined"
-              onClick={() => {
-                setIsCreateAddressModalOpen(false);
-                setSelectedLocation(null);
-              }}
-              style={{ flex: 1 }}
-            />
-            <Button
-              text={isCreatingAddress ? "Creando..." : "Crear Dirección"}
-              variant="solid"
-              backgroundColor={theme.colors.primary}
-              onClick={handleCreateAddressSubmit}
-              disabled={isCreatingAddress}
-              style={{ flex: 1 }}
-            />
+          <div style={{ display: "flex", gap: 12, width: "100%" }}>
+            <Button text="Cancelar" variant="outlined" onClick={() => { setIsCreateAddressModalOpen(false); setSelectedLocation(null); }} style={{ flex: 1 }} />
+            <Button text={isCreatingAddress ? "Creando..." : "Crear Dirección"} variant="solid" backgroundColor={theme.colors.primary} onClick={handleCreateAddressSubmit} disabled={isCreatingAddress} style={{ flex: 1 }} />
           </div>
         }
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <FormField>
             <FormLabel>País</FormLabel>
-            <FormInput
-              type="text"
-              value={newAddressData.country}
-              disabled={true}
-            />
+            <FormInput type="text" value={newAddressData.country} disabled />
           </FormField>
           <FormField>
             <FormLabel>Provincia / Estado *</FormLabel>
-            <FormInput
-              type="text"
-              placeholder="Ej: AZUAY"
-              value={newAddressData.state}
-              onChange={(e) => setNewAddressData({ ...newAddressData, state: e.target.value })}
-              autoComplete="off"
-            />
+            <FormInput type="text" placeholder="Ej: AZUAY" value={newAddressData.state} onChange={e => setNewAddressData({ ...newAddressData, state: e.target.value })} autoComplete="off" />
           </FormField>
           <FormField>
             <FormLabel>Ciudad *</FormLabel>
-            <FormInput
-              type="text"
-              placeholder="Ej: CUENCA"
-              value={newAddressData.city}
-              onChange={(e) => setNewAddressData({ ...newAddressData, city: e.target.value })}
-              autoComplete="off"
-            />
+            <FormInput type="text" placeholder="Ej: CUENCA" value={newAddressData.city} onChange={e => setNewAddressData({ ...newAddressData, city: e.target.value })} autoComplete="off" />
           </FormField>
           <FormField>
             <FormLabel>Dirección (Calle y número) *</FormLabel>
-            <FormInput
-              type="text"
-              placeholder="Ej: OCARINA Y TURUHUAYCO 1-75"
-              value={newAddressData.street}
-              onChange={(e) => setNewAddressData({ ...newAddressData, street: e.target.value })}
-              autoComplete="off"
-            />
+            <FormInput type="text" placeholder="Ej: OCARINA Y TURUHUAYCO 1-75" value={newAddressData.street} onChange={e => setNewAddressData({ ...newAddressData, street: e.target.value })} autoComplete="off" />
           </FormField>
-
           <div style={{ marginTop: "1rem" }}>
             <FormLabel>Ubicación en el mapa *</FormLabel>
             <MapSelector
-              onLocationSelect={(loc) => {
+              onLocationSelect={loc => {
                 setSelectedLocation(loc);
                 if (loc.province || loc.city || loc.address) {
                   setNewAddressData(prev => ({
                     ...prev,
                     state: loc.province || prev.state,
                     city: loc.city || prev.city,
-                    street: loc.address || prev.street
+                    street: loc.address || prev.street,
                   }));
                 }
               }}
