@@ -171,21 +171,15 @@ const CatalogBreadcrumb = ({
   availableLines,
   onLineaSelect,
   onFilterSelect,
-  onProductsSelect,
   currentStep,
   flowConfig,
   isAtProductView,
   isSeller,
-  authorizedCompanies = [],
   selectedClientName = "",
   empresaName
 }) => {
 
-  const { vendedores, loading: loadingVendedor, error: errorVendedor } = useVendedorAsignado(empresaName);
-
-  const selectedLineaData = availableLines.find(
-    (line) => line.key === selectedLinea
-  );
+  const { vendedores, loading: loadingVendedor, error: errorVendedor } = useVendedorAsignado(empresaName, selectedLinea);
 
   const getFilterDisplayName = (filterId) => {
     const names = {

@@ -4,10 +4,10 @@ import api from "../../constants/api";
  * Obtiene la lista de clientes (SOCIOS) del vendedor autenticado.
  * @returns {Promise<Object>} { success, data: { ...vendedor, SOCIOS: [] }, message }
  */
-export const api_get_vendedores_por_cliente = async ({ empresa }) => {
+export const api_get_vendedores_por_cliente = async ({ empresa, linea }) => {
     try {
         const response = await api.get(
-            `/vendedores/clientes/get-activos-by-empresa/${encodeURIComponent(empresa)}`
+            `/vendedores/clientes/get-activos-by-empresa/${encodeURIComponent(empresa)}/${encodeURIComponent(linea)}`
         );
 
         return {
