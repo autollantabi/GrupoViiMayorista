@@ -39,9 +39,9 @@ const PageTitle = styled.div`
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 800;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
-        : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
+    theme.mode === "dark"
+      ? `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`
+      : `linear-gradient(135deg, ${theme.colors.text} 0%, ${theme.colors.primary} 100%)`};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -119,7 +119,7 @@ const CartItemContainer = styled.div`
 
   &:hover {
     background-color: ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.background}50` : `${theme.colors.background}`};
+    theme.mode === "dark" ? `${theme.colors.background}50` : `${theme.colors.background}`};
   }
 
   @media (max-width: 768px) {
@@ -444,7 +444,7 @@ const CartSliderArrow = styled.button`
   cursor: pointer;
   backdrop-filter: blur(8px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  left:  ${({ direction }) => (direction === "left"  ? "1rem" : "auto")};
+  left:  ${({ direction }) => (direction === "left" ? "1rem" : "auto")};
   right: ${({ direction }) => (direction === "right" ? "1rem" : "auto")};
 
   &:hover {
@@ -457,7 +457,7 @@ const CartSliderArrow = styled.button`
 
   @media (max-width: 768px) {
     width: 32px; height: 32px;
-    left:  ${({ direction }) => (direction === "left"  ? "0.5rem" : "auto")};
+    left:  ${({ direction }) => (direction === "left" ? "0.5rem" : "auto")};
     right: ${({ direction }) => (direction === "right" ? "0.5rem" : "auto")};
   }
 `;
@@ -593,17 +593,17 @@ const AddressCard = styled.div`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.primary}12` : `${theme.colors.primary}08`};
+    theme.mode === "dark" ? `${theme.colors.primary}12` : `${theme.colors.primary}08`};
     transform: translateY(-2px);
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark" ? "0 6px 20px rgba(0,0,0,0.2)" : "0 6px 20px rgba(0,0,0,0.1)"};
+    theme.mode === "dark" ? "0 6px 20px rgba(0,0,0,0.2)" : "0 6px 20px rgba(0,0,0,0.1)"};
   }
 
   @media (max-width: 768px) { padding: 1rem; border-radius: 12px; }
 `;
 
-const AddressInfo    = styled.div` flex: 1; `;
-const AddressName    = styled.div` font-weight: bold; margin-bottom: 4px; `;
+const AddressInfo = styled.div` flex: 1; `;
+const AddressName = styled.div` font-weight: bold; margin-bottom: 4px; `;
 const AddressDetails = styled.div` font-size: 0.9rem; `;
 const AddressActions = styled.div` display: flex; gap: 8px; `;
 
@@ -641,7 +641,7 @@ const NewAddressButton = styled(Button)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
     background-color: ${({ theme }) =>
-      theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}08`};
+    theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}08`};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px ${({ theme }) => `${theme.colors.primary}20`};
   }
@@ -663,9 +663,9 @@ const CompanyTabs = styled.div`
     bottom: -2px; left: 0;
     height: 2px;
     background: ${({ theme }) =>
-      theme.mode === "dark"
-        ? `linear-gradient(90deg, ${theme.colors.primary}40, transparent)`
-        : `linear-gradient(90deg, ${theme.colors.primary}30, transparent)`};
+    theme.mode === "dark"
+      ? `linear-gradient(90deg, ${theme.colors.primary}40, transparent)`
+      : `linear-gradient(90deg, ${theme.colors.primary}30, transparent)`};
     width: 100%;
     pointer-events: none;
   }
@@ -704,9 +704,9 @@ const CompanyTab = styled.button`
   &:hover {
     color: ${({ theme }) => theme.colors.primary};
     background: ${({ theme, $active }) =>
-      !$active
-        ? theme.mode === "dark" ? `${theme.colors.primary}08` : `${theme.colors.primary}05`
-        : theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}12`};
+    !$active
+      ? theme.mode === "dark" ? `${theme.colors.primary}08` : `${theme.colors.primary}05`
+      : theme.mode === "dark" ? `${theme.colors.primary}15` : `${theme.colors.primary}12`};
   }
 
   @media (max-width: 768px) { padding: 0.75rem 1rem; font-size: 0.85rem; }
@@ -725,7 +725,7 @@ const CompanySummary = styled.div`
   &:hover {
     border-color: ${({ theme }) => `${theme.colors.primary}50`};
     box-shadow: ${({ theme }) =>
-      theme.mode === "dark" ? "0 4px 16px rgba(0,0,0,0.15)" : "0 4px 16px rgba(0,0,0,0.08)"};
+    theme.mode === "dark" ? "0 4px 16px rgba(0,0,0,0.15)" : "0 4px 16px rgba(0,0,0,0.08)"};
   }
 
   @media (max-width: 768px) { padding: 1.25rem; border-radius: 12px; }
@@ -939,7 +939,7 @@ const mapLineaToDiscountKey = (lineaNegocio) => {
   const u = lineaNegocio.toUpperCase().trim();
   if (u === "LLANTAS" || u === "LLANTAS MOTO") return "LLANTAS";
   if (u === "HERRAMIENTAS") return "HERRAMIENTAS";
-  if (u === "LUBRICANTES")  return "LUBRICANTES";
+  if (u === "LUBRICANTES") return "LUBRICANTES";
   return u;
 };
 
@@ -967,10 +967,10 @@ const findBestAvailableAddress = (addresses, company, type) => {
 // ─────────────────────────────────────────────
 
 const MemoizedProductImage = memo(({ src, alt }) => {
-  const [imageError, setImageError]   = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const timeoutRef    = useRef(null);
-  const imgRef        = useRef(null);
+  const timeoutRef = useRef(null);
+  const imgRef = useRef(null);
   const currentSrcRef = useRef(null);
 
   const imageSrc = useMemo(() => {
@@ -1057,7 +1057,7 @@ const CartImageSlider = ({ empresaName }) => {
   const activeCompany = (empresaName || "").toUpperCase();
   const slides = COMPANY_SLIDES[activeCompany] || COMPANY_SLIDES.DEFAULT;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered]       = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => { setCurrentIndex(0); }, [activeCompany]);
@@ -1088,7 +1088,7 @@ const CartImageSlider = ({ empresaName }) => {
               <CartSlideOverlay />
               {(slide.title || slide.subtitle) && (
                 <CartSlideContent>
-                  {slide.title    && <CartSlideTitle>{slide.title}</CartSlideTitle>}
+                  {slide.title && <CartSlideTitle>{slide.title}</CartSlideTitle>}
                   {slide.subtitle && <CartSlideSubtitle>{slide.subtitle}</CartSlideSubtitle>}
                 </CartSlideContent>
               )}
@@ -1097,7 +1097,7 @@ const CartImageSlider = ({ empresaName }) => {
         </CartSliderTrack>
         {slides.length > 1 && (
           <>
-            <CartSliderArrow direction="left"  onClick={prevSlide} aria-label="Anterior"><RenderIcon name="FaChevronLeft"  size={16} /></CartSliderArrow>
+            <CartSliderArrow direction="left" onClick={prevSlide} aria-label="Anterior"><RenderIcon name="FaChevronLeft" size={16} /></CartSliderArrow>
             <CartSliderArrow direction="right" onClick={nextSlide} aria-label="Siguiente"><RenderIcon name="FaChevronRight" size={16} /></CartSliderArrow>
             <CartSliderDots>
               {slides.map((_, idx) => (
@@ -1112,19 +1112,19 @@ const CartImageSlider = ({ empresaName }) => {
 };
 
 const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate, extraDiscount = 0, isB2BSeller = false }) => {
-  const maxStock           = item?.stock || 0;
-  const quantityIntervalRef  = useRef(null);
-  const currentQuantityRef   = useRef(item.quantity);
+  const maxStock = item?.stock || 0;
+  const quantityIntervalRef = useRef(null);
+  const currentQuantityRef = useRef(item.quantity);
   const mouseDownExecutedRef = useRef(false);
 
   useEffect(() => { currentQuantityRef.current = item.quantity; }, [item.quantity]);
 
-  const promoDiscount    = item?.promotionalDiscount || 0;
+  const promoDiscount = item?.promotionalDiscount || 0;
   const totalDiscountPct = (Number(promoDiscount) + Number(extraDiscount)) / 100;
-  const discountedPrice  = item.price * (1 - totalDiscountPct);
-  const priceWithIVA     = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
-  const subTotal         = priceWithIVA * item.quantity;
-  const maxQuantity      = maxStock || 0;
+  const discountedPrice = item.price * (1 - totalDiscountPct);
+  const priceWithIVA = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
+  const subTotal = priceWithIVA * item.quantity;
+  const maxQuantity = maxStock || 0;
 
   const handleItemClick = () => {
     navigate(`/productos/${encodeURIComponent(item.empresaId || "")}/${item.id}`, {
@@ -1217,9 +1217,9 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
               autoComplete="off"
               disabled={isB2BSeller}
               style={{
-                borderLeft:   isB2BSeller ? "1px solid" : "none",
-                borderRight:  isB2BSeller ? "1px solid" : "none",
-                borderRadius: isB2BSeller ? "4px"       : "0",
+                borderLeft: isB2BSeller ? "1px solid" : "none",
+                borderRight: isB2BSeller ? "1px solid" : "none",
+                borderRadius: isB2BSeller ? "4px" : "0",
               }}
             />
             <QuantityButton
@@ -1261,11 +1261,11 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
 
 const ResolvedAddress = ({ address }) => {
   const [resolvedText, setResolvedText] = useState(null);
-  const [loading, setLoading]           = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const resolve = async () => {
-      const lat = address.LATITUDE  || address.latitude;
+      const lat = address.LATITUDE || address.latitude;
       const lng = address.LONGITUDE || address.longitude;
       if (!lat || !lng || lat === "" || lng === "") return;
       setLoading(true);
@@ -1298,7 +1298,7 @@ const ResolvedAddress = ({ address }) => {
   return (
     <>
       {address.street || address.STREET} {address.number || address.NUMBER || ""}{" "}
-      {address.city  || address.CITY}, {address.state || address.STATE}
+      {address.city || address.CITY}, {address.state || address.STATE}
     </>
   );
 };
@@ -1318,37 +1318,37 @@ const Carrito = () => {
     removeFromCartByDetailIds,
   } = useCart();
 
-  const navigate            = useNavigate();
-  const { theme }           = useAppTheme();
+  const navigate = useNavigate();
+  const { theme } = useAppTheme();
   const { user, isSeller, isB2BSeller } = useAuth();
 
   // ── Estados ──────────────────────────────
-  const [addresses,              setAddresses]              = useState([]);
-  const [groupedCart,            setGroupedCart]            = useState({});
-  const [selectedCompany,        setSelectedCompany]        = useState(null);
-  const [isProcessingOrders,     setIsProcessingOrders]     = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [groupedCart, setGroupedCart] = useState({});
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [isProcessingOrders, setIsProcessingOrders] = useState(false);
   const [currentProcessingCompany, setCurrentProcessingCompany] = useState(""); // eslint-disable-line no-unused-vars
-  const [completedOrders,        setCompletedOrders]        = useState(0);
-  const [showSuccessCard,        setShowSuccessCard]        = useState(false);
-  const [totalOrdersToProcess,   setTotalOrdersToProcess]   = useState(0);   // eslint-disable-line no-unused-vars
+  const [completedOrders, setCompletedOrders] = useState(0);
+  const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [totalOrdersToProcess, setTotalOrdersToProcess] = useState(0);   // eslint-disable-line no-unused-vars
   const [lastProcessedCompanies, setLastProcessedCompanies] = useState([]);  // eslint-disable-line no-unused-vars
-  const [companyToCheckout,      setCompanyToCheckout]      = useState(null);
-  const [showConfirmModal,       setShowConfirmModal]       = useState(false);
-  const [isAddressModalOpen,     setIsAddressModalOpen]     = useState(false);
-  const [addressModalType,       setAddressModalType]       = useState("S");
-  const [addressModalCompany,    setAddressModalCompany]    = useState(null);
+  const [companyToCheckout, setCompanyToCheckout] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [addressModalType, setAddressModalType] = useState("S");
+  const [addressModalCompany, setAddressModalCompany] = useState(null);
   const [isCreateAddressModalOpen, setIsCreateAddressModalOpen] = useState(false);
-  const [newAddressData,         setNewAddressData]         = useState({ country: "EC", state: "", city: "", street: "" });
-  const [isCreatingAddress,      setIsCreatingAddress]      = useState(false);
-  const [selectedLocation,       setSelectedLocation]       = useState(null);
+  const [newAddressData, setNewAddressData] = useState({ country: "EC", state: "", city: "", street: "" });
+  const [isCreatingAddress, setIsCreatingAddress] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [showConfirmAddressModal, setShowConfirmAddressModal] = useState(false);
-  const [paymentMethod,          setPaymentMethod]          = useState("CREDIT");
+  const [paymentMethod, setPaymentMethod] = useState("CREDIT");
 
   // ── Refs ─────────────────────────────────
-  const skipCartLoadRef      = useRef(false);
-  const loadingAddressesRef  = useRef(false);
+  const skipCartLoadRef = useRef(false);
+  const loadingAddressesRef = useRef(false);
   const lastLoadedAccountRef = useRef(null);
-  const pendingCheckoutRef   = useRef(null); // Guarda { company, line } mientras Nuvei procesa
+  const pendingCheckoutRef = useRef(null); // Guarda { company, line } mientras Nuvei procesa
 
   // ── Helpers internos ─────────────────────
   const getClientNameForSeller = () => {
@@ -1400,13 +1400,13 @@ const Carrito = () => {
       return priceWithIVA * (1 - clientDiscountPct / 100) * item.quantity;
     });
 
-    const subtotalFinalWithIVA  = totals.reduce((acc, val) => acc + val, 0);
+    const subtotalFinalWithIVA = totals.reduce((acc, val) => acc + val, 0);
     const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
     let groupEcovalor = 0;
     lineData.items.forEach(item => {
       const l = (item.lineaNegocio || "").toUpperCase();
-      if (l === "LLANTAS")      groupEcovalor += item.quantity * 1;
+      if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
       else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
     });
 
@@ -1419,7 +1419,7 @@ const Carrito = () => {
     if (!lineData.shippingAddressId || !lineData.billingAddressId) throw new Error("Faltan direcciones para esta línea");
 
     const shippingAddress = addresses.find(a => a.id === lineData.shippingAddressId);
-    const billingAddress  = addresses.find(a => a.id === lineData.billingAddressId);
+    const billingAddress = addresses.find(a => a.id === lineData.billingAddressId);
 
     const offerData = isB2BSeller ? JSON.parse(sessionStorage.getItem("ofertaVendedor") || "{}") : null;
     const extraProductDiscounts = offerData?.items || {};
@@ -1450,14 +1450,14 @@ const Carrito = () => {
       return { ...item, priceWithIVA, totalWithIVA: priceWithIVA * item.quantity };
     });
 
-    const subtotalFinalWithIVA  = itemsWithIVA.reduce((acc, i) => acc + i.totalWithIVA, 0);
+    const subtotalFinalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalWithIVA, 0);
     const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
-    const totalConIvaSinEcovalor  = subtotalFinalWithIVA - totalExtraDiscountValue;
+    const totalConIvaSinEcovalor = subtotalFinalWithIVA - totalExtraDiscountValue;
 
     let groupEcovalor = 0;
     lineData.items.forEach(item => {
       const l = (item.lineaNegocio || "").toUpperCase();
-      if (l === "LLANTAS")      groupEcovalor += item.quantity * 1;
+      if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
       else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
     });
 
@@ -1481,33 +1481,38 @@ const Carrito = () => {
       return productData;
     });
 
-    const spancopCodeStr  = sessionStorage.getItem("CODIGO_DATOS_SPANCOP");
+    const spancopCodeStr = sessionStorage.getItem("CODIGO_DATOS_SPANCOP");
     const proformaHeaderStr = sessionStorage.getItem("PROFORMA_HEADER");
-    const clientSource    = sessionStorage.getItem("SOURCE") || "";
+    const clientSource = sessionStorage.getItem("SOURCE") || "";
 
     const orderToProcess = {
-      ENTERPRISE:         company,
-      ACCOUNT_USER:       accountUser,
+      ENTERPRISE: company,
+      ACCOUNT_USER: accountUser,
       SHIPPING_ADDRESS_ID: parseInt(shippingAddress.id),
-      BILLING_ADDRESS_ID:  parseInt(billingAddress.id),
-      SUBTOTAL:           subtotalFinalWithIVA / (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100),
+      BILLING_ADDRESS_ID: parseInt(billingAddress.id),
+      SUBTOTAL: subtotalFinalWithIVA / (1 + (user?.IVA || TAXES.IVA_PERCENTAGE) / 100),
       ADITIONAL_DISCOUNT: 0,
       OFFER_TOTAL_DISCOUNT: extraTotalDiscountPct,
-      EXTRA_DISCOUNT:     isB2BSeller ? extraTotalDiscountPct : 0,
-      ECOVALOR:           groupEcovalor,
-      TOTAL:              totalConIva,
-      PRODUCTOS:          productsToProcess,
-      SOURCE:             clientSource,
-      PAYMENT_METHOD:     paymentMethod,
+      EXTRA_DISCOUNT: isB2BSeller ? extraTotalDiscountPct : 0,
+      ECOVALOR: groupEcovalor,
+      TOTAL: totalConIva,
+      PRODUCTOS: productsToProcess,
+      SOURCE: clientSource,
+      PAYMENT_METHOD: paymentMethod,
       // Datos de transacción Nuvei (solo cuando se paga con tarjeta)
-      ...(lineData.transaction && {
-        TRANSACTION_ID:     lineData.transaction.id,
-        TRANSACTION_STATUS: lineData.transaction.status,
-      }),
-      ...(lineData.card && {
-        CARD_TYPE:      lineData.card.type,
-        CARD_LAST_FOUR: lineData.card.number,
-      }),
+      ...(lineData.transaction && lineData.card && {
+        TRANSACTION_DATA: {
+          TRANSACTION_ID: lineData.transaction.id,
+          TRANSACTION_STATUS: lineData.transaction.status,
+          TRANSACTION_CURRENT_STATUS: lineData.transaction.current_status,
+          TRANSACTION_AMOUNT: lineData.transaction.amount,
+          TRANSACTION_AUTHORIZATION_CODE: lineData.transaction.authorization_code,
+          CARD_TYPE: lineData.card.type,
+          CARD_LAST_FOUR: lineData.card.number,
+          CARD_EXPIRY_YEAR: lineData.card.expiry_year,
+          CARD_EXPIRY_MONTH: lineData.card.expiry_month,
+        }
+      })
     };
 
     if (isB2BSeller && proformaHeaderStr) {
@@ -1538,13 +1543,13 @@ const Carrito = () => {
 
     const lineDataObj = companyData.lines[line];
     const lineData = {
-      items:             lineDataObj.items,
+      items: lineDataObj.items,
       shippingAddressId: companyData.shippingAddressId,
-      billingAddressId:  companyData.billingAddressId,
-      discountKey:       lineDataObj.discountKey,
+      billingAddressId: companyData.billingAddressId,
+      discountKey: lineDataObj.discountKey,
       ...(paymentData && {
         transaction: paymentData.transaction,
-        card:        paymentData.card,
+        card: paymentData.card,
       }),
     };
 
@@ -1621,7 +1626,7 @@ const Carrito = () => {
 
       await processLineOrder(pending.company, pending.line, {
         transaction: result.data.transaction,
-        card:        result.data.card || null,
+        card: result.data.card || null,
       });
 
       pendingCheckoutRef.current = null;
@@ -1644,8 +1649,8 @@ const Carrito = () => {
 
   const { openCheckout } = useNuvei({
     onSuccess: handleNuveiSuccess,
-    onError:   handleNuveiError,
-    onClose:   handleNuveiClose,
+    onError: handleNuveiError,
+    onClose: handleNuveiClose,
   });
 
   // ── Cargar direcciones ────────────────────
@@ -1667,21 +1672,21 @@ const Carrito = () => {
 
         if (response.success && Array.isArray(response.data)) {
           userAddresses = response.data.map(addr => ({
-            id:           addr.ID.toString(),
-            name:         addr.TYPE.trim().toUpperCase() === "S" ? "ENVIO" : "FACTURACION",
-            street:       addr.STREET,
-            number:       "",
-            city:         addr.CITY,
-            state:        addr.STATE,
-            zipCode:      "",
-            phone:        "",
-            isDefault:    addr.PREDETERMINED,
-            type:         addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
+            id: addr.ID.toString(),
+            name: addr.TYPE.trim().toUpperCase() === "S" ? "ENVIO" : "FACTURACION",
+            street: addr.STREET,
+            number: "",
+            city: addr.CITY,
+            state: addr.STATE,
+            zipCode: "",
+            phone: "",
+            isDefault: addr.PREDETERMINED,
+            type: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
             internalType: addr.TYPE.trim().toUpperCase() === "S" ? "S" : "B",
-            empresa:      addr.EMPRESA,
-            origen:       addr.ORIGIN,
-            LATITUDE:     addr.LATITUDE,
-            LONGITUDE:    addr.LONGITUDE,
+            empresa: addr.EMPRESA,
+            origen: addr.ORIGIN,
+            LATITUDE: addr.LATITUDE,
+            LONGITUDE: addr.LONGITUDE,
           }));
           lastLoadedAccountRef.current = account;
         }
@@ -1690,19 +1695,19 @@ const Carrito = () => {
         loadingAddressesRef.current = true;
 
         userAddresses = Object.values(user.DIRECCIONES).flat().map(addr => ({
-          id:        addr.ID.toString(),
-          name:      addr.CLASIFICATION,
-          street:    addr.STREET,
-          number:    "",
-          city:      addr.CITY,
-          state:     addr.STATE,
-          zipCode:   "",
-          phone:     "",
+          id: addr.ID.toString(),
+          name: addr.CLASIFICATION,
+          street: addr.STREET,
+          number: "",
+          city: addr.CITY,
+          state: addr.STATE,
+          zipCode: "",
+          phone: "",
           isDefault: addr.PREDETERMINED,
-          type:      addr.TYPE.trim(),
-          empresa:   addr.EMPRESA,
-          origen:    addr.ORIGIN,
-          LATITUDE:  addr.LATITUDE,
+          type: addr.TYPE.trim(),
+          empresa: addr.EMPRESA,
+          origen: addr.ORIGIN,
+          LATITUDE: addr.LATITUDE,
           LONGITUDE: addr.LONGITUDE,
         }));
         lastLoadedAccountRef.current = user.ACCOUNT_USER;
@@ -1714,7 +1719,7 @@ const Carrito = () => {
     } finally {
       loadingAddressesRef.current = false;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isSeller, isB2BSeller]);
 
   useEffect(() => { loadAddresses(); }, [loadAddresses]);
@@ -1725,7 +1730,7 @@ const Carrito = () => {
 
     const grouped = {};
     cart.forEach((item) => {
-      const company    = item.empresaId || "Sin empresa";
+      const company = item.empresaId || "Sin empresa";
       const displayLine = getDisplayLineName(item.lineaNegocio || "DEFAULT");
       const discountKey = mapLineaToDiscountKey(item.lineaNegocio) || "DEFAULT";
 
@@ -1733,7 +1738,7 @@ const Carrito = () => {
         grouped[company] = {
           items: [], lines: {}, total: 0,
           shippingAddressId: groupedCart[company]?.shippingAddressId || null,
-          billingAddressId:  groupedCart[company]?.billingAddressId  || null,
+          billingAddressId: groupedCart[company]?.billingAddressId || null,
         };
       }
       if (!grouped[company].lines[displayLine]) {
@@ -1754,7 +1759,7 @@ const Carrito = () => {
         if (!grouped[company].shippingAddressId)
           grouped[company].shippingAddressId = findBestAvailableAddress(addresses, company, "S");
         if (!grouped[company].billingAddressId)
-          grouped[company].billingAddressId  = findBestAvailableAddress(addresses, company, "B");
+          grouped[company].billingAddressId = findBestAvailableAddress(addresses, company, "B");
       }
     });
 
@@ -1762,7 +1767,7 @@ const Carrito = () => {
     if (Object.keys(grouped).length > 0 && (!selectedCompany || !grouped[selectedCompany])) {
       setSelectedCompany(Object.keys(grouped)[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, addresses, showSuccessCard, isProcessingOrders]);
 
   // ── Handlers generales ────────────────────
@@ -1804,18 +1809,18 @@ const Carrito = () => {
       const accountUser = stored.clientAccounts?.[addressModalCompany] || user.ACCOUNT_USER;
 
       const payload = {
-        ACCOUNT_USER:  accountUser,
+        ACCOUNT_USER: accountUser,
         CLASIFICATION: "PRINCIPAL",
-        TYPE:          addressModalType,
-        COUNTRY:       newAddressData.country,
-        STATE:         newAddressData.state.toUpperCase(),
-        CITY:          newAddressData.city.toUpperCase(),
-        STREET:        newAddressData.street.toUpperCase(),
+        TYPE: addressModalType,
+        COUNTRY: newAddressData.country,
+        STATE: newAddressData.state.toUpperCase(),
+        CITY: newAddressData.city.toUpperCase(),
+        STREET: newAddressData.street.toUpperCase(),
         PREDETERMINED: false,
-        ORIGIN:        "USER",
-        EMPRESA:       isB2BSeller ? "AUTOLLANTA" : addressModalCompany,
-        LATITUDE:      selectedLocation?.lat  || null,
-        LONGITUDE:     selectedLocation?.lng  || null,
+        ORIGIN: "USER",
+        EMPRESA: isB2BSeller ? "AUTOLLANTA" : addressModalCompany,
+        LATITUDE: selectedLocation?.lat || null,
+        LONGITUDE: selectedLocation?.lng || null,
       };
 
       const response = await api_addresses_createAddress(payload);
@@ -1839,11 +1844,11 @@ const Carrito = () => {
             ID: createdId, CLASIFICATION: "PRINCIPAL",
             TYPE: addressModalType,
             STREET: newAddressData.street.toUpperCase(),
-            CITY:   newAddressData.city.toUpperCase(),
-            STATE:  newAddressData.state.toUpperCase(),
+            CITY: newAddressData.city.toUpperCase(),
+            STATE: newAddressData.state.toUpperCase(),
             PREDETERMINED: false,
             EMPRESA: addressModalCompany, ORIGIN: "USER",
-            LATITUDE:  selectedLocation?.lat || null,
+            LATITUDE: selectedLocation?.lat || null,
             LONGITUDE: selectedLocation?.lng || null,
           });
         }
@@ -1853,7 +1858,7 @@ const Carrito = () => {
         const updated = { ...groupedCart };
         if (updated[addressModalCompany]) {
           if (addressModalType === "S") updated[addressModalCompany].shippingAddressId = createdId;
-          else                          updated[addressModalCompany].billingAddressId  = createdId;
+          else updated[addressModalCompany].billingAddressId = createdId;
           setGroupedCart(updated);
         }
       } else {
@@ -1871,7 +1876,7 @@ const Carrito = () => {
     const updated = { ...groupedCart };
     if (updated[addressModalCompany]) {
       if (addressModalType === "S") updated[addressModalCompany].shippingAddressId = addressId;
-      else                          updated[addressModalCompany].billingAddressId  = addressId;
+      else updated[addressModalCompany].billingAddressId = addressId;
     }
     setGroupedCart(updated);
     setIsAddressModalOpen(false);
@@ -1887,12 +1892,12 @@ const Carrito = () => {
 
         const result = await api_generate_payment_reference({
           order: {
-            amount:         parseFloat(totalConIva.toFixed(2)),
-            description:    `Pedido ${company} - ${line}`,
-            dev_reference:  `REF-${Date.now()}`,
+            amount: parseFloat(totalConIva.toFixed(2)),
+            description: `Pedido ${company} - ${line}`,
+            dev_reference: `REF-${Date.now()}`,
             taxable_amount: 0,
             tax_percentage: 0,
-            vat:            0,
+            vat: 0,
           },
           user: { id: user.ACCOUNT_USER, email: user.EMAIL },
         });
@@ -1968,7 +1973,7 @@ const Carrito = () => {
         Forma de pago
       </div>
       {[
-        { id: "CREDIT",      label: "Crédito",            icon: "FaFileInvoiceDollar" },
+        { id: "CREDIT", label: "Crédito", icon: "FaFileInvoiceDollar" },
         { id: "CREDIT_CARD", label: "Tarjeta de crédito", icon: "FaCreditCard" },
       ].map((option) => (
         <label
@@ -2261,30 +2266,30 @@ const Carrito = () => {
                   itemClientDiscountPct = potentialDiscount?.[discountKey] ?? (typeof potentialDiscount === "number" ? potentialDiscount : 0);
                 }
 
-                const discountAmt  = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
+                const discountAmt = priceWithIVABeforeClient * (itemClientDiscountPct / 100);
                 const finalPriceIVA = priceWithIVABeforeClient - discountAmt;
                 return {
                   ...item,
-                  totalWithIVA:            finalPriceIVA * item.quantity,
+                  totalWithIVA: finalPriceIVA * item.quantity,
                   totalBeforeClientWithIVA: priceWithIVABeforeClient * item.quantity,
                   discountAmt,
                 };
               });
 
-              const subtotalWithIVA         = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
+              const subtotalWithIVA = itemsWithIVA.reduce((acc, i) => acc + i.totalBeforeClientWithIVA, 0);
               const totalClientDiscountAmount = itemsWithIVA.reduce((acc, i) => acc + i.discountAmt * i.quantity, 0);
-              const subtotalFinalWithIVA     = subtotalWithIVA - totalClientDiscountAmount;
-              const totalExtraDiscountValue  = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
+              const subtotalFinalWithIVA = subtotalWithIVA - totalClientDiscountAmount;
+              const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
               let groupEcovalor = 0;
               lineData.items.forEach(item => {
                 const l = (item.lineaNegocio || "").toUpperCase();
-                if (l === "LLANTAS")      groupEcovalor += item.quantity * 1;
+                if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
                 else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
               });
 
-              const totalConIva  = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
-              const companyData  = groupedCart[selectedCompany];
+              const totalConIva = subtotalFinalWithIVA - totalExtraDiscountValue + groupEcovalor;
+              const companyData = groupedCart[selectedCompany];
 
               return (
                 <CompanySummary key={line}>
@@ -2320,7 +2325,7 @@ const Carrito = () => {
                   </TotalRow>
 
                   {!companyData.shippingAddressId && <ValidationWarning>Falta dirección de envío</ValidationWarning>}
-                  {!companyData.billingAddressId  && <ValidationWarning>Falta dirección de facturación</ValidationWarning>}
+                  {!companyData.billingAddressId && <ValidationWarning>Falta dirección de facturación</ValidationWarning>}
 
                   <CompanyCheckoutButton
                     text="Proceder al pedido"
@@ -2440,32 +2445,32 @@ const Carrito = () => {
         <div style={{ maxHeight: 400, overflowY: "auto" }}>
           {addresses.filter(a => a.type === addressModalType && a.empresa === addressModalCompany).length > 0
             ? addresses
-                .filter(a => a.type === addressModalType && a.empresa === addressModalCompany)
-                .map(address => (
-                  <AddressCard
-                    key={address.id}
-                    selected={addressModalType === "S"
-                      ? groupedCart[addressModalCompany]?.shippingAddressId === address.id
-                      : groupedCart[addressModalCompany]?.billingAddressId  === address.id}
-                    onClick={() => handleSelectAddressFromModal(address.id)}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <AddressInfo>
-                      <AddressName>
-                        {address.name}
-                        {address.origen === "SAP" && (
-                          <span style={{ marginLeft: 8, fontSize: "0.75rem", padding: "2px 6px", border: `solid 1px ${theme.colors.primary}`, borderRadius: 4, color: theme.colors.primary }}>
-                            Registrada
-                          </span>
-                        )}
-                      </AddressName>
-                      <AddressDetails>
-                        <ResolvedAddress address={address} />
-                        {address.isDefault && <span style={{ marginLeft: 8, color: theme.colors.success, fontWeight: 600 }}>• Predeterminada</span>}
-                      </AddressDetails>
-                    </AddressInfo>
-                  </AddressCard>
-                ))
+              .filter(a => a.type === addressModalType && a.empresa === addressModalCompany)
+              .map(address => (
+                <AddressCard
+                  key={address.id}
+                  selected={addressModalType === "S"
+                    ? groupedCart[addressModalCompany]?.shippingAddressId === address.id
+                    : groupedCart[addressModalCompany]?.billingAddressId === address.id}
+                  onClick={() => handleSelectAddressFromModal(address.id)}
+                  style={{ marginBottom: 12 }}
+                >
+                  <AddressInfo>
+                    <AddressName>
+                      {address.name}
+                      {address.origen === "SAP" && (
+                        <span style={{ marginLeft: 8, fontSize: "0.75rem", padding: "2px 6px", border: `solid 1px ${theme.colors.primary}`, borderRadius: 4, color: theme.colors.primary }}>
+                          Registrada
+                        </span>
+                      )}
+                    </AddressName>
+                    <AddressDetails>
+                      <ResolvedAddress address={address} />
+                      {address.isDefault && <span style={{ marginLeft: 8, color: theme.colors.success, fontWeight: 600 }}>• Predeterminada</span>}
+                    </AddressDetails>
+                  </AddressInfo>
+                </AddressCard>
+              ))
             : (
               <div style={{ textAlign: "center", padding: "2rem", color: theme.colors.textSecondary }}>
                 No hay direcciones disponibles de este tipo ({addressModalType === "S" ? "Envío" : "Facturación"}) para esta empresa.
@@ -2517,9 +2522,9 @@ const Carrito = () => {
                 if (loc.province || loc.city || loc.address) {
                   setNewAddressData(prev => ({
                     ...prev,
-                    state:  loc.province || prev.state,
-                    city:   loc.city     || prev.city,
-                    street: loc.address  || prev.street,
+                    state: loc.province || prev.state,
+                    city: loc.city || prev.city,
+                    street: loc.address || prev.street,
                   }));
                 }
               }}
