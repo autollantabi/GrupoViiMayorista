@@ -32,6 +32,7 @@ export const ROUTES = {
     APP_SHELL: "/app-shell",
     XCOIN: "/xcoin",
     CONTACTO: "/contacto",
+    ESTADO_CUENTA: "/estado-cuenta",
   },
   REENCAUCHE: {
     HOME: "/reencauche/home",

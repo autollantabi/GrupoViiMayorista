@@ -429,6 +429,12 @@ export default function Header() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleEstadoCuenta = () => {
+    navigate(ROUTES.ECOMMERCE.ESTADO_CUENTA);
+    setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleProfile = () => {
     navigate("/perfil");
     setIsUserMenuOpen(false);
@@ -615,6 +621,13 @@ export default function Header() {
                   </UserMenuItem>
                 )}
 
+                {isClient && (
+                  <UserMenuItem onClick={handleEstadoCuenta}>
+                    <RenderIcon name="FaFileInvoiceDollar" size={16} />
+                    Estado de Cuenta
+                  </UserMenuItem>
+                )}
+
                 <UserMenuItem onClick={toggleTheme}>
                   <RenderIcon
                     name={isDarkMode ? "FaSun" : "FaMoon"}
@@ -753,6 +766,13 @@ export default function Header() {
             <UserMenuItem onClick={handleOrderHistory}>
               <RenderIcon name="FaBagShopping" size={16} />
               Mis Pedidos
+            </UserMenuItem>
+          )}
+
+          {isClient && (
+            <UserMenuItem onClick={handleEstadoCuenta}>
+              <RenderIcon name="FaFileInvoiceDollar" size={16} />
+              Estado de Cuenta
             </UserMenuItem>
           )}
           <UserMenuItem onClick={toggleTheme}>

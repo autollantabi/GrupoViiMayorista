@@ -9,6 +9,7 @@ import Carrito from "../pages/compras/Carrito";
 import MisPedidos from "../pages/compras/MisPedidos";
 import DetallePedido from "../pages/compras/DetallePedido";
 import Perfil from "../pages/usuario/Perfil";
+import EstadoCuenta from "../pages/usuario/EstadoCuenta";
 import SearchResults from "../pages/busqueda/SearchResults";
 import Contacto from "../pages/contacto/Contacto";
 import SeleccionEmpresa from "../pages/compras/SeleccionEmpresa";
@@ -99,6 +100,13 @@ export const ecommerceRoutes = [
       ROLES.VISUALIZACION,
       ROLES.VENDEDOR_B2C,
       ROLES.VENDEDOR_B2B
+    ],
+  },
+  {
+    path: ROUTES.ECOMMERCE.ESTADO_CUENTA,
+    element: <EstadoCuenta />,
+    allowedRoles: [
+      ROLES.CLIENTE
     ],
   },
   {
