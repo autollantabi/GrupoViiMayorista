@@ -2322,7 +2322,9 @@ const Carrito = () => {
         <SummarySidebar>
           <OrderSummary>
             <SummaryTitle>Resumen del pedido</SummaryTitle>
-            <ClientSummaryCard />
+            <ClientSummaryCard />            
+
+            <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
 
             <Button
               text="Seguir comprando" variant="outlined"
@@ -2431,8 +2433,6 @@ const Carrito = () => {
                 </CompanySummary>
               );
             })}
-
-            <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
 
             {/* Modal de confirmación de orden */}
             {showConfirmModal && (

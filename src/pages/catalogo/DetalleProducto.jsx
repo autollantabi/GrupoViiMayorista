@@ -968,27 +968,26 @@ const ZoomedImage = styled.div`
 const ProductSpecifications = ({ product }) => {
   const [isValidSheet, setIsValidSheet] = useState(false);
 
-  if (!product.specs || Object.keys(product.specs).length === 0) {
-    return null;
-  }
+  const hasSpecs = product.specs && Object.keys(product.specs).length > 0;
 
   // Obtener la configuración correspondiente a la línea de negocio
   const lineConfig =
     PRODUCT_LINE_CONFIG[product.lineaNegocio] || PRODUCT_LINE_CONFIG.DEFAULT;
 
   // Filtrar y mapear las especificaciones con sus valores
-  const specsWithValues = lineConfig.specs
-    .map((specConfig) => {
-      const value = product.specs[specConfig.field];
-      if (value === null || value === undefined || value === "") return null;
-
-      return {
-        field: specConfig.field,
-        label: specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label,
-        value: value,
-      };
-    })
-    .filter((spec) => spec !== null);
+  const specsWithValues = hasSpecs
+    ? lineConfig.specs
+      .map((specConfig) => {
+        const value = product.specs[specConfig.field];
+        if (value === null || value === undefined || value === "") return null;
+        return {
+          field: specConfig.field,
+          label: specConfig.label === "Serie" ? "Alto/Serie" : specConfig.label,
+          value: value,
+        };
+      })
+      .filter((spec) => spec !== null)
+    : [];
 
   // Agrupar en pares para mostrar dos especificaciones por fila
   const groupedSpecs = [];
@@ -1010,7 +1009,6 @@ const ProductSpecifications = ({ product }) => {
       if (/^https?:\/\//i.test(trimmed)) {
         technicalSheetUrl = trimmed;
       } else {
-        // Aseguramos que el base URL esté definido
         const baseUrl = baseLinkFicha || baseLinkImages || "";
         technicalSheetUrl = `${baseUrl}${trimmed.startsWith("/") ? trimmed.slice(1) : trimmed}`;
       }
@@ -1036,6 +1034,11 @@ const ProductSpecifications = ({ product }) => {
     };
   }, [technicalSheetUrl]);
 
+  // El return condicional va AL FINAL, después de todos los hooks
+  if (!hasSpecs) {
+    return null;
+  }
+
   return (
     <SpecificationsSection>
       <SpecificationsHeader>
@@ -1057,6 +1060,7 @@ const ProductSpecifications = ({ product }) => {
                 setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
               } catch (error) {
                 // Fallback en caso de error (ej. CORS)
+                console.log(error);
                 window.open(technicalSheetUrl, "_blank");
               }
             }}

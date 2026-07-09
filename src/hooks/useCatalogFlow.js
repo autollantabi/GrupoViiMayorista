@@ -670,6 +670,11 @@ const useCatalogFlow = (
   // Funciones de navegación
   const selectLinea = useCallback(
     (linea) => {
+
+      if (linea === selectedLinea) {
+        return;
+      }
+
       // Marcar que estamos actualizando desde selectLinea para evitar que el useEffect de lectura interfiera
       isUpdatingFromSelectLinea.current = true;
 
@@ -778,7 +783,7 @@ const useCatalogFlow = (
         // Esto se maneja automáticamente en isAtProductView()
       }
     },
-    [updateURL, isInitialized, syncURL, urlParams]
+    [updateURL, isInitialized, syncURL, urlParams, selectedLinea]
   );
 
   const selectFilterValue = useCallback(
@@ -1344,7 +1349,7 @@ const useCatalogFlow = (
 
       searchTimeoutRef.current = setTimeout(() => {
         setDebouncedSearchQuery(query);
-        
+
         if (updateURL && isInitialized) {
           syncURL({
             selectedLinea,

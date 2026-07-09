@@ -1488,7 +1488,6 @@ const Catalog = () => {
                   : "Explora nuestra amplia gama de productos de alta calidad. Selecciona una línea de negocio para comenzar a filtrar productos."}
               </WelcomeDescription>
             </WelcomeHeader>
-
             {loading ? (
               <LoadingContainer>
                 <RenderLoader
@@ -1542,8 +1541,8 @@ const Catalog = () => {
             currentStep={currentStep}
             flowConfig={flowConfig}
             isAtProductView={isAtProductView}
+            empresaName={empresaName}
           />
-
           <MainContentProducts>
             <ContentWithFilters>
               <AdditionalFilters
