@@ -525,7 +525,16 @@ export default function EstadoCuenta() {
         ["Número", "Fecha Factura", "Vencimiento", "Días Ven.", "Cuota", "Valor cuota", "Abono", "Saldo Cuota", "Saldo Factura", "Total Factura", "Protesto"]
       ];
 
-      const body = processedData.map(item => [
+      // Ordenar por número de documento ascendente y días vencidos descendente
+      const sortedData = [...processedData].sort((a, b) => {
+        const numA = String(a.numero);
+        const numB = String(b.numero);
+        const compNum = numA.localeCompare(numB, undefined, { numeric: true });
+        if (compNum !== 0) return compNum;
+        return b.diasVencidos - a.diasVencidos;
+      });
+
+      const body = sortedData.map(item => [
         item.numero,
         formatDate(item.fechaCreacion),
         formatDate(item.fechaVencimiento),

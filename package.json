@@ -7,7 +7,10 @@
     "pm2Dev": "pm2 delete PMayoristaDev || true && pm2 start npm --name 'PMayoristaDev' -- run dev && pm2 log 'PMayoristaDev'",
     "dev": "vite --host --port 4200",
     "build": "vite build",
-    "install:legacy": "npm install --legacy-peer-deps"
+    "install:legacy": "npm install --legacy-peer-deps",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-pdf:python": "python3 scripts/generate_estado_cuenta_pdf.py"
   },
   "dependencies": {
     "@date-io/date-fns": "^3.2.1",
@@ -42,6 +45,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vitest": "^4.1.10"
   }
 }
