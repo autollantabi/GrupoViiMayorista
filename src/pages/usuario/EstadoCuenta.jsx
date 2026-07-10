@@ -363,9 +363,8 @@ export default function EstadoCuenta() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Meta-información del informe (vendedor, fecha/hora)
+  // Meta-información del informe (fecha/hora)
   const [reportMeta, setReportMeta] = useState({
-    vendedorAsignado: "JOHANNA MARULANDA",
     fechaHoraInforme: new Date().toLocaleString("es-EC")
   });
 
@@ -507,7 +506,7 @@ export default function EstadoCuenta() {
       doc.setFont("helvetica", "bold");
       doc.text("Vendedor:", 115, 63);
       doc.setFont("helvetica", "normal");
-      doc.text(reportMeta.vendedorAsignado, 135, 63);
+      doc.text(user?.NOMBRE_VENDEDOR, 135, 63);
 
       doc.setFont("helvetica", "bold");
       doc.text("Ciudad:", 115, 69);
@@ -615,7 +614,12 @@ export default function EstadoCuenta() {
               data.cell.styles.border = { top: { width: 0.5, color: [0, 86, 179] } };
               data.cell.styles.fillColor = [255, 255, 255];
             } else {
-              data.cell.styles.textColor = [220, 53, 69];
+              const item = sortedData[data.row.index];
+              if (item && item.diasVencidos > 0) {
+                data.cell.styles.textColor = [220, 53, 69]; // Rojo
+              } else {
+                data.cell.styles.textColor = [0, 0, 0]; // Negro
+              }
             }
           }
         }
@@ -694,6 +698,12 @@ export default function EstadoCuenta() {
         totalFactura: Number(item.HCAD_TOTAL_DOCUMENTO) || 0,
         protesto: Number(item.HCAD_PROTESTO) || 0,
       };
+    }).sort((a, b) => {
+      const numA = String(a.numero);
+      const numB = String(b.numero);
+      const compNum = numA.localeCompare(numB, undefined, { numeric: true });
+      if (compNum !== 0) return compNum;
+      return b.diasVencidos - a.diasVencidos;
     });
   }, [selectedCompany, apiData]);
 
@@ -859,7 +869,7 @@ export default function EstadoCuenta() {
             </div>
             <div className="content">
               <span className="label">Vendedor Asignado</span>
-              <span className="value">{reportMeta.vendedorAsignado}</span>
+              <span className="value">{user?.NOMBRE_VENDEDOR}</span>
             </div>
           </InfoItem>
           <InfoItem>
@@ -974,8 +984,6 @@ export default function EstadoCuenta() {
                 data={processedData}
                 emptyMessage="No se encontraron facturas o cuotas creadas antes de la fecha de corte seleccionada para esta empresa."
                 itemsPerPage={10}
-                initialSortField="fechaCreacion"
-                initialSortDirection="desc"
               />
             </TableCard>
 
