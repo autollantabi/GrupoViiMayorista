@@ -363,9 +363,8 @@ export default function EstadoCuenta() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Meta-información del informe (vendedor, fecha/hora)
+  // Meta-información del informe (fecha/hora)
   const [reportMeta, setReportMeta] = useState({
-    vendedorAsignado: "JOHANNA MARULANDA",
     fechaHoraInforme: new Date().toLocaleString("es-EC")
   });
 
@@ -507,7 +506,7 @@ export default function EstadoCuenta() {
       doc.setFont("helvetica", "bold");
       doc.text("Vendedor:", 115, 63);
       doc.setFont("helvetica", "normal");
-      doc.text(reportMeta.vendedorAsignado, 135, 63);
+      doc.text(user?.NOMBRE_VENDEDOR, 135, 63);
 
       doc.setFont("helvetica", "bold");
       doc.text("Ciudad:", 115, 69);
