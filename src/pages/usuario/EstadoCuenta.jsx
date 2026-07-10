@@ -859,7 +859,7 @@ export default function EstadoCuenta() {
             </div>
             <div className="content">
               <span className="label">Vendedor Asignado</span>
-              <span className="value">{reportMeta.vendedorAsignado}</span>
+              <span className="value">{user?.NOMBRE_VENDEDOR}</span>
             </div>
           </InfoItem>
           <InfoItem>
