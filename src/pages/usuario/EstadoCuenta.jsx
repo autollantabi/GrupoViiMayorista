@@ -698,6 +698,12 @@ export default function EstadoCuenta() {
         totalFactura: Number(item.HCAD_TOTAL_DOCUMENTO) || 0,
         protesto: Number(item.HCAD_PROTESTO) || 0,
       };
+    }).sort((a, b) => {
+      const numA = String(a.numero);
+      const numB = String(b.numero);
+      const compNum = numA.localeCompare(numB, undefined, { numeric: true });
+      if (compNum !== 0) return compNum;
+      return b.diasVencidos - a.diasVencidos;
     });
   }, [selectedCompany, apiData]);
 
@@ -978,8 +984,6 @@ export default function EstadoCuenta() {
                 data={processedData}
                 emptyMessage="No se encontraron facturas o cuotas creadas antes de la fecha de corte seleccionada para esta empresa."
                 itemsPerPage={10}
-                initialSortField="fechaCreacion"
-                initialSortDirection="desc"
               />
             </TableCard>
 
