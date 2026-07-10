@@ -1617,7 +1617,13 @@ const Carrito = () => {
     }
 
     const responseOrder = await api_order_createOrder(orderToProcess);
-    if (!responseOrder.success) throw new Error(responseOrder.message || "Error al procesar el pedido");
+    if (!responseOrder.success) {
+      const error = new Error(responseOrder.message || "Error al procesar el pedido");
+      error.refunded = responseOrder.refunded; // true | false | undefined
+      error.isOrderCreationError = true;
+      throw error;
+    }
+
     return responseOrder;
 
   }, [addresses, isB2BSeller, isSeller, user, paymentMethod]);
@@ -1724,7 +1730,30 @@ const Carrito = () => {
 
     } catch (error) {
       console.error("Error al procesar respuesta de Nuvei:", error);
-      toast.error("Error al confirmar el pago.");
+
+      // El pago se cobró pero la orden falló: distinguir si se pudo reembolsar o no
+      if (error.isOrderCreationError) {
+        if (error.refunded === true) {
+          toast.error(
+            "No pudimos generar tu pedido, pero el pago fue reembolsado automáticamente. Intenta nuevamente.",
+            { autoClose: 8000 }
+          );
+        } else if (error.refunded === false) {
+          toast.error(
+            "No pudimos generar tu pedido y el reembolso automático falló. Por favor contacta a soporte con tu comprobante de pago.",
+            { autoClose: false } // no se cierra solo, es crítico
+          );
+        } else {
+          // refunded === undefined → no era pago con tarjeta, o el backend no envió el campo
+          toast.error(`Error al procesar tu pedido: ${error.message}`);
+        }
+      } else {
+        toast.error("Error al confirmar el pago.");
+      }
+
+      // El pago ya quedó resuelto (cobrado y potencialmente reembolsado),
+      // así que este intento de checkout ya no es válido
+      pendingCheckoutRef.current = null;
       setIsProcessingOrders(false);
     }
   }, [processLineOrder]);
@@ -2322,7 +2351,7 @@ const Carrito = () => {
         <SummarySidebar>
           <OrderSummary>
             <SummaryTitle>Resumen del pedido</SummaryTitle>
-            <ClientSummaryCard />            
+            <ClientSummaryCard />
 
             <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
 

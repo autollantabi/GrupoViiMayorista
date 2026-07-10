@@ -42,12 +42,16 @@ export const api_order_createOrder = async (orderData) => {
     };
 
   } catch (error) {
-    const message = error?.message || "Ocurrió un error al crear el pedido";
+    const backendData = error.response?.data;
+
+    const message =
+      backendData?.message || error?.message || "Ocurrió un error al crear el pedido";
 
     return {
       success: false,
       message,
-      error: error?.message || null,
+      error: backendData?.error || error?.message || null,
+      refunded: backendData?.refunded,
     };
   }
 };

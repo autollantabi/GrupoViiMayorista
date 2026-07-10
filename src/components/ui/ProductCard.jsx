@@ -241,6 +241,20 @@ const DiscountBadge = styled.div`
   }
 `;
 
+const PreviouslyBoughtBadge = styled.span`
+  position: absolute;
+  top: 8px;
+  left: 8px; /* si DiscountBadge está en right, pon este en left para que no se solapen */
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 2;
+  white-space: nowrap;
+`;
+
 const ContentContainer = styled.div`
   padding: ${({ $restricted }) => ($restricted ? "16px" : "20px")};
   display: flex;
@@ -1254,6 +1268,9 @@ const ProductCard = ({
           )}
           {product.discount > 0 && !restricted && (
             <DiscountBadge>-{product.discount}%</DiscountBadge>
+          )}
+          {product.originalData?.DMA_INDICADOR_VENTAS > 0 && !restricted && (
+            <PreviouslyBoughtBadge>Prev. Comprado</PreviouslyBoughtBadge>
           )}
         </ImageContainer>
 
