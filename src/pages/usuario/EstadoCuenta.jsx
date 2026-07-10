@@ -614,7 +614,12 @@ export default function EstadoCuenta() {
               data.cell.styles.border = { top: { width: 0.5, color: [0, 86, 179] } };
               data.cell.styles.fillColor = [255, 255, 255];
             } else {
-              data.cell.styles.textColor = [220, 53, 69];
+              const item = sortedData[data.row.index];
+              if (item && item.diasVencidos > 0) {
+                data.cell.styles.textColor = [220, 53, 69]; // Rojo
+              } else {
+                data.cell.styles.textColor = [0, 0, 0]; // Negro
+              }
             }
           }
         }
