@@ -591,7 +591,7 @@ export default function EstadoCuenta() {
           lineWidth: 0.1
         },
         columnStyles: {
-          0: { cellWidth: 26 }, // Número
+          0: { cellWidth: 23 }, // Número
           1: { cellWidth: 16 }, // Fecha Factura
           2: { cellWidth: 16 }, // Vencimiento
           3: { cellWidth: 12, halign: "center" }, // Días Ven.
@@ -601,7 +601,7 @@ export default function EstadoCuenta() {
           7: { cellWidth: 18, halign: "right" }, // Saldo Cuota
           8: { cellWidth: 18, halign: "right" }, // Saldo Factura
           9: { cellWidth: 18, halign: "right" }, // Total Factura
-          10: { cellWidth: 15, halign: "right" } // Protesto
+          10: { cellWidth: 18, halign: "center" } // Protesto
         },
         didParseCell: function (data) {
           if (data.row.section === 'body') {
@@ -696,7 +696,7 @@ export default function EstadoCuenta() {
         saldoCuota,
         saldoFactura: docsMap[docNum]?.saldoFactura || 0,
         totalFactura: Number(item.HCAD_TOTAL_DOCUMENTO) || 0,
-        protesto: item.HCAD_PROTESTO || "NO",
+        protesto: (item.HCAD_PROTESTO === "" || item.HCAD_PROTESTO === null || item.HCAD_PROTESTO === undefined) ? "NO" : String(item.HCAD_PROTESTO),
       };
     }).sort((a, b) => {
       const numA = String(a.numero);
@@ -713,7 +713,9 @@ export default function EstadoCuenta() {
       (acc, item) => {
         acc.totalAbono += item.abono;
         acc.totalSaldoCuota += item.saldoCuota;
-        acc.totalProtesto += (item.protesto && String(item.protesto).toUpperCase().includes("SI")) ? 1 : 0;
+        if (typeof item.protesto === "string" && item.protesto.toUpperCase().includes("SI")) {
+          acc.totalProtesto += 1;
+        }
         if (item.diasVencidos > 0 && item.saldoCuota > 0) {
           acc.documentosVencidos += 1;
         }
@@ -821,13 +823,13 @@ export default function EstadoCuenta() {
       field: "protesto",
       sortable: true,
       dataType: "string",
-      align: "right",
+      align: "center",
       render: (row) => {
-        const hasProtesto = row.protesto && String(row.protesto).toUpperCase().includes("SI");
+        const isProtested = typeof row.protesto === "string" && row.protesto.toUpperCase().includes("SI");
         return (
           <span style={{
-            color: hasProtesto ? (theme.mode === "dark" ? "#ff5722" : "#dc3545") : "inherit",
-            fontWeight: hasProtesto ? "700" : "400"
+            color: isProtested ? (theme.mode === "dark" ? "#ff5722" : "#dc3545") : "inherit",
+            fontWeight: isProtested ? "700" : "400"
           }}>
             {row.protesto}
           </span>
@@ -965,7 +967,7 @@ export default function EstadoCuenta() {
                   <RenderIcon name="FaTriangleExclamation" size={24} color={theme.colors.error} />
                 </div>
                 <div className="card-content">
-                  <span className="card-label">Total Protestos</span>
+                  <span className="card-label">Cantidad de Cheques Protestados</span>
                   <span className="card-value">{kpiTotals.totalProtesto}</span>
                 </div>
               </KPICard>

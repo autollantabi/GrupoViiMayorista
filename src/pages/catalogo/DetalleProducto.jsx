@@ -18,6 +18,8 @@ import ContactModal from "../../components/ui/ContactModal";
 import SEO from "../../components/seo/SEO";
 import { useProductStructuredData } from "../../hooks/useStructuredData";
 import { baseLinkImages, baseLinkFicha } from "../../constants/links";
+import ProductCard from "../../components/ui/ProductCard";
+import RelatedProductsCarousel from "../../components/ui/RelatedProductsCarousel";
 
 const ProductLayout = styled.div`
   display: grid;
@@ -708,6 +710,25 @@ const SpecItemLabel = styled.span`
   }
 `;
 
+const RelatedSection = styled.section`
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid
+    ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+
+  @media (max-width: 768px) {
+    margin-top: 2rem;
+  }
+`;
+
+const RelatedTitle = styled.h2`
+  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: 1.25rem;
+`;
+
 // Componentes para los breadcrumbs
 const BreadcrumbsContainer = styled.nav`
   margin-bottom: 1.5rem;
@@ -1104,7 +1125,7 @@ const DetalleProducto = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loadProductByCodigo, loadProductById } = useProductCatalog();
+  const { loadProductByCodigo, loadProductById, loadProductsForEmpresa, catalogByEmpresa, getRelatedProducts } = useProductCatalog();
   const { navigateToHomeByRole, isClient, isVisualizacion } = useAuth();
   const { addToCart, cart } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -1120,6 +1141,11 @@ const DetalleProducto = () => {
 
   // SEO y datos estructurados
   const structuredData = useProductStructuredData(product);
+
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    return getRelatedProducts(product, { limit: 12 });
+  }, [product, getRelatedProducts]);
 
   const resolvedEmpresaId = useMemo(() => {
     if (empresaIdParam) return empresaIdParam;
@@ -1551,6 +1577,14 @@ const DetalleProducto = () => {
     };
   }, []);
 
+  // Asegura que el catálogo completo de la empresa esté disponible para poder
+  // calcular productos relacionados sin hacer una llamada aparte a la API.
+  useEffect(() => {
+    if (resolvedEmpresaId && !catalogByEmpresa[resolvedEmpresaId]) {
+      loadProductsForEmpresa(resolvedEmpresaId);
+    }
+  }, [resolvedEmpresaId, catalogByEmpresa, loadProductsForEmpresa]);
+
   if (loadingProduct || (!product && !productNotFound)) {
     return (
       <PageContainer>
@@ -1959,6 +1993,14 @@ const DetalleProducto = () => {
             <ProductSpecifications product={product} />
           </InfoSection>
         </ProductLayout>
+
+        {relatedProducts.length > 0 && (
+          <RelatedSection>
+            <RelatedTitle>Productos relacionados</RelatedTitle>
+            <RelatedProductsCarousel products={relatedProducts} />
+          </RelatedSection>
+        )}
+
 
         {/* Modal de contacto */}
         <ContactModal

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 import {
   api_products_getProductByCodigo,
-  api_products_getProductByField,
   api_products_getProductById,
   api_products_getProductsByFieldPaginated,
   api_products_searchProducts,
@@ -522,6 +521,89 @@ export const ProductCatalogProvider = ({ children }) => {
     }, []);
   }, [catalogByEmpresa]);
 
+  
+  /**
+ * Productos relacionados a uno dado, sin hacer fetch (opera sobre catalogByEmpresa
+ * ya cargado). Prioridad de relevancia:
+ *   1) Misma medida+rin (DMA_MEDIDARIN) o al menos misma medida (DMA_MEDIDA)
+ *   2) Misma marca (DMA_MARCA)
+ *   3) Misma categoría/segmento
+ * Además, si el producto candidato fue comprado antes por el cliente
+ * (DMA_INDICADOR_VENTAS > 0), se suma un boost de relevancia.
+ *
+ * Requiere que catalogByEmpresa[empresa] ya esté cargado
+ * (llamar loadProductsForEmpresa antes si hace falta).
+ */
+  const getRelatedProducts = useCallback((product, { limit = 12 } = {}) => {
+
+    if (!product) return [];
+
+    const empresaName = product.empresaId || product.empresa;
+    const pool = catalogByEmpresa[empresaName];
+    if (!Array.isArray(pool) || pool.length === 0) return [];
+
+    const baseData = product.originalData || {};
+    const baseLinea = (product.lineaNegocio || baseData.DMA_LINEANEGOCIO || "").toUpperCase();
+    const baseMedidaRin = (baseData.DMA_MEDIDARIN || "").toString().trim().toUpperCase();
+    const baseMedida = (baseData.DMA_MEDIDA || "").toString().trim().toUpperCase();
+    const baseBrand = (product.brand || baseData.DMA_MARCA || "").toString().trim().toUpperCase();
+    const baseCategoria = (baseData.DMA_CATEGORIA || "").toString().trim().toUpperCase();
+    const baseSegmento = (baseData.DMA_SEGMENTO || "").toString().trim().toUpperCase();
+
+    const scored = pool.reduce((acc, candidate) => {
+      if (!candidate || candidate.id === product.id) return acc;
+
+      const candData = candidate.originalData || {};
+      const candLinea = (candidate.lineaNegocio || candData.DMA_LINEANEGOCIO || "").toUpperCase();
+
+      // Solo se consideran relacionados productos de la misma línea de negocio
+      if (baseLinea && candLinea !== baseLinea) return acc;
+
+      const candMedidaRin = (candData.DMA_MEDIDARIN || "").toString().trim().toUpperCase();
+      const candMedida = (candData.DMA_MEDIDA || "").toString().trim().toUpperCase();
+      const candBrand = (candidate.brand || candData.DMA_MARCA || "").toString().trim().toUpperCase();
+      const candCategoria = (candData.DMA_CATEGORIA || "").toString().trim().toUpperCase();
+      const candSegmento = (candData.DMA_SEGMENTO || "").toString().trim().toUpperCase();
+
+      let score = 0;
+
+      // 1. Medida: coincidencia exacta (medida + rin) pesa más que solo medida
+      if (baseMedidaRin && candMedidaRin && baseMedidaRin === candMedidaRin) {
+        score += 150;
+      } else if (baseMedida && candMedida && baseMedida === candMedida) {
+        score += 100;
+      }
+
+      // 2. Marca (se suma, no reemplaza la relevancia de medida)
+      if (baseBrand && candBrand && baseBrand === candBrand) {
+        score += 30;
+      }
+
+      // 3. Categoría / segmento (ej. mismo tipo de llanta o línea de producto)
+      if (baseCategoria && candCategoria && baseCategoria === candCategoria) {
+        score += 15;
+      }
+      if (baseSegmento && candSegmento && baseSegmento === candSegmento) {
+        score += 10;
+      }
+
+      // Sin ninguna coincidencia relevante, no es "relacionado"
+      if (score === 0) return acc;
+
+      // 4. Boost por historial de compras del cliente
+      const indicadorVentas = Number(candData.DMA_INDICADOR_VENTAS) || 0;
+      if (indicadorVentas > 0) {
+        score += 50 + indicadorVentas;
+      }
+
+      acc.push({ product: candidate, score });
+      return acc;
+    }, []);
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, limit).map((s) => s.product);
+  }, [catalogByEmpresa]);
+
   const value = useMemo(() => ({
     catalogByEmpresa,
     loadingByEmpresa,
@@ -541,6 +623,7 @@ export const ProductCatalogProvider = ({ children }) => {
     loadProductsForSeller,
     loadProductsForMultipleCompanies,
     getProductsForCompanies,
+    getRelatedProducts,
   }), [
     catalogByEmpresa,
     loadingByEmpresa,
@@ -559,7 +642,9 @@ export const ProductCatalogProvider = ({ children }) => {
     loadProductsForSeller,
     loadProductsForMultipleCompanies,
     getProductsForCompanies,
+    getRelatedProducts
   ]);
+
 
   return (
     <ProductCatalogContext.Provider value={value}>
@@ -567,3 +652,5 @@ export const ProductCatalogProvider = ({ children }) => {
     </ProductCatalogContext.Provider>
   );
 };
+
+
