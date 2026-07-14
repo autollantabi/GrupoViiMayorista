@@ -95,12 +95,12 @@ def process_data(api_data, selected_company, today):
         valor_cuota = float(item.get("HCAD_CUOTATOTAL") or 0.0)
         abono = float(item.get("HCAD_MONTOPAGADO") or 0.0)
         saldo_cuota = valor_cuota - abono
-        protesto = float(item.get("HCAD_PROTESTO") or 0.0)
+        protesto = item.get("HCAD_PROTESTO") or "NO"
 
         # Totales
         total_abono += abono
         total_saldo_cuota += saldo_cuota
-        total_protesto += protesto
+        total_protesto += 1 if "SI" in protesto.upper() else 0
         if dias_vencidos > 0 and saldo_cuota > 0:
             doc_vencidos_count += 1
 
@@ -329,7 +329,7 @@ def build_pdf(output_path, selected_company, processed_data, kpi_totals, user_in
             format_currency(item["saldoCuota"]),
             format_currency(item["saldoFactura"]),
             format_currency(item["totalFactura"]),
-            format_currency(item["protesto"])
+            item["protesto"]
         ])
 
     # Filas de totales

@@ -544,7 +544,7 @@ export default function EstadoCuenta() {
         formatCurrency(item.saldoCuota).replace("US$", ""),
         formatCurrency(item.saldoFactura).replace("US$", ""),
         formatCurrency(item.totalFactura).replace("US$", ""),
-        formatCurrency(item.protesto).replace("US$", "")
+        item.protesto || "NO"
       ]);
 
       // Añadir filas de totales
@@ -696,7 +696,7 @@ export default function EstadoCuenta() {
         saldoCuota,
         saldoFactura: docsMap[docNum]?.saldoFactura || 0,
         totalFactura: Number(item.HCAD_TOTAL_DOCUMENTO) || 0,
-        protesto: Number(item.HCAD_PROTESTO) || 0,
+        protesto: item.HCAD_PROTESTO || "NO",
       };
     }).sort((a, b) => {
       const numA = String(a.numero);
@@ -713,7 +713,7 @@ export default function EstadoCuenta() {
       (acc, item) => {
         acc.totalAbono += item.abono;
         acc.totalSaldoCuota += item.saldoCuota;
-        acc.totalProtesto += item.protesto;
+        acc.totalProtesto += (item.protesto && String(item.protesto).toUpperCase().includes("SI")) ? 1 : 0;
         if (item.diasVencidos > 0 && item.saldoCuota > 0) {
           acc.documentosVencidos += 1;
         }
@@ -820,16 +820,19 @@ export default function EstadoCuenta() {
       header: "Protesto",
       field: "protesto",
       sortable: true,
-      dataType: "number",
+      dataType: "string",
       align: "right",
-      render: (row) => (
-        <span style={{
-          color: row.protesto > 0 ? (theme.mode === "dark" ? "#ff5722" : "#dc3545") : "inherit",
-          fontWeight: row.protesto > 0 ? "700" : "400"
-        }}>
-          {formatCurrency(row.protesto)}
-        </span>
-      )
+      render: (row) => {
+        const hasProtesto = row.protesto && String(row.protesto).toUpperCase().includes("SI");
+        return (
+          <span style={{
+            color: hasProtesto ? (theme.mode === "dark" ? "#ff5722" : "#dc3545") : "inherit",
+            fontWeight: hasProtesto ? "700" : "400"
+          }}>
+            {row.protesto}
+          </span>
+        );
+      }
     }
   ], [theme.mode]);
 
@@ -963,7 +966,7 @@ export default function EstadoCuenta() {
                 </div>
                 <div className="card-content">
                   <span className="card-label">Total Protestos</span>
-                  <span className="card-value">{formatCurrency(kpiTotals.totalProtesto)}</span>
+                  <span className="card-value">{kpiTotals.totalProtesto}</span>
                 </div>
               </KPICard>
 
