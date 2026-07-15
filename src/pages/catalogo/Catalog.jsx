@@ -704,14 +704,10 @@ const SliderSection = styled.div`
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 250px;
+  height: 105px;
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${({ theme }) => theme.colors.surface};
   box-shadow: ${({ theme }) =>
     theme.mode === "dark"
       ? "0 8px 30px rgba(0, 0, 0, 0.3)"
@@ -719,7 +715,12 @@ const SliderContainer = styled.div`
   border: 1px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}20`};
 
+  @media (max-width: 1024px) {
+    height: 105px;
+  }
+
   @media (max-width: 768px) {
+    height: 105px;
     border-radius: 12px;
   }
 `;
@@ -738,13 +739,11 @@ const Slide = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
 `;
 
 const SlideLink = styled.a`
   display: flex;
   align-items: center;
-  justify-content: center;
   width: 100%;
   height: 100%;
   position: relative;
@@ -753,12 +752,13 @@ const SlideLink = styled.a`
 `;
 
 const SliderImage = styled.img`
+  width: 100%;
   height: 100%;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  display: block;
-  position: relative;
+  object-fit: cover;
+  object-position: center; /* o "left center", "right center" según tu diseño */
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 1;
 `;
 
@@ -768,10 +768,6 @@ const SlideOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "linear-gradient(90deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(15, 23, 42, 0.1) 100%)"
-      : "linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.1) 100%)"};
   z-index: 2;
 `;
 
