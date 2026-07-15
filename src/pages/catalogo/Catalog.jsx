@@ -704,10 +704,14 @@ const SliderSection = styled.div`
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 90px;
+  height: 250px;
   position: relative;
   overflow: hidden;
   border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.surface};
   box-shadow: ${({ theme }) =>
     theme.mode === "dark"
       ? "0 8px 30px rgba(0, 0, 0, 0.3)"
@@ -715,12 +719,7 @@ const SliderContainer = styled.div`
   border: 1px solid ${({ theme }) =>
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}20`};
 
-  @media (max-width: 1024px) {
-    height: 90px;
-  }
-
   @media (max-width: 768px) {
-    height: 90px;
     border-radius: 12px;
   }
 `;
@@ -739,11 +738,13 @@ const Slide = styled.div`
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
 `;
 
 const SlideLink = styled.a`
   display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   position: relative;
@@ -752,12 +753,12 @@ const SlideLink = styled.a`
 `;
 
 const SliderImage = styled.img`
-  width: 100%;
   height: 100%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  position: relative;
   z-index: 1;
 `;
 

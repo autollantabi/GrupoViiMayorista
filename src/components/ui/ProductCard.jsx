@@ -1049,16 +1049,16 @@ const ProductCard = ({
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
   useEffect(() => {
-  const maxAvailable = (product.stock || 0) - quantityInCart;
-  const clampedMax = Math.max(maxAvailable, 0);
+    const maxAvailable = (product.stock || 0) - quantityInCart;
+    const clampedMax = Math.max(maxAvailable, 0);
 
-  const desiredQuantity =
-    quantityInCart > 0
-      ? Math.min(quantityInCart, clampedMax > 0 ? quantityInCart : 0)
-      : Math.min(1, clampedMax);
+    const desiredQuantity =
+      quantityInCart > 0
+        ? Math.min(quantityInCart, clampedMax > 0 ? quantityInCart : 0)
+        : Math.min(1, clampedMax);
 
-  setQuantity(desiredQuantity);
-}, [product.id, product.stock, quantityInCart]);
+    setQuantity(desiredQuantity);
+  }, [product.id, product.stock, quantityInCart]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -1125,9 +1125,9 @@ const ProductCard = ({
 
     if (isAddingToCart || restricted) return; // Evitar múltiples clics y productos restringidos
 
-    if(quantityInCart == quantity)
+    if (quantityInCart == quantity)
       return;
-    
+
     setIsAddingToCart(true);
 
     try {
@@ -1379,45 +1379,54 @@ const ProductCard = ({
                 </PriceRight>
               )}
             </Price>
-            {(isClient || isSeller) && !isVisualizacion && (
-              <ButtonContainer>
-                <Button
-                  leftIconName={"FaCartShopping"}
-                  text={
-                    product.stock === 0
-                      ? product.originalData?.DMA_INVENTARIO?.dias != null ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '2px', padding: '4px 0' }}>
-                          <span style={{ fontWeight: '600' }}>Sin Stock</span>
-                          <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
-                            Unidades disponibles en {product.originalData.DMA_INVENTARIO.dias} días
-                          </span>
-                        </div>
-                      ) : "Sin Stock por el momento"
-                      : quantityInCart >= product.stock
-                        ? "Stock máximo en carrito"
-                        : isAddingToCart
-                          ? "Agregando..."
-                          : quantityInCart > 0 && !isButtonHovered
-                            ? `${quantityInCart} en carrito`
-                            : "Agregar"
-                  }
-                  variant="solid"
-                  size="small"
-                  backgroundColor={({ theme }) =>
-                    product.stock === 0 || quantityInCart >= product.stock
-                      ? theme.colors.textLight
-                      : quantityInCart > 0 && !isButtonHovered
-                        ? theme.colors.success
-                        : theme.colors.primary
-                  }
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart || product.stock === 0 || quantityInCart >= product.stock}
-                  onMouseEnter={() => setIsButtonHovered(true)}
-                  onMouseLeave={() => setIsButtonHovered(false)}
-                  style={{ width: "100%" }}
-                />
-              </ButtonContainer>
-            )}
+            {(isClient || isSeller) && !isVisualizacion && (() => {
+              const hasTransitStock = product.stock === 0 && product.originalData?.DMA_INVENTARIO?.dias != null;
+              const isOutOfStockNoTransit = product.stock === 0 && !hasTransitStock;
+              const isMaxInCart = product.stock > 0 && quantityInCart >= product.stock; // el chequeo de máximo solo aplica si hay stock real
+              const isDisabled = isAddingToCart || isOutOfStockNoTransit || isMaxInCart;
+
+              const buttonText = isOutOfStockNoTransit
+                ? "Sin Stock por el momento"
+                : isMaxInCart
+                  ? "Stock máximo en carrito"
+                  : isAddingToCart
+                    ? "Agregando..."
+                    : quantityInCart > 0 && !isButtonHovered
+                      ? `${quantityInCart} en carrito`
+                      : hasTransitStock
+                        ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '2px', padding: '4px 0' }}>
+                            <span style={{ fontWeight: '600' }}>Agregar</span>
+                            <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
+                              Disponible en {product.originalData.DMA_INVENTARIO.dias} días
+                            </span>
+                          </div>
+                        )
+                        : "Agregar";
+
+              return (
+                <ButtonContainer>
+                  <Button
+                    leftIconName={"FaCartShopping"}
+                    text={buttonText}
+                    variant="solid"
+                    size="small"
+                    backgroundColor={({ theme }) =>
+                      isDisabled
+                        ? theme.colors.textLight
+                        : quantityInCart > 0 && !isButtonHovered
+                          ? theme.colors.success
+                          : theme.colors.primary
+                    }
+                    onClick={handleAddToCart}
+                    disabled={isDisabled}
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                    style={{ width: "100%" }}
+                  />
+                </ButtonContainer>
+              );
+            })()}
           </ContentContainer>
         )}
       </StyledCard>
