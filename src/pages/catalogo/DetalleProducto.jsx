@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   useParams,
   useNavigate,
@@ -12,14 +12,14 @@ import { useAuth } from "../../context/AuthContext";
 import { PRODUCT_LINE_CONFIG } from "../../constants/productLineConfig";
 import { toast } from "react-toastify";
 import { useProductCatalog } from "../../context/ProductCatalogContext";
-import { TAXES, calculatePriceWithIVA } from "../../constants/taxes";
 import PageContainer from "../../components/layout/PageContainer";
 import ContactModal from "../../components/ui/ContactModal";
 import SEO from "../../components/seo/SEO";
 import { useProductStructuredData } from "../../hooks/useStructuredData";
 import { baseLinkImages, baseLinkFicha } from "../../constants/links";
+import { calculatePriceWithIVA, TAXES } from "../../constants/taxes";
+import RenderIcon from "../../components/ui/RenderIcon";
 import ProductCard from "../../components/ui/ProductCard";
-import RelatedProductsCarousel from "../../components/ui/RelatedProductsCarousel";
 
 const ProductLayout = styled.div`
   display: grid;
@@ -211,6 +211,107 @@ const DescriptionMeta = styled.div`
   margin-bottom: 0.875rem;
   word-break: break-word;
   opacity: 0.8;
+`;
+
+const RelatedSection = styled.div`
+  margin-top: 2.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid
+    ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
+
+  @media (max-width: 768px) {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+  }
+`;
+
+const RelatedTitle = styled.h2`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+`;
+
+const RelatedSliderWrapper = styled.div`
+  position: relative;
+`;
+
+const RelatedTrack = styled.div`
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  padding: 0.25rem 0.25rem 0.75rem;
+  margin: -0.25rem -0.25rem 0;
+
+  /* Ocultar scrollbar (se navega con las flechas o swipe) */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
+`;
+
+const RelatedCardWrapper = styled.div`
+  flex: 0 0 auto;
+  width: 250px;
+  scroll-snap-align: start;
+
+  @media (max-width: 768px) {
+    width: 200px;
+  }
+
+  @media (max-width: 480px) {
+    width: 170px;
+  }
+`;
+
+const RelatedArrowButton = styled.button`
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  ${({ $direction }) => ($direction === "left" ? "left: -18px;" : "right: -18px;")}
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid
+    ${({ theme }) =>
+    theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}30`};
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  opacity: ${({ disabled }) => (disabled ? 0.35 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) => theme.colors.primary};
+    color: #fff;
+    transform: translateY(-50%) scale(1.08);
+  }
+
+  @media (max-width: 768px) {
+    width: 34px;
+    height: 34px;
+    ${({ $direction }) => ($direction === "left" ? "left: -10px;" : "right: -10px;")}
+  }
+
+  @media (max-width: 480px) {
+    /* En mobile se navega con swipe táctil sobre el track */
+    display: none;
+  }
 `;
 
 const DescriptionText = styled.span`
@@ -710,25 +811,6 @@ const SpecItemLabel = styled.span`
   }
 `;
 
-const RelatedSection = styled.section`
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid
-    ${({ theme }) =>
-    theme.mode === "dark" ? `${theme.colors.border}30` : `${theme.colors.border}20`};
-
-  @media (max-width: 768px) {
-    margin-top: 2rem;
-  }
-`;
-
-const RelatedTitle = styled.h2`
-  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
-  margin-bottom: 1.25rem;
-`;
-
 // Componentes para los breadcrumbs
 const BreadcrumbsContainer = styled.nav`
   margin-bottom: 1.5rem;
@@ -1125,7 +1207,13 @@ const DetalleProducto = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loadProductByCodigo, loadProductById, loadProductsForEmpresa, catalogByEmpresa, getRelatedProducts } = useProductCatalog();
+  const {
+    loadProductByCodigo,
+    loadProductById,
+    getRelatedProducts,
+    catalogByEmpresa,
+    loadProductsForEmpresa,
+  } = useProductCatalog();
   const { navigateToHomeByRole, isClient, isVisualizacion } = useAuth();
   const { addToCart, cart } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -1142,11 +1230,6 @@ const DetalleProducto = () => {
   // SEO y datos estructurados
   const structuredData = useProductStructuredData(product);
 
-  const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return getRelatedProducts(product, { limit: 12 });
-  }, [product, getRelatedProducts]);
-
   const resolvedEmpresaId = useMemo(() => {
     if (empresaIdParam) return empresaIdParam;
     const companyFromState = location.state?.empresaId;
@@ -1155,6 +1238,48 @@ const DetalleProducto = () => {
     if (product?.empresa) return product.empresa;
     return null;
   }, [empresaIdParam, location.state, product?.empresaId, product?.empresa]);
+
+  // Asegurar que exista un pool de candidatos para calcular relacionados.
+  // Si el usuario llegó directo por URL (sin pasar por el catálogo), puede no
+  // estar cargado todavía el catálogo de esa empresa en el contexto.
+  useEffect(() => {
+    const empresa = product?.empresaId || resolvedEmpresaId;
+    if (empresa && !catalogByEmpresa[empresa]) {
+      loadProductsForEmpresa(empresa);
+    }
+  }, [product?.empresaId, resolvedEmpresaId, catalogByEmpresa, loadProductsForEmpresa]);
+
+  const relatedProducts = useMemo(
+    () => (product ? getRelatedProducts(product, { limit: 8 }) : []),
+    [product, getRelatedProducts]
+  );
+
+  // --- Slider de productos relacionados (flechas izq/der) ---
+  const relatedTrackRef = useRef(null);
+  const [canScrollRelatedLeft, setCanScrollRelatedLeft] = useState(false);
+  const [canScrollRelatedRight, setCanScrollRelatedRight] = useState(false);
+
+  const updateRelatedScrollButtons = useCallback(() => {
+    const el = relatedTrackRef.current;
+    if (!el) return;
+    setCanScrollRelatedLeft(el.scrollLeft > 4);
+    setCanScrollRelatedRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    // Al cambiar de producto (nueva lista de relacionados), volver el slider
+    // a su posición inicial en vez de arrastrar el scroll del producto anterior.
+    const el = relatedTrackRef.current;
+    if (el) el.scrollLeft = 0;
+    updateRelatedScrollButtons();
+  }, [relatedProducts, updateRelatedScrollButtons]);
+
+  const scrollRelatedTrack = (direction) => {
+    const el = relatedTrackRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({ left: direction * amount, behavior: "smooth" });
+  };
 
   const [isHovering, setIsHovering] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -1169,6 +1294,9 @@ const DetalleProducto = () => {
   const hasFetchedProductRef = useRef(false);
   const quantityIntervalRef = useRef(null);
   const mouseDownExecutedRef = useRef(false);
+  // Referencia al layout del producto, usada solo para ubicar el contenedor
+  // scrolleable real del layout (ver efecto de reset de scroll más abajo)
+  const pageWrapperRef = useRef(null);
 
   // Función para renderizar los breadcrumbs dinámicos según el origen
   const renderBreadcrumbs = () => {
@@ -1239,9 +1367,11 @@ const DetalleProducto = () => {
           active: false,
         });
       } else {
-        // Otro origen - mostrar la ruta
-        const pathParts = prevUrl.split("/").filter((part) => part);
-        const lastPart = pathParts[pathParts.length - 1];
+        // Otro origen - mostrar la ruta (sin el query string, para no
+        // arrastrar un ?prevUrl=... u otros parámetros dentro del label)
+        const pathOnly = prevUrl.split("?")[0];
+        const pathParts = pathOnly.split("/").filter((part) => part);
+        const lastPart = pathParts[pathParts.length - 1] || "Producto";
         breadcrumbs.push({
           label: lastPart.charAt(0).toUpperCase() + lastPart.slice(1),
           onClick: (e) => {
@@ -1453,6 +1583,68 @@ const DetalleProducto = () => {
     setProductNotFound(false);
   }, [id]);
 
+  // Al navegar a un producto distinto (nuevo id en la URL) volver al inicio
+  // de la página, igual que se esperaría de una carga nueva del detalle.
+  // React Router no remonta este componente entre rutas del mismo patrón
+  // (/productos/:empresaId/:id), así que el scroll hay que resetearlo a mano.
+  //
+  // IMPORTANTE: en este proyecto la ventana (window/body) NUNCA hace scroll:
+  // AuthenticatedLayout > MainContent tiene `overflow: hidden`, y el scroll
+  // real ocurre en un <div style={{ overflowY: "auto" }}> interno que envuelve
+  // el <Outlet />. Por eso window.scrollTo(0,0) no tenía ningún efecto.
+  // Acá subimos por el DOM desde nuestro propio layout hasta encontrar ese
+  // contenedor scrolleable real y reseteamos su scrollTop directamente.
+  useEffect(() => {
+    if (window.history && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    const findScrollableAncestor = (node) => {
+      let el = node?.parentElement || null;
+      while (el && el !== document.body) {
+        const { overflowY } = window.getComputedStyle(el);
+        const isScrollable =
+          (overflowY === "auto" || overflowY === "scroll") &&
+          el.scrollHeight > el.clientHeight;
+        if (isScrollable) return el;
+        el = el.parentElement;
+      }
+      return null;
+    };
+
+    const resetScroll = () => {
+      // Contenedor real del layout autenticado (overflowY: auto)
+      const scrollableAncestor = findScrollableAncestor(pageWrapperRef.current);
+      if (scrollableAncestor) {
+        scrollableAncestor.scrollTop = 0;
+      }
+      // Respaldo por si en algún layout (ej. CleanLayout) sí scrollea la ventana
+      window.scrollTo(0, 0);
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    resetScroll();
+    const raf = requestAnimationFrame(resetScroll);
+    const timeout = setTimeout(resetScroll, 50);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeout);
+    };
+  }, [id]);
+
+  // Si la navegación viene de un click en una ProductCard (ej. el slider de
+  // relacionados), React Router ya trae el producto en location.state.
+  // Lo aplicamos de inmediato para que el detalle "se sienta" recargado con
+  // el nuevo producto sin esperar la respuesta del fetch de refresco.
+  useEffect(() => {
+    if (location.state?.product && location.state.product.id !== product?.id) {
+      setProduct(location.state.product);
+    }
+  }, [location.state?.product]);
+
   const resolvedImageSrc = useMemo(() => {
     if (!product?.image) return "";
     const trimmed = product.image.trim();
@@ -1576,14 +1768,6 @@ const DetalleProducto = () => {
       }
     };
   }, []);
-
-  // Asegura que el catálogo completo de la empresa esté disponible para poder
-  // calcular productos relacionados sin hacer una llamada aparte a la API.
-  useEffect(() => {
-    if (resolvedEmpresaId && !catalogByEmpresa[resolvedEmpresaId]) {
-      loadProductsForEmpresa(resolvedEmpresaId);
-    }
-  }, [resolvedEmpresaId, catalogByEmpresa, loadProductsForEmpresa]);
 
   if (loadingProduct || (!product && !productNotFound)) {
     return (
@@ -1786,7 +1970,7 @@ const DetalleProducto = () => {
       />
       <PageContainer style={{ padding: "0 16px" }}>
         {renderBreadcrumbs()}
-        <ProductLayout>
+        <ProductLayout ref={pageWrapperRef}>
           <ImageSection>
             {/* Nombre del producto */}
             <ProductTitle>{product.name}</ProductTitle>
@@ -1997,10 +2181,37 @@ const DetalleProducto = () => {
         {relatedProducts.length > 0 && (
           <RelatedSection>
             <RelatedTitle>Productos relacionados</RelatedTitle>
-            <RelatedProductsCarousel products={relatedProducts} />
+            <RelatedSliderWrapper>
+              <RelatedArrowButton
+                type="button"
+                $direction="left"
+                onClick={() => scrollRelatedTrack(-1)}
+                disabled={!canScrollRelatedLeft}
+                aria-label="Ver productos relacionados anteriores"
+              >
+                <RenderIcon name="FaChevronLeft" size={16} />
+              </RelatedArrowButton>
+
+              <RelatedTrack ref={relatedTrackRef} onScroll={updateRelatedScrollButtons}>
+                {relatedProducts.map((relatedProduct) => (
+                  <RelatedCardWrapper key={relatedProduct.id}>
+                    <ProductCard product={relatedProduct} />
+                  </RelatedCardWrapper>
+                ))}
+              </RelatedTrack>
+
+              <RelatedArrowButton
+                type="button"
+                $direction="right"
+                onClick={() => scrollRelatedTrack(1)}
+                disabled={!canScrollRelatedRight}
+                aria-label="Ver más productos relacionados"
+              >
+                <RenderIcon name="FaChevronRight" size={16} />
+              </RelatedArrowButton>
+            </RelatedSliderWrapper>
           </RelatedSection>
         )}
-
 
         {/* Modal de contacto */}
         <ContactModal
