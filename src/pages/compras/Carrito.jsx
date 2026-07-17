@@ -1267,13 +1267,13 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
         <CartStockText>
           {maxStock === 0
             ? (hasTransitStock
-                ? "Se procesará cuando exista stock"
-                : "Sin Stock")
+              ? "Se procesará cuando exista stock"
+              : "Sin Stock")
             : maxStock > 100
               ? "+100 Unidades Disponibles"
               : `${maxStock} Unidad${maxStock !== 1 ? "es" : ""} Disponible${maxStock !== 1 ? "s" : ""}`}
         </CartStockText>
-        {maxQuantity > 0 && (
+        {maxStock > 0 && (
           <ItemQuantityControl>
             <QuantityButton
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!mouseDownExecutedRef.current) handleQuantityChange(item.id, item.quantity - 1); }}
@@ -1320,7 +1320,7 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
       </ItemDetails>
       <ItemPricing>
         {hasTransitStock ? (
-          <ItemPrice style={{ opacity: 0.6 }}>No incluido en el total</ItemPrice>
+          <ItemPrice >No incluido en el total</ItemPrice>
         ) : (
           <>
             <ItemPrice>${subTotal.toFixed(2)}</ItemPrice>
