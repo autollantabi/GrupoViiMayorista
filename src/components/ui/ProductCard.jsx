@@ -1048,17 +1048,32 @@ const ProductCard = ({
   const cartItem = cart.find((item) => item?.id === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
+  // Info de stock en tránsito (DMA_INVENTARIO puede ser 0 o un objeto {cantidad, dias})
+  const transitStockInfo = product.originalData?.DMA_INVENTARIO;
+  const hasTransitStock =
+    product.stock === 0 &&
+    transitStockInfo != null &&
+    typeof transitStockInfo === "object" &&
+    transitStockInfo.dias != null;
+
+  // Cantidad "disponible" real para calcular para calcular limites de la cantidad
+  // Si hay stock en tránsito y no viene cantidad explícita, usamos 1 como mínimo operable.
+  const availableStock = hasTransitStock
+    ? (transitStockInfo.cantidad ?? 1)
+    : (product.stock || 0);
+
+
   useEffect(() => {
-    const maxAvailable = (product.stock || 0) - quantityInCart;
+    const maxAvailable = availableStock - quantityInCart;
     const clampedMax = Math.max(maxAvailable, 0);
 
     const desiredQuantity =
       quantityInCart > 0
         ? Math.min(quantityInCart, clampedMax > 0 ? quantityInCart : 0)
-        : Math.min(1, clampedMax);
+        : Math.min(1, Math.max(clampedMax, hasTransitStock ? 1 : 0));
 
     setQuantity(desiredQuantity);
-  }, [product.id, product.stock, quantityInCart]);
+  }, [product.id, product.stock, quantityInCart, availableStock, hasTransitStock]);
 
   // Calcular precio con descuento aplicado
   const discountedPrice =
@@ -1125,8 +1140,9 @@ const ProductCard = ({
 
     if (isAddingToCart || restricted) return; // Evitar múltiples clics y productos restringidos
 
-    if (quantityInCart == quantity)
+    if (quantityInCart == quantity){
       return;
+    }
 
     setIsAddingToCart(true);
 
@@ -1152,7 +1168,7 @@ const ProductCard = ({
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    const maxAvailable = (product.stock || 0) - quantityInCart;
+    const maxAvailable = availableStock - quantityInCart;
     if (!isNaN(value) && value > 0 && value <= maxAvailable) {
       setQuantity(value);
     } else if (value > maxAvailable) {
@@ -1169,7 +1185,7 @@ const ProductCard = ({
 
   const increaseQuantity = (e) => {
     e.stopPropagation();
-    const maxAvailable = (product.stock || 0) - quantityInCart;
+    const maxAvailable = availableStock - quantityInCart;
     if (quantity < maxAvailable) {
       setQuantity(quantity + 1);
     } else {
@@ -1250,7 +1266,7 @@ const ProductCard = ({
     <>
       <StyledCard
         $restricted={restricted}
-        $indicadorRecurrencia={product.originalData.DMA_INDICADOR_VENTAS}
+        $indicadorRecurrencia={product.salesIndicator}
       >
         <ImageContainer $restricted={restricted}>
           <MemoizedProductImage
@@ -1269,7 +1285,7 @@ const ProductCard = ({
           {product.discount > 0 && !restricted && (
             <DiscountBadge>-{product.discount}%</DiscountBadge>
           )}
-          {product.originalData?.DMA_INDICADOR_VENTAS > 0 && !restricted && (
+          {product.salesIndicator > 0 && !restricted && (
             <PreviouslyBoughtBadge>Prev. Comprado</PreviouslyBoughtBadge>
           )}
         </ImageContainer>
@@ -1380,7 +1396,6 @@ const ProductCard = ({
               )}
             </Price>
             {(isClient || isSeller) && !isVisualizacion && (() => {
-              const hasTransitStock = product.stock === 0 && product.originalData?.DMA_INVENTARIO?.dias != null;
               const isOutOfStockNoTransit = product.stock === 0 && !hasTransitStock;
               const isMaxInCart = product.stock > 0 && quantityInCart >= product.stock; // el chequeo de máximo solo aplica si hay stock real
               const isDisabled = isAddingToCart || isOutOfStockNoTransit || isMaxInCart;
@@ -1391,12 +1406,12 @@ const ProductCard = ({
                   ? "Stock máximo en carrito"
                   : isAddingToCart
                     ? "Agregando..."
-                    : quantityInCart > 0 && !isButtonHovered
+                    : !hasTransitStock && quantityInCart > 0 && !isButtonHovered
                       ? `${quantityInCart} en carrito`
                       : hasTransitStock
                         ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '2px', padding: '4px 0' }}>
-                            <span style={{ fontWeight: '600' }}>Agregar</span>
+                            <span style={{ fontWeight: '600' }}> {quantityInCart > 0 ? 'Agregado' : 'Agregar'} </span>
                             <span style={{ fontSize: '11px', fontWeight: '400', opacity: 0.9 }}>
                               Disponible en {product.originalData.DMA_INVENTARIO.dias} días
                             </span>
@@ -1451,6 +1466,7 @@ export default memo(ProductCard, (prevProps, nextProps) => {
     prevProps.product?.stock === nextProps.product?.stock &&
     prevProps.product?.price === nextProps.product?.price &&
     prevProps.product?.discount === nextProps.product?.discount &&
+    prevProps.product?.salesIndicator === nextProps.product?.salesIndicator &&
     prevProps.product?.originalData?.DMA_INVENTARIO?.dias === nextProps.product?.originalData?.DMA_INVENTARIO?.dias
   );
 });
