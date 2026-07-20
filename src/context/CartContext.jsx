@@ -21,6 +21,16 @@ import { baseLinkImages } from "../constants/links";
 import { toast } from "react-toastify";
 
 const CartContext = createContext();
+
+/**
+ * Normaliza la data cruda de un producto (venga de getProductByCodigo, del
+ * catálogo, del carrito unificado, etc.) a un formato consistente.
+ *
+ * El backend agrega `DMA_INVENTARIO` de forma confiable en TODOS los endpoints
+ * de producto (catálogo y detalle por código) vía `agregarInventarioFuturoAProductos`,
+ * así que aquí se resuelve directamente hasTransitStock/transitQuantity sin
+ * necesitar cruzar contra el catálogo cargado en memoria.
+ */
 const normalizeProductData = (data) => {
   if (!data) return null;
 
@@ -46,6 +56,14 @@ const normalizeProductData = (data) => {
   const rawStock = combined.DMA_STOCK || combined.STOCK || combined.stock || combined.DMA_EXISTENCIA || combined.QUANTITY_AVAILABLE || 0;
   const stock = !isNaN(parseInt(rawStock)) ? parseInt(rawStock) : 0;
 
+  // Stock en tránsito: DMA_INVENTARIO viene como 0 (sin tránsito) o como
+  // objeto { cantidad, dias } cuando el backend encontró inventario futuro
+  // (a 30/60/90 días) para un producto sin stock actual.
+  const rawTransit = combined.DMA_INVENTARIO;
+  const isTransitObject = rawTransit != null && typeof rawTransit === "object";
+  const hasTransitStock = stock === 0 && isTransitObject && rawTransit.dias != null;
+  const transitQuantity = hasTransitStock ? (parseInt(rawTransit.cantidad) || 0) : 0;
+
   // Código de Barras: VITAL para B2B Price Map
   const codigoBarras = combined.DMA_CODIGOBARRAS || combined.BARCODE || combined.CODIGO_BARRAS || combined.barcode || combined.EAN || combined.UPC || combined.id || null;
 
@@ -59,6 +77,8 @@ const normalizeProductData = (data) => {
     brand,
     price,
     stock,
+    hasTransitStock,
+    transitQuantity,
     codigoBarras,
     lineaNegocio
   };
@@ -79,9 +99,13 @@ export function CartProvider({ children }) {
   const sellerCartClientAccountRef = useRef({}); // Ref para ACCOUNT_USER del cliente por empresa
   const [selectedClientName, setSelectedClientName] = useState(""); // Nombre del cliente seleccionado para vendedores
   const hasRecoveredSellerCartRef = useRef(false);
+  // Ref con el carrito actual, para poder reutilizar items ya enriquecidos
+  // (name/price/stock/hasTransitStock/etc.) sin volver a llamar
+  // api_products_getProductByCodigo cuando ya conocemos esos datos localmente.
+  const cartRef = useRef(cart);
+  useEffect(() => { cartRef.current = cart; }, [cart]);
 
   const { user, isClient, isSeller, isB2CSeller, isB2BSeller, isVisualizacion } = useAuth();
-
 
   // Hidratar los refs del vendedor desde sessionStorage al montar
   // Necesario porque StrictMode desmonta y remonta CartProvider, borrando los refs
@@ -125,13 +149,17 @@ export function CartProvider({ children }) {
     const extraTotalDiscount = offerData?.total || 0;
 
     Object.entries(grouped).forEach(([company, items]) => {
+      // Los productos con stock en tránsito ingresan como "oferta de venta":
+      // no se contabilizan en el total (se procesan aparte cuando llegue el stock real).
+      const billableItems = items.filter((item) => !item.hasTransitStock);
+
       // 1. Subtotal sin descuentos
-      const rawSubtotal = items.reduce(
+      const rawSubtotal = billableItems.reduce(
         (acc, item) => acc + item.price * item.quantity,
         0
       );
       // 2. Total de descuentos promocionales (por producto) + descuentos extra de la oferta
-      const totalPromotionalAndExtraProductDiscount = items.reduce(
+      const totalPromotionalAndExtraProductDiscount = billableItems.reduce(
         (acc, item) => {
           const promoPct = (Number(item.promotionalDiscount) || 0);
           const extraPct = (Number(extraProductDiscounts[item.id]) || 0);
@@ -162,7 +190,7 @@ export function CartProvider({ children }) {
       const subtotalFinalConDescuentoTotal = subtotalAfterAditional - totalDiscountValue;
 
       // 6.2 Calcular ecovalor
-      const totalEcovalor = items.reduce((acc, item) => {
+      const totalEcovalor = billableItems.reduce((acc, item) => {
         let ecovalorUnit = 0;
         const linea = (item.lineaNegocio || "").toUpperCase();
         if (linea === "LLANTAS") {
@@ -235,6 +263,22 @@ export function CartProvider({ children }) {
               cartData.CABECERA.ID_SHOPPING_CART_HEADER;
 
             const cartItemsPromises = cartData.DETALLE.map(async (item) => {
+              // Si ya conocemos este producto localmente (ej. addToCart ya lo enriqueció
+              // hace un momento y solo estamos esperando el idShoppingCartDetail del
+              // backend), reutilizamos esos datos en vez de volver a golpear la API.
+              // Esto es lo que evita la doble llamada a api_products_getProductByCodigo
+              // justo después de agregar un producto al carrito.
+              const existingItem = cartRef.current.find(
+                (ci) => ci.id === item.PRODUCT_CODE && ci.empresaId === enterprise
+              );
+              if (existingItem && existingItem.name) {
+                return {
+                  ...existingItem,
+                  idShoppingCartDetail: item.ID_SHOPPING_CART_DETAIL,
+                  quantity: item.QUANTITY, // el backend es la fuente de verdad para la cantidad
+                };
+              }
+
               try {
                 const productResponse = await api_products_getProductByCodigo(
                   item.PRODUCT_CODE,
@@ -243,20 +287,24 @@ export function CartProvider({ children }) {
 
                 if (productResponse.success && productResponse.data) {
                   const product = productResponse.data;
+                  const normalized = normalizeProductData(product);
+                  const stock = normalized.stock || product.DMA_STOCK || 0;
 
                   return {
                     id: item.PRODUCT_CODE,
                     idShoppingCartDetail: item.ID_SHOPPING_CART_DETAIL,
                     quantity: item.QUANTITY,
-                    price: product.DMA_COSTO || 0,
-                    name: product.DMA_NOMBREITEM || item.PRODUCT_CODE,
-                    image: product.DMA_RUTAIMAGEN || "",
+                    price: normalized.price || product.DMA_COSTO || 0,
+                    name: normalized.name || product.DMA_NOMBREITEM || item.PRODUCT_CODE,
+                    image: normalized.image || product.DMA_RUTAIMAGEN || "",
                     empresaId: enterprise,
-                    stock: product.DMA_STOCK || 0,
-                    brand: product.DMA_MARCA || "Sin marca",
+                    stock,
+                    hasTransitStock: normalized.hasTransitStock,
+                    transitQuantity: normalized.transitQuantity,
+                    brand: normalized.brand || product.DMA_MARCA || "Sin marca",
                     discount: product.DMA_DESCUENTO_PROMOCIONAL || 0,
                     iva: TAXES.IVA_PERCENTAGE,
-                    lineaNegocio: product.DMA_LINEANEGOCIO || "DEFAULT",
+                    lineaNegocio: normalized.lineaNegocio || product.DMA_LINEANEGOCIO || "DEFAULT",
                   };
                 }
 
@@ -269,6 +317,8 @@ export function CartProvider({ children }) {
                   image: "",
                   empresaId: enterprise,
                   stock: 0,
+                  hasTransitStock: false,
+                  transitQuantity: 0,
                   brand: "Sin marca",
                   discount: 0,
                   iva: TAXES.IVA_PERCENTAGE,
@@ -287,6 +337,8 @@ export function CartProvider({ children }) {
                   image: "",
                   empresaId: enterprise,
                   stock: 0,
+                  hasTransitStock: false,
+                  transitQuantity: 0,
                   brand: "Sin marca",
                   discount: 0,
                   iva: TAXES.IVA_PERCENTAGE,
@@ -575,6 +627,7 @@ export function CartProvider({ children }) {
       if (productResponse.success && productResponse.data) {
         const apiProduct = productResponse.data;
         const normalized = normalizeProductData(apiProduct);
+        const stock = normalized.stock || product.stock || 0;
 
         productData = {
           id: product.id,
@@ -585,7 +638,9 @@ export function CartProvider({ children }) {
             : (normalized.price ?? product.price ?? 0),
           image: normalized.image || product.image,
           empresaId: enterprise,
-          stock: normalized.stock || product.stock || 0,
+          stock,
+          hasTransitStock: normalized.hasTransitStock,
+          transitQuantity: normalized.transitQuantity,
           brand: normalized.brand || product.brand || "Sin marca",
           iva: product.iva || TAXES.IVA_PERCENTAGE,
           promotionalDiscount:
@@ -606,33 +661,34 @@ export function CartProvider({ children }) {
         quantity: quantity,
       };
 
-
       setCart((prevCart) => {
-        // Buscar si el producto ya está en el carrito
-        // Usar empresaId + id para identificar correctamente el mismo producto
         const existingProductIndex = prevCart.findIndex(
           (item) =>
             item.id === dataToSave.id && item.empresaId === dataToSave.empresaId
         );
 
+        // Stock "efectivo" contra el cual validamos: si es solo tránsito,
+        // usamos la cantidad en tránsito; si no, el stock real.
+        const effectiveAvailable = dataToSave.hasTransitStock
+          ? dataToSave.transitQuantity
+          : (dataToSave.stock || 0);
+
         let newCart;
         if (existingProductIndex >= 0) {
           const currentItem = prevCart[existingProductIndex];
           const totalRequested = quantity;
-          const availableStock = productData.stock || 0;
 
-          // Validar contra stock
           let finalQuantity = totalRequested;
-          if (totalRequested > availableStock) {
-            finalQuantity = availableStock;
-            console.warn(`⚠️ Cantidad limitada al stock disponible (${availableStock}) para el producto ${dataToSave.id}`);
-            toast.warn(`Solo hay ${availableStock} unidades disponibles. Se ha ajustado la cantidad en el carrito.`);
+          if (totalRequested > effectiveAvailable) {
+            finalQuantity = effectiveAvailable;
+            if (!dataToSave.hasTransitStock) {
+              console.warn(`⚠️ Cantidad limitada al stock disponible (${effectiveAvailable}) para el producto ${dataToSave.id}`);
+              toast.warn(`Solo hay ${effectiveAvailable} unidades disponibles. Se ha ajustado la cantidad en el carrito.`);
+            }
+            // Si es stock en tránsito, se ajusta silenciosamente (sin toast de advertencia)
           }
 
-          // Si el producto ya existe, crear una nueva copia del carrito
           const updatedCart = [...prevCart];
-          // Actualizar la cantidad y también refrescar los datos del producto
-          // Mantener idShoppingCartDetail si ya existe
           updatedCart[existingProductIndex] = {
             ...dataToSave,
             idShoppingCartDetail: currentItem.idShoppingCartDetail,
@@ -640,13 +696,14 @@ export function CartProvider({ children }) {
           };
           newCart = updatedCart;
         } else {
-          // Si es un producto nuevo, validar stock inicial
-          const availableStock = dataToSave.stock || 0;
-          if (quantity > availableStock) {
-            dataToSave.quantity = availableStock;
-            toast.warn(`Solo hay ${availableStock} unidades disponibles. Se ha ajustado la cantidad.`);
+          let finalQuantity = quantity;
+          if (quantity > effectiveAvailable) {
+            finalQuantity = effectiveAvailable;
+            if (!dataToSave.hasTransitStock) {
+              toast.warn(`Solo hay ${effectiveAvailable} unidades disponibles. Se ha ajustado la cantidad.`);
+            }
           }
-          newCart = [...prevCart, dataToSave];
+          newCart = [...prevCart, { ...dataToSave, quantity: finalQuantity }];
         }
 
         return newCart;
@@ -659,7 +716,14 @@ export function CartProvider({ children }) {
     } catch (error) {
       console.error("❌ Error al obtener información del producto:", error);
 
-      // En caso de error, usar los datos del producto disponibles
+      // Fallback total: usamos lo que ya traía `product` (incluye originalData,
+      // que trae DMA_INVENTARIO si `product` vino del catálogo).
+      const stock = product.stock || 0;
+      const rawTransit = product.originalData?.DMA_INVENTARIO;
+      const isTransitObject = rawTransit != null && typeof rawTransit === "object";
+      const hasTransitStock = stock === 0 && isTransitObject && rawTransit.dias != null;
+      const transitQuantity = hasTransitStock ? (parseInt(rawTransit.cantidad) || 0) : 0;
+
       const dataToSave = {
         id: product.id,
         name: product.name,
@@ -667,7 +731,9 @@ export function CartProvider({ children }) {
         price: product.price,
         image: product.image,
         empresaId: product.empresaId,
-        stock: product.stock || 0,
+        stock,
+        hasTransitStock,
+        transitQuantity,
         quantity: quantity,
         brand: product.brand || "Sin marca",
         iva: product.iva || TAXES.IVA_PERCENTAGE,
@@ -676,42 +742,41 @@ export function CartProvider({ children }) {
         codigoBarras: product.codigoBarras || product.barcode || null,
       };
 
-
       setCart((prevCart) => {
-        // Buscar si el producto ya está en el carrito
-        // Usar empresaId + id para identificar correctamente el mismo producto
         const existingProductIndex = prevCart.findIndex(
           (item) =>
             item.id === dataToSave.id && item.empresaId === dataToSave.empresaId
         );
 
+        const effectiveAvailable = dataToSave.hasTransitStock
+          ? dataToSave.transitQuantity
+          : (dataToSave.stock || 0);
+
         let newCart;
         if (existingProductIndex >= 0) {
           const totalRequested = quantity;
-          const availableStock = dataToSave.stock || 0;
 
           let finalQuantity = totalRequested;
-          if (totalRequested > availableStock) {
-            finalQuantity = availableStock;
-            toast.warn(`Stock insuficiente. Cantidad ajustada a ${availableStock}.`);
+          if (totalRequested > effectiveAvailable) {
+            finalQuantity = effectiveAvailable;
+            if (!dataToSave.hasTransitStock) {
+              toast.warn(`Stock insuficiente. Cantidad ajustada a ${effectiveAvailable}.`);
+            }
           }
 
-          // Si el producto ya existe, crear una nueva copia del carrito
           const updatedCart = [...prevCart];
-          // Actualizar solo la cantidad del producto existente
-          // Mantener idShoppingCartDetail si ya existe
           updatedCart[existingProductIndex] = {
             ...updatedCart[existingProductIndex],
             quantity: finalQuantity,
           };
           newCart = updatedCart;
         } else {
-          // Si es un producto nuevo, añadirlo al carrito
-          const availableStock = dataToSave.stock || 0;
           let finalQuantity = quantity;
-          if (quantity > availableStock) {
-            finalQuantity = availableStock;
-            toast.warn(`Stock insuficiente. Cantidad ajustada a ${availableStock}.`);
+          if (quantity > effectiveAvailable) {
+            finalQuantity = effectiveAvailable;
+            if (!dataToSave.hasTransitStock) {
+              toast.warn(`Stock insuficiente. Cantidad ajustada a ${effectiveAvailable}.`);
+            }
           }
           newCart = [...prevCart, { ...dataToSave, quantity: finalQuantity }];
         }
@@ -773,13 +838,17 @@ export function CartProvider({ children }) {
     setCart((prevCart) => {
       updatedCart = prevCart.map((item) => {
         if (item.id === productId) {
-          const availableStock = item.stock || 0;
+          const availableStock = item.hasTransitStock
+            ? (item.transitQuantity || 0)
+            : (item.stock || 0);
           let finalQuantity = newQuantity;
 
           // IMPORTANTE: solo restringir si el stock es conocido (> 0).
           if (availableStock > 0 && newQuantity > availableStock) {
             finalQuantity = availableStock;
-            toast.warn(`Solo hay ${availableStock} unidades disponibles.`);
+            if (!item.hasTransitStock) {
+              toast.warn(`Solo hay ${availableStock} unidades disponibles.`);
+            }
           }
 
           return { ...item, quantity: finalQuantity };
@@ -944,6 +1013,19 @@ export function CartProvider({ children }) {
     if (!Array.isArray(details) || details.length === 0) return;
 
     const cartItemsPromises = details.map(async (detail) => {
+      // Si ya conocemos este producto localmente (ej. addToCart ya lo enriqueció),
+      // reutilizamos esos datos en vez de volver a golpear la API o re-normalizar.
+      const existingItem = cartRef.current.find(
+        (ci) => ci.id === detail.PRODUCT_CODE && ci.empresaId === enterprise
+      );
+      if (existingItem && existingItem.name) {
+        return {
+          ...existingItem,
+          idShoppingCartDetail: detail.ID_SHOPPING_CART_DETAIL,
+          quantity: detail.QUANTITY,
+        };
+      }
+
       try {
         let normalized = null;
 
@@ -972,13 +1054,14 @@ export function CartProvider({ children }) {
             image: normalized.image,
             empresaId: enterprise,
             stock: normalized.stock,
+            hasTransitStock: normalized.hasTransitStock,
+            transitQuantity: normalized.transitQuantity,
+            codigoBarras: normalized.codigoBarras,
             brand: normalized.brand,
             discount: detail.PROMOTIONAL_DISCOUNT || detail.DISCOUNT || 0,
             iva: TAXES.IVA_PERCENTAGE,
             lineaNegocio: normalized.lineaNegocio,
-            codigoBarras: normalized.codigoBarras,
           };
-
 
           return mappedItem;
         }
@@ -993,6 +1076,8 @@ export function CartProvider({ children }) {
         image: "",
         empresaId: enterprise,
         stock: 0,
+        hasTransitStock: false,
+        transitQuantity: 0,
         brand: "Sin marca",
         discount: 0,
         iva: TAXES.IVA_PERCENTAGE,
@@ -1051,7 +1136,7 @@ export function CartProvider({ children }) {
           try {
             // Normalizar el item (que ya incluye el MAESTRO con DMA_STOCK y demás info)
             const normalized = normalizeProductData(item);
-            
+
             if (normalized) {
               return {
                 id: item.PRODUCT_CODE,
@@ -1061,7 +1146,9 @@ export function CartProvider({ children }) {
                 name: normalized.name || item.PRODUCT_CODE,
                 image: normalized.image || "",
                 empresaId: enterprise,
-                stock: normalized.stock || 0, // normalizeProductData ya prioriza DMA_STOCK
+                stock: normalized.stock || 0,
+                hasTransitStock: normalized.hasTransitStock,
+                transitQuantity: normalized.transitQuantity,
                 brand: normalized.brand || "Sin marca",
                 discount: item.PROMOTIONAL_DISCOUNT || 0,
                 iva: TAXES.IVA_PERCENTAGE,

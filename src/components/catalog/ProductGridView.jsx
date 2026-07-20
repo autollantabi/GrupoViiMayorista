@@ -812,6 +812,10 @@ const ProductGridView = ({
         case "name_asc":
           filtered.sort((a, b) => a.name.localeCompare(b.name));
           break;
+        case "on_sale":
+          // "En oferta": solo productos con descuento aplicado
+          filtered = filtered.filter((product) => product.discount > 0);
+          break;
         default:
           // No hacer nada, mantener el orden que viene de la API
           break;
@@ -1136,13 +1140,13 @@ const ProductGridView = ({
           </ProductsInfo>
 
           {/* Solo mostrar el selector de ordenación si hay productos */}
-          {processedProducts && processedProducts.items.length > 0 && (
+          {products && products.length > 0 && (
             <SelectsContainer>
               <Select
                 options={[
-                  { value: "default", label: "Destacados" },
-                  { value: "clasificacion_indice", label: "Más Vendidos" },
+                  { value: "default", label: "Todos" },
                   { value: "recurrencia", label: "Mis favoritos" },
+                  { value: "on_sale", label: "En oferta" },
                   { value: "name_asc", label: "Alfabético (A-Z)" },
                 ]}
                 value={sortBy}
@@ -1214,32 +1218,43 @@ const ProductGridView = ({
             </PaginationContainerTop>
           )}
 
-        <ProductsGrid>
-          {processedProducts.items.map((product, index) => (
-            <div
-              key={`${product.empresaId}-${product.id}-${index}`}
-              data-product-id={product.id}
-            >
-              <ProductCard
-                product={product}
-                lineConfig={
-                  PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
-                  PRODUCT_LINE_CONFIG.DEFAULT
-                }
-                restricted={false}
-                onRequestAccess={handleRequestAccess}
-                // Pasar información de catálogo para preservar contexto
-                currentFilters={{
-                  selectedLinea,
-                  selectedValues,
-                }}
-                currentSearch={catalogSearch}
-                currentSort={sortBy}
-                onClick={() => handleProductClick(product)}
-              />
-            </div>
-          ))}
-        </ProductsGrid>
+        {processedProducts.items.length === 0 ? (
+          <NoResultsContainer>
+            <NoResultsIcon>🔍</NoResultsIcon>
+            <NoResultsTitle>Sin resultados para este filtro</NoResultsTitle>
+            <NoResultsText>
+              No hay productos que cumplan con el filtro seleccionado. Prueba
+              cambiando el filtro de ordenamiento o el de stock.
+            </NoResultsText>
+          </NoResultsContainer>
+        ) : (
+          <ProductsGrid>
+            {processedProducts.items.map((product, index) => (
+              <div
+                key={`${product.empresaId}-${product.id}-${index}`}
+                data-product-id={product.id}
+              >
+                <ProductCard
+                  product={product}
+                  lineConfig={
+                    PRODUCT_LINE_CONFIG[product.lineaNegocio] ||
+                    PRODUCT_LINE_CONFIG.DEFAULT
+                  }
+                  restricted={false}
+                  onRequestAccess={handleRequestAccess}
+                  // Pasar información de catálogo para preservar contexto
+                  currentFilters={{
+                    selectedLinea,
+                    selectedValues,
+                  }}
+                  currentSearch={catalogSearch}
+                  currentSort={sortBy}
+                  onClick={() => handleProductClick(product)}
+                />
+              </div>
+            ))}
+          </ProductsGrid>
+        )}
 
         {/* Paginación */}
         {processedProducts &&

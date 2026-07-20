@@ -1189,6 +1189,8 @@ MemoizedProductImage.displayName = "MemoizedProductImage";
 
 const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate, extraDiscount = 0, isB2BSeller = false }) => {
   const maxStock = item?.stock || 0;
+  const hasTransitStock = !!item?.hasTransitStock;
+  const transitQuantity = item?.transitQuantity || 0;
   const quantityIntervalRef = useRef(null);
   const currentQuantityRef = useRef(item.quantity);
   const mouseDownExecutedRef = useRef(false);
@@ -1200,7 +1202,9 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
   const discountedPrice = item.price * (1 - totalDiscountPct);
   const priceWithIVA = calculatePriceWithIVA(discountedPrice, item.iva || TAXES.IVA_PERCENTAGE);
   const subTotal = priceWithIVA * item.quantity;
-  const maxQuantity = maxStock || 0;
+  // Si el producto solo tiene stock en tránsito, el límite de cantidad pasa a ser
+  // transitQuantity (no 0), para no dejar el selector inutilizable.
+  const maxQuantity = hasTransitStock ? transitQuantity : maxStock;
 
   const handleItemClick = () => {
     navigate(`/productos/${encodeURIComponent(item.empresaId || "")}/${item.id}`, {
@@ -1262,7 +1266,9 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
         <ItemBrand>{item?.brand}</ItemBrand>
         <CartStockText>
           {maxStock === 0
-            ? "Sin Stock"
+            ? (hasTransitStock
+              ? "Se procesará cuando exista stock"
+              : "Sin Stock")
             : maxStock > 100
               ? "+100 Unidades Disponibles"
               : `${maxStock} Unidad${maxStock !== 1 ? "es" : ""} Disponible${maxStock !== 1 ? "s" : ""}`}
@@ -1313,13 +1319,19 @@ const CartItem = ({ item, handleQuantityChange, removeFromCart, theme, navigate,
         )}
       </ItemDetails>
       <ItemPricing>
-        <ItemPrice>${subTotal.toFixed(2)}</ItemPrice>
-        {(promoDiscount > 0 || extraDiscount > 0) && (
-          <ItemPrice $subtotal>
-            ${calculatePriceWithIVA(item.price * item.quantity, item.iva || TAXES.IVA_PERCENTAGE).toFixed(2)}
-          </ItemPrice>
+        {hasTransitStock ? (
+          <ItemPrice >No incluido en el total</ItemPrice>
+        ) : (
+          <>
+            <ItemPrice>${subTotal.toFixed(2)}</ItemPrice>
+            {(promoDiscount > 0 || extraDiscount > 0) && (
+              <ItemPrice $subtotal>
+                ${calculatePriceWithIVA(item.price * item.quantity, item.iva || TAXES.IVA_PERCENTAGE).toFixed(2)}
+              </ItemPrice>
+            )}
+            <IvaLabel style={{ textAlign: "right", marginTop: 0 }}>IVA Incl.</IvaLabel>
+          </>
         )}
-        <IvaLabel style={{ textAlign: "right", marginTop: 0 }}>IVA Incl.</IvaLabel>
         {!isB2BSeller && (
           <Button
             onClick={() => removeFromCart(item.id, item.empresaId)}
@@ -1468,7 +1480,11 @@ const Carrito = () => {
     const extraTotalDiscountPct = offerData?.total || 0;
     const preview = offerData?.previews?.[company];
 
-    const totals = lineData.items.map((item) => {
+    // Los productos con solo stock en tránsito ingresan como "oferta de venta":
+    // no se contabilizan en el total porque se procesan aparte cuando llegue el stock real.
+    const billableItems = lineData.items.filter((item) => !item.hasTransitStock);
+
+    const totals = billableItems.map((item) => {
       const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
       const extraDiscount = extraProductDiscounts[item.id] || 0;
       const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
@@ -1495,7 +1511,7 @@ const Carrito = () => {
     const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
     let groupEcovalor = 0;
-    lineData.items.forEach(item => {
+    billableItems.forEach(item => {
       const l = (item.lineaNegocio || "").toUpperCase();
       if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
       else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
@@ -1517,7 +1533,10 @@ const Carrito = () => {
     const extraTotalDiscountPct = offerData?.total || 0;
     const preview = offerData?.previews?.[company];
 
-    const itemsWithIVA = lineData.items.map((item) => {
+    // Solo los productos con stock real entran al cálculo monetario del pedido.
+    const billableItems = lineData.items.filter((item) => !item.hasTransitStock);
+
+    const itemsWithIVA = billableItems.map((item) => {
       const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
       const extraDiscount = extraProductDiscounts[item.id] || 0;
       const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
@@ -1546,7 +1565,7 @@ const Carrito = () => {
     const totalConIvaSinEcovalor = subtotalFinalWithIVA - totalExtraDiscountValue;
 
     let groupEcovalor = 0;
-    lineData.items.forEach(item => {
+    billableItems.forEach(item => {
       const l = (item.lineaNegocio || "").toUpperCase();
       if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
       else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;
@@ -1560,6 +1579,9 @@ const Carrito = () => {
       accountUser = stored.clientAccounts?.[company] || user.ACCOUNT_USER;
     }
 
+    // IMPORTANTE: aquí sí van TODOS los productos (billables + en tránsito),
+    // porque el pedido debe registrar la totalidad de lo solicitado; el backend
+    // es quien procesa/asigna bodega para los que tienen stock en tránsito.
     const productsToProcess = lineData.items.map((item) => {
       const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
       const productData = {
@@ -1866,8 +1888,11 @@ const Carrito = () => {
       }
       grouped[company].items.push(item);
       grouped[company].lines[displayLine].items.push(item);
-      grouped[company].total += item.price * item.quantity;
-      grouped[company].lines[displayLine].total += item.price * item.quantity;
+      // Los items en tránsito no suman al total mostrado/cobrado
+      if (!item.hasTransitStock) {
+        grouped[company].total += item.price * item.quantity;
+        grouped[company].lines[displayLine].total += item.price * item.quantity;
+      }
     });
 
     Object.keys(grouped).forEach(company => {
@@ -2368,7 +2393,10 @@ const Carrito = () => {
               const extraTotalDiscountPct = offerData?.total || 0;
               const preview = offerData?.previews?.[selectedCompany];
 
-              const itemsWithIVA = lineData.items.map(item => {
+              // Los productos con solo stock en tránsito no se contabilizan en el resumen.
+              const billableItems = lineData.items.filter((item) => !item.hasTransitStock);
+
+              const itemsWithIVA = billableItems.map(item => {
                 const productSapDiscount = preview?.DESCUENTOS_PRODUCTOS?.find(p => p.PRODUCT_CODE === item.id)?.DISCOUNT_PRODUCTO_SAP || 0;
                 const extraDiscount = extraProductDiscounts[item.id] || 0;
                 const promoDiscount = (Number(item.promotionalDiscount) || 0) + productSapDiscount;
@@ -2404,7 +2432,7 @@ const Carrito = () => {
               const totalExtraDiscountValue = subtotalFinalWithIVA * (extraTotalDiscountPct / 100);
 
               let groupEcovalor = 0;
-              lineData.items.forEach(item => {
+              billableItems.forEach(item => {
                 const l = (item.lineaNegocio || "").toUpperCase();
                 if (l === "LLANTAS") groupEcovalor += item.quantity * 1;
                 else if (l === "LLANTAS MOTO") groupEcovalor += item.quantity * 0.5;

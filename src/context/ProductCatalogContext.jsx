@@ -204,6 +204,7 @@ export const ProductCatalogProvider = ({ children }) => {
         codigoBarras: normalizedItem.DMA_CODIGOBARRAS || item.barcode,
         lineaNegocio: normalizedItem.DMA_LINEANEGOCIO,
         originalData: normalizedItem,
+        salesIndicator: parseInt(normalizedItem.DMA_INDICADOR_VENTAS ?? item.indicadorVentas) || 0,
       };
     } catch (error) {
       console.error("Error mapping product:", error, item);
@@ -521,19 +522,39 @@ export const ProductCatalogProvider = ({ children }) => {
     }, []);
   }, [catalogByEmpresa]);
 
-  
+
   /**
- * Productos relacionados a uno dado, sin hacer fetch (opera sobre catalogByEmpresa
- * ya cargado). Prioridad de relevancia:
- *   1) Misma medida+rin (DMA_MEDIDARIN) o al menos misma medida (DMA_MEDIDA)
- *   2) Misma marca (DMA_MARCA)
- *   3) Misma categoría/segmento
- * Además, si el producto candidato fue comprado antes por el cliente
- * (DMA_INDICADOR_VENTAS > 0), se suma un boost de relevancia.
- *
- * Requiere que catalogByEmpresa[empresa] ya esté cargado
- * (llamar loadProductsForEmpresa antes si hace falta).
- */
+   * Productos relacionados a uno dado, sin hacer fetch (opera sobre catalogByEmpresa
+   * ya cargado).
+   *
+   * LLANTAS (implementado): prioridad de relevancia, en este orden:
+   *   1) Misma marca (DMA_MARCA)
+   *   2) Misma medida (DMA_MEDIDA, ej. "155/70")
+   *   3) Mismo rin (DMA_RIN, ej. 12)
+   *
+   * LUBRICANTES (implementado): prioridad de relevancia, en este orden:
+   *   1) Misma marca (DMA_MARCA, ej. PENNZOIL, SHELL)
+   *   2) Mismo modelo/familia (DMA_MODELO, ej. HELIX, GADUS, OMALA)
+   *   3) Mismo tipo/variante exacta (DMA_TIPO, ej. "HELIX HX7")
+   *   4) Misma aplicación (DMA_APLICACION, ej. AUTOMOTRIZ GASOLINA) como
+   *      respaldo cuando no coincide el modelo (útil para cross-brand)
+   *   5) Misma clase (DMA_CLASE: mineral/sintético/semisintético) como
+   *      desempate menor
+   *
+   * Los pesos usan una escala 10x entre criterios para que el orden se respete
+   * siempre (coincidir en marca pesa más que coincidir en medida+rin combinados,
+   * y así sucesivamente), y luego se suman coincidencias de categoría/segmento
+   * (llantas) o clase (lubricantes) como desempate menor dentro de un mismo nivel.
+   *
+   * Otras líneas de negocio: aproximación básica por marca/categoría/segmento,
+   * pendiente de definir criterios propios si se necesita.
+   *
+   * Además, si el producto candidato fue comprado antes por el cliente
+   * (DMA_INDICADOR_VENTAS > 0), se suma un boost de relevancia.
+   *
+   * Requiere que catalogByEmpresa[empresa] ya esté cargado
+   * (llamar loadProductsForEmpresa antes si hace falta).
+   */
   const getRelatedProducts = useCallback((product, { limit = 12 } = {}) => {
 
     if (!product) return [];
@@ -544,11 +565,15 @@ export const ProductCatalogProvider = ({ children }) => {
 
     const baseData = product.originalData || {};
     const baseLinea = (product.lineaNegocio || baseData.DMA_LINEANEGOCIO || "").toUpperCase();
-    const baseMedidaRin = (baseData.DMA_MEDIDARIN || "").toString().trim().toUpperCase();
-    const baseMedida = (baseData.DMA_MEDIDA || "").toString().trim().toUpperCase();
     const baseBrand = (product.brand || baseData.DMA_MARCA || "").toString().trim().toUpperCase();
+    const baseMedida = (baseData.DMA_MEDIDA || "").toString().trim().toUpperCase();
+    const baseRin = (baseData.DMA_RIN ?? "").toString().trim().toUpperCase();
     const baseCategoria = (baseData.DMA_CATEGORIA || "").toString().trim().toUpperCase();
     const baseSegmento = (baseData.DMA_SEGMENTO || "").toString().trim().toUpperCase();
+    const baseModelo = (baseData.DMA_MODELO || "").toString().trim().toUpperCase();
+    const baseTipo = (baseData.DMA_TIPO || "").toString().trim().toUpperCase();
+    const baseAplicacion = (baseData.DMA_APLICACION || "").toString().trim().toUpperCase();
+    const baseClase = (baseData.DMA_CLASE || "").toString().trim().toUpperCase();
 
     const scored = pool.reduce((acc, candidate) => {
       if (!candidate || candidate.id === product.id) return acc;
@@ -559,41 +584,85 @@ export const ProductCatalogProvider = ({ children }) => {
       // Solo se consideran relacionados productos de la misma línea de negocio
       if (baseLinea && candLinea !== baseLinea) return acc;
 
-      const candMedidaRin = (candData.DMA_MEDIDARIN || "").toString().trim().toUpperCase();
-      const candMedida = (candData.DMA_MEDIDA || "").toString().trim().toUpperCase();
       const candBrand = (candidate.brand || candData.DMA_MARCA || "").toString().trim().toUpperCase();
+      const candMedida = (candData.DMA_MEDIDA || "").toString().trim().toUpperCase();
+      const candRin = (candData.DMA_RIN ?? "").toString().trim().toUpperCase();
       const candCategoria = (candData.DMA_CATEGORIA || "").toString().trim().toUpperCase();
       const candSegmento = (candData.DMA_SEGMENTO || "").toString().trim().toUpperCase();
+      const candModelo = (candData.DMA_MODELO || "").toString().trim().toUpperCase();
+      const candTipo = (candData.DMA_TIPO || "").toString().trim().toUpperCase();
+      const candAplicacion = (candData.DMA_APLICACION || "").toString().trim().toUpperCase();
+      const candClase = (candData.DMA_CLASE || "").toString().trim().toUpperCase();
 
       let score = 0;
 
-      // 1. Medida: coincidencia exacta (medida + rin) pesa más que solo medida
-      if (baseMedidaRin && candMedidaRin && baseMedidaRin === candMedidaRin) {
-        score += 150;
-      } else if (baseMedida && candMedida && baseMedida === candMedida) {
-        score += 100;
-      }
-
-      // 2. Marca (se suma, no reemplaza la relevancia de medida)
-      if (baseBrand && candBrand && baseBrand === candBrand) {
-        score += 30;
-      }
-
-      // 3. Categoría / segmento (ej. mismo tipo de llanta o línea de producto)
-      if (baseCategoria && candCategoria && baseCategoria === candCategoria) {
-        score += 15;
-      }
-      if (baseSegmento && candSegmento && baseSegmento === candSegmento) {
-        score += 10;
+      if (baseLinea === "LLANTAS") {
+        // 1. Marca (mayor prioridad)
+        if (baseBrand && candBrand && baseBrand === candBrand) {
+          score += 400;
+        }
+        // 2. Medida (ej. "155/70")
+        if (baseMedida && candMedida && baseMedida === candMedida) {
+          score += 40;
+        }
+        // 3. Rin (ej. 12, 22.5)
+        if (baseRin && candRin && baseRin === candRin) {
+          score += 4;
+        }
+        // 4. Categoría / segmento como desempate menor dentro del mismo nivel
+        if (baseCategoria && candCategoria && baseCategoria === candCategoria) {
+          score += 0.4;
+        }
+        if (baseSegmento && candSegmento && baseSegmento === candSegmento) {
+          score += 0.1;
+        }
+      } else if (baseLinea === "LUBRICANTES") {
+        // 1. Marca (mayor prioridad, ej. PENNZOIL, SHELL)
+        if (baseBrand && candBrand && baseBrand === candBrand) {
+          score += 4000;
+        }
+        // 2. Modelo: familia de producto (ej. HELIX, GADUS, OMALA). Es el
+        //    identificador más fuerte de "mismo tipo de producto" ya que casi
+        //    siempre implica también la misma aplicación (motor, industrial, etc.)
+        if (baseModelo && candModelo && baseModelo === candModelo) {
+          score += 400;
+        }
+        // 3. Tipo: variante exacta dentro del modelo (ej. "HELIX HX7" vs "HELIX HX5")
+        if (baseTipo && candTipo && baseTipo === candTipo) {
+          score += 40;
+        }
+        // 4. Aplicación (ej. automotriz gasolina, industrial) como respaldo
+        //    cuando no coincide el modelo (ej. otra marca, mismo uso)
+        if (baseAplicacion && candAplicacion && baseAplicacion === candAplicacion) {
+          score += 4;
+        }
+        // 5. Clase (mineral/sintético/semisintético) como desempate menor
+        if (baseClase && candClase && baseClase === candClase) {
+          score += 0.4;
+        }
+      } else {
+        // Otras líneas: aproximación básica por marca/categoría/segmento.
+        if (baseBrand && candBrand && baseBrand === candBrand) {
+          score += 30;
+        }
+        if (baseCategoria && candCategoria && baseCategoria === candCategoria) {
+          score += 15;
+        }
+        if (baseSegmento && candSegmento && baseSegmento === candSegmento) {
+          score += 10;
+        }
       }
 
       // Sin ninguna coincidencia relevante, no es "relacionado"
       if (score === 0) return acc;
 
-      // 4. Boost por historial de compras del cliente
+      // Boost por historial de compras del cliente: debe romper empates DENTRO
+      // del mismo nivel de prioridad (marca/medida/rin), nunca superarlo.
+      // Por eso el incremento máximo (0.09) es menor que el peso más chico
+      // de la escala de prioridad (segmento = 0.1).
       const indicadorVentas = Number(candData.DMA_INDICADOR_VENTAS) || 0;
       if (indicadorVentas > 0) {
-        score += 50 + indicadorVentas;
+        score += Math.min(0.01 + indicadorVentas * 0.01, 0.09);
       }
 
       acc.push({ product: candidate, score });
@@ -652,5 +721,3 @@ export const ProductCatalogProvider = ({ children }) => {
     </ProductCatalogContext.Provider>
   );
 };
-
-
