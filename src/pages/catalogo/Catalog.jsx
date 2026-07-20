@@ -704,7 +704,7 @@ const SliderSection = styled.div`
 
 const SliderContainer = styled.div`
   width: 100%;
-  height: 90px;
+  height: 105px;
   position: relative;
   overflow: hidden;
   border-radius: 16px;
@@ -716,11 +716,11 @@ const SliderContainer = styled.div`
     theme.mode === "dark" ? `${theme.colors.border}40` : `${theme.colors.border}20`};
 
   @media (max-width: 1024px) {
-    height: 90px;
+    height: 105px;
   }
 
   @media (max-width: 768px) {
-    height: 90px;
+    height: 105px;
     border-radius: 12px;
   }
 `;
@@ -755,6 +755,7 @@ const SliderImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center; /* o "left center", "right center" según tu diseño */
   position: absolute;
   top: 0;
   left: 0;
@@ -767,10 +768,6 @@ const SlideOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: ${({ theme }) =>
-    theme.mode === "dark"
-      ? "linear-gradient(90deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(15, 23, 42, 0.1) 100%)"
-      : "linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.1) 100%)"};
   z-index: 2;
 `;
 
