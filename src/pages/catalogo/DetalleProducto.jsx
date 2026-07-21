@@ -18,6 +18,7 @@ import ContactModal from "../../components/ui/ContactModal";
 import SEO from "../../components/seo/SEO";
 import { useProductStructuredData } from "../../hooks/useStructuredData";
 import { baseLinkImages, baseLinkFicha } from "../../constants/links";
+import PdfViewerModal from "../../components/ui/PdfViewerModal";
 
 const ProductLayout = styled.div`
   display: grid;
@@ -967,6 +968,9 @@ const ZoomedImage = styled.div`
 // En el componente DetalleProducto, agregar este componente para renderizar especificaciones
 const ProductSpecifications = ({ product }) => {
   const [isValidSheet, setIsValidSheet] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
   if (!product.specs || Object.keys(product.specs).length === 0) {
     return null;
@@ -1036,6 +1040,40 @@ const ProductSpecifications = ({ product }) => {
     };
   }, [technicalSheetUrl]);
 
+  // Liberar el blob del PDF al desmontar o cuando cambie
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl);
+    };
+  }, [pdfBlobUrl]);
+
+  const handleClosePdfModal = () => {
+    setIsPdfModalOpen(false);
+    if (pdfBlobUrl) {
+      window.URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(null);
+    }
+  };
+
+  const handleOpenTechnicalSheet = async () => {
+    setIsLoadingPdf(true);
+    try {
+      // Descargamos el contenido como blob para ocultar la URL real
+      // y para que el visor (react-pdf) no vuelva a chocar con CORS.
+      const response = await fetch(technicalSheetUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      setPdfBlobUrl(blobUrl);
+      setIsPdfModalOpen(true);
+    } catch (error) {
+      // Fallback en caso de error (ej. CORS)
+      console.log(error);
+      window.open(technicalSheetUrl, "_blank");
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
   return (
     <SpecificationsSection>
       <SpecificationsHeader>
@@ -1046,20 +1084,8 @@ const ProductSpecifications = ({ product }) => {
             variant="outlined"
             size="small"
             leftIconName="FaFilePdf"
-            onClick={async () => {
-              try {
-                // Descargamos el contenido como blob para ocultar la URL real
-                const response = await fetch(technicalSheetUrl);
-                const blob = await response.blob();
-                const blobUrl = window.URL.createObjectURL(blob);
-                window.open(blobUrl, "_blank");
-                // Liberamos la memoria después de abrir
-                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-              } catch (error) {
-                // Fallback en caso de error (ej. CORS)
-                window.open(technicalSheetUrl, "_blank");
-              }
-            }}
+            loading={isLoadingPdf}
+            onClick={handleOpenTechnicalSheet}
           />
         )}
       </SpecificationsHeader>
@@ -1091,6 +1117,13 @@ const ProductSpecifications = ({ product }) => {
           })}
         </tbody>
       </SpecificationsTable>
+
+      <PdfViewerModal
+        isOpen={isPdfModalOpen}
+        onClose={handleClosePdfModal}
+        fileUrl={pdfBlobUrl}
+        title="Ficha técnica"
+      />
     </SpecificationsSection>
   );
 };
