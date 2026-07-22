@@ -23,8 +23,8 @@ import { reverseGeocode } from "../../utils/reverseGeocoding";
 import { api_banners_getByTipo } from "../../api/banners/apiBanners";
 import { useNuvei } from "../../hooks/useNuevi";
 import { api_generate_payment_reference, api_verify_transaction } from "../../api/payments/apiPayments";
-import { api_cartera_getResumenCarteraClienteByEmpresa } from "../../api/cartera/apiCarterClientes";
 import { stripPaymentConditionCode } from "../../utils/formatPaymentCondition";
+import { api_cartera_getResumenCarteraClienteByEmpresa } from "../../api/cartera/apiCarteraClientes";
 
 // ─────────────────────────────────────────────
 // STYLED COMPONENTS

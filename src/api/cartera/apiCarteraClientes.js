@@ -15,6 +15,7 @@ export const api_cartera_getResumenCarteraClienteByEmpresa = async (empresa) => 
       data: response.data?.data || null,
       message: response.data?.message || "",
     };
+    
   } catch (error) {
     return {
       success: false,
