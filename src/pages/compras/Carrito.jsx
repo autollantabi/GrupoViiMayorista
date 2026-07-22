@@ -23,6 +23,8 @@ import { reverseGeocode } from "../../utils/reverseGeocoding";
 import { api_banners_getByTipo } from "../../api/banners/apiBanners";
 import { useNuvei } from "../../hooks/useNuevi";
 import { api_generate_payment_reference, api_verify_transaction } from "../../api/payments/apiPayments";
+import { api_cartera_getResumenCarteraClienteByEmpresa } from "../../api/cartera/apiCarterClientes";
+import { stripPaymentConditionCode } from "../../utils/formatPaymentCondition";
 
 // ─────────────────────────────────────────────
 // STYLED COMPONENTS
@@ -1446,6 +1448,8 @@ const Carrito = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showConfirmAddressModal, setShowConfirmAddressModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("CREDIT");
+  // Cache de cartera por empresa: { [empresa]: { data, isLoading, error } }
+  const [carteraByCompany, setCarteraByCompany] = useState({});
 
   // ── Refs ─────────────────────────────────
   const skipCartLoadRef = useRef(false);
@@ -1915,6 +1919,37 @@ const Carrito = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, addresses, showSuccessCard, isProcessingOrders]);
 
+  const carteraRequestedRef = useRef({});
+
+  useEffect(() => {
+    const carteraEmpresa = isB2BSeller ? "AUTOLLANTA" : selectedCompany;
+    if (!carteraEmpresa || carteraRequestedRef.current[carteraEmpresa]) return;
+
+    carteraRequestedRef.current[carteraEmpresa] = true;
+
+    setCarteraByCompany((prev) => ({
+      ...prev,
+      [carteraEmpresa]: { data: null, isLoading: true, error: null },
+    }));
+
+    (async () => {
+      try {
+        const response = await api_cartera_getResumenCarteraClienteByEmpresa(carteraEmpresa);
+        setCarteraByCompany((prev) => ({
+          ...prev,
+          [carteraEmpresa]: response.success
+            ? { data: response.data, isLoading: false, error: null }
+            : { data: null, isLoading: false, error: response.message || "No se pudo obtener la cartera" },
+        }));
+      } catch (error) {
+        setCarteraByCompany((prev) => ({
+          ...prev,
+          [carteraEmpresa]: { data: null, isLoading: false, error: "Error al consultar la cartera" },
+        }));
+      }
+    })();
+  }, [selectedCompany, isB2BSeller]); // ← sin carteraByCompany
+
   // ── Handlers generales ────────────────────
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity <= 0) return;
@@ -2149,6 +2184,57 @@ const Carrito = () => {
     </div>
   );
 
+  const CreditAvailabilityCard = () => {
+    const carteraEmpresa = isB2BSeller ? "AUTOLLANTA" : selectedCompany;
+    const carteraState = carteraEmpresa ? carteraByCompany[carteraEmpresa] : null;
+
+    if (!carteraEmpresa) return null;
+
+    if (carteraState?.isLoading) {
+      return (
+        <div style={{
+          padding: "1rem", borderRadius: "10px",
+          border: `1px solid ${theme.colors.border}`,
+          backgroundColor: theme.mode === "dark" ? `${theme.colors.background}80` : theme.colors.background,
+          marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.75rem",
+        }}>
+          <RenderLoader size="18px" showSpinner />
+          <span style={{ fontSize: "0.85rem", color: theme.colors.textSecondary }}>
+            Consultando cupo disponible...
+          </span>
+        </div>
+      );
+    }
+
+    if (carteraState?.error || !carteraState?.data) return null;
+
+    const { HRC_DISPONIBLE, HRC_CONDICIONPAGO } = carteraState.data;
+
+    return (
+      <div style={{
+        padding: "1rem", borderRadius: "10px",
+        border: `1px solid ${theme.colors.border}`,
+        backgroundColor: theme.mode === "dark" ? `${theme.colors.background}80` : theme.colors.background,
+        marginBottom: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem",
+      }}>
+        <div style={{ fontSize: "0.75rem", fontWeight: 600, color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Cupo disponible
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <RenderIcon name="FaWallet" size={16} color={theme.colors.success} />
+          <span style={{ fontWeight: 700, fontSize: "1.1rem", color: theme.colors.success }}>
+            ${Number(HRC_DISPONIBLE ?? 0).toFixed(2)}
+          </span>
+        </div>
+        {HRC_CONDICIONPAGO && (
+          <div style={{ fontSize: "0.8rem", color: theme.colors.textSecondary, lineHeight: 1.3 }}>
+            <b>Condición de pago:</b> {stripPaymentConditionCode(HRC_CONDICIONPAGO)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ── Early returns ─────────────────────────
   if (isLoading || isHydrating) {
     return (
@@ -2379,6 +2465,7 @@ const Carrito = () => {
             <ClientSummaryCard />
 
             <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
+            {paymentMethod === "CREDIT" && <CreditAvailabilityCard />}
 
             <Button
               text="Seguir comprando" variant="outlined"
