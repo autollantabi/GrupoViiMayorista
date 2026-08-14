@@ -345,6 +345,9 @@ export default function BannersAdministration() {
   const [isActive, setIsActive] = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [existingImageUrlMobile, setExistingImageUrlMobile] = useState("");
+  const [imageFileMobile, setImageFileMobile] = useState(null);
+  const [imagePreviewUrlMobile, setImagePreviewUrlMobile] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const TIPO_OPTIONS = [
@@ -382,6 +385,28 @@ export default function BannersAdministration() {
     reader.readAsDataURL(file);
   };
 
+  const handleImageChangeMobile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate that the image file is WebP only (no dimension restriction)
+    const isWebp = file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
+    if (!isWebp) {
+      toast.error("Únicamente se permiten imágenes en formato WebP");
+      e.target.value = null;
+      setImageFileMobile(null);
+      setImagePreviewUrlMobile("");
+      return;
+    }
+
+    setImageFileMobile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreviewUrlMobile(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleEditClick = (banner) => {
     setIsEditMode(true);
     setSelectedBannerId(banner.DBN_ID);
@@ -392,8 +417,11 @@ export default function BannersAdministration() {
     setCompany(banner.DBN_EMPRESA || "AUTOLLANTA");
     setIsActive(banner.DBN_ACTIVO);
     setExistingImageUrl(banner.DBN_RUTAIMAGEN || "");
+    setExistingImageUrlMobile(banner.DBN_RUTAIMAGEN_MOBILE || "");
     setImageFile(null);
     setImagePreviewUrl("");
+    setImageFileMobile(null);
+    setImagePreviewUrlMobile("");
     setIsOpenModal(true);
   };
 
@@ -410,6 +438,9 @@ export default function BannersAdministration() {
     setImageFile(null);
     setImagePreviewUrl("");
     setExistingImageUrl("");
+    setImageFileMobile(null);
+    setImagePreviewUrlMobile("");
+    setExistingImageUrlMobile("");
   };
 
   const handleCreateBannerSubmit = async (e) => {
@@ -454,6 +485,9 @@ export default function BannersAdministration() {
         // POST /banners/uploadBanner using FormData
         const formData = new FormData();
         formData.append("imagen", imageFile);
+        if (imageFileMobile) {
+          formData.append("imagenMobile", imageFileMobile);
+        }
         formData.append("empresa", company);
         formData.append("titulo", title.trim());
         formData.append("descripcion", description.trim());
@@ -710,41 +744,80 @@ export default function BannersAdministration() {
       >
         <FormGrid onSubmit={handleCreateBannerSubmit}>
           {isEditMode ? (
-            <FormGroup>
-              <FormLabel>Imagen del Banner (No modificable)</FormLabel>
-              {existingImageUrl ? (
-                <div style={{ textAlign: "center", marginTop: "10px" }}>
-                  <ImagePreview src={getImageUrl(existingImageUrl)} alt="Banner actual" />
-                </div>
-              ) : (
-                <div style={{ textAlign: "center", padding: "10px", color: theme.colors.textLight }}>
-                  Sin imagen asignada
-                </div>
-              )}
-            </FormGroup>
+            <FormRow>
+              <FormGroup>
+                <FormLabel>Imagen Web (No modificable)</FormLabel>
+                {existingImageUrl ? (
+                  <div style={{ textAlign: "center", marginTop: "10px" }}>
+                    <ImagePreview src={getImageUrl(existingImageUrl)} alt="Banner actual" />
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "10px", color: theme.colors.textLight }}>
+                    Sin imagen asignada
+                  </div>
+                )}
+              </FormGroup>
+              <FormGroup>
+                <FormLabel>Imagen Mobile (No modificable)</FormLabel>
+                {existingImageUrlMobile ? (
+                  <div style={{ textAlign: "center", marginTop: "10px" }}>
+                    <ImagePreview src={getImageUrl(existingImageUrlMobile)} alt="Banner mobile actual" />
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", padding: "10px", color: theme.colors.textLight }}>
+                    Sin imagen mobile asignada
+                  </div>
+                )}
+              </FormGroup>
+            </FormRow>
           ) : (
-            <FormGroup>
-              <FormLabel>Imagen del Banner (Formato WebP únicamente)</FormLabel>
-              <FileUploadContainer>
-                <RenderIcon name="FaCloudArrowUp" size={24} color={theme.colors.textLight} />
-                <span style={{ fontSize: "0.85rem", marginTop: "8px", color: theme.colors.textLight }}>
-                  {imageFile ? imageFile.name : "Seleccionar o arrastrar imagen .webp"}
-                </span>
-                <FileInput
-                  type="file"
-                  accept="image/webp, .webp"
-                  onChange={handleImageChange}
-                />
-              </FileUploadContainer>
-              {imagePreviewUrl && (
-                <div style={{ textAlign: "center", marginTop: "10px" }}>
-                  <span style={{ fontSize: "0.8rem", color: theme.colors.textLight, display: "block" }}>
-                    Vista previa:
+            <FormRow>
+              <FormGroup>
+                <FormLabel>Imagen del Banner - Web (Formato WebP únicamente)</FormLabel>
+                <FileUploadContainer>
+                  <RenderIcon name="FaCloudArrowUp" size={24} color={theme.colors.textLight} />
+                  <span style={{ fontSize: "0.85rem", marginTop: "8px", color: theme.colors.textLight }}>
+                    {imageFile ? imageFile.name : "Seleccionar o arrastrar imagen .webp"}
                   </span>
-                  <ImagePreview src={imagePreviewUrl} alt="Preview" />
-                </div>
-              )}
-            </FormGroup>
+                  <FileInput
+                    type="file"
+                    accept="image/webp, .webp"
+                    onChange={handleImageChange}
+                  />
+                </FileUploadContainer>
+                {imagePreviewUrl && (
+                  <div style={{ textAlign: "center", marginTop: "10px" }}>
+                    <span style={{ fontSize: "0.8rem", color: theme.colors.textLight, display: "block" }}>
+                      Vista previa:
+                    </span>
+                    <ImagePreview src={imagePreviewUrl} alt="Preview" />
+                  </div>
+                )}
+              </FormGroup>
+
+              <FormGroup>
+                <FormLabel>Imagen del Banner - Mobile (Opcional, sugerido 720x210px)</FormLabel>
+                <FileUploadContainer>
+                  <RenderIcon name="FaCloudArrowUp" size={24} color={theme.colors.textLight} />
+                  <span style={{ fontSize: "0.85rem", marginTop: "8px", color: theme.colors.textLight }}>
+                    {imageFileMobile ? imageFileMobile.name : "Seleccionar o arrastrar imagen .webp"}
+                  </span>
+                  <FileInput
+                    type="file"
+                    accept="image/webp, .webp"
+                    onChange={handleImageChangeMobile}
+                  />
+                </FileUploadContainer>
+                {imagePreviewUrlMobile && (
+                  <div style={{ textAlign: "center", marginTop: "10px" }}>
+                    <span style={{ fontSize: "0.8rem", color: theme.colors.textLight, display: "block" }}>
+                      Vista previa:
+                    </span>
+                    <ImagePreview src={imagePreviewUrlMobile} alt="Preview mobile" />
+                  </div>
+                )}
+              </FormGroup>
+            </FormRow>
           )}
 
           <FormRow>
@@ -756,7 +829,7 @@ export default function BannersAdministration() {
               fullWidth
             />
             <Input
-              label="Enlace / URL"
+              label="Enlace / URL (Opcional)"
               placeholder="Ej. https://misitio.com/ofertas"
               value={url}
               onChange={(e) => setUrl(e.target.value)}

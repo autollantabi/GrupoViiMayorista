@@ -751,15 +751,22 @@ const SlideLink = styled.a`
   cursor: pointer;
 `;
 
-const SliderImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center; /* o "left center", "right center" según tu diseño */
+const SliderPicture = styled.picture`
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
+  display: block;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center; /* o "left center", "right center" según tu diseño */
+    display: block;
+  }
 `;
 
 const SlideOverlay = styled.div`
@@ -897,6 +904,7 @@ const ImageSlider = ({ empresaName, banners = [] }) => {
 
     const mapped = filtered.map((b) => ({
       url: getImageUrl(b.DBN_RUTAIMAGEN),
+      mobileUrl: b.DBN_RUTAIMAGEN_MOBILE ? getImageUrl(b.DBN_RUTAIMAGEN_MOBILE) : "",
       title: b.DBN_TITULO,
       subtitle: b.DBN_DESCRIPCION,
       link: b.DBN_URL
@@ -908,6 +916,7 @@ const ImageSlider = ({ empresaName, banners = [] }) => {
       );
       const mappedGlobal = global.map((b) => ({
         url: getImageUrl(b.DBN_RUTAIMAGEN),
+        mobileUrl: b.DBN_RUTAIMAGEN_MOBILE ? getImageUrl(b.DBN_RUTAIMAGEN_MOBILE) : "",
         title: b.DBN_TITULO,
         subtitle: b.DBN_DESCRIPCION,
         link: b.DBN_URL
@@ -961,7 +970,12 @@ const ImageSlider = ({ empresaName, banners = [] }) => {
             <Slide key={idx}>
               {slide.link && isSafeUrl(slide.link) ? (
                 <SlideLink href={slide.link} target="_blank" rel="noopener noreferrer">
-                  <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
+                  <SliderPicture>
+                    {slide.mobileUrl && (
+                      <source media="(max-width: 768px)" srcSet={slide.mobileUrl} />
+                    )}
+                    <img src={slide.url} alt={slide.title} loading="lazy" />
+                  </SliderPicture>
                   <SlideOverlay />
                   <SlideContent>
                     <SlideTitle>{slide.title}</SlideTitle>
@@ -970,7 +984,12 @@ const ImageSlider = ({ empresaName, banners = [] }) => {
                 </SlideLink>
               ) : (
                 <>
-                  <SliderImage src={slide.url} alt={slide.title} loading="lazy" />
+                  <SliderPicture>
+                    {slide.mobileUrl && (
+                      <source media="(max-width: 768px)" srcSet={slide.mobileUrl} />
+                    )}
+                    <img src={slide.url} alt={slide.title} loading="lazy" />
+                  </SliderPicture>
                   <SlideOverlay />
                   <SlideContent>
                     <SlideTitle>{slide.title}</SlideTitle>
