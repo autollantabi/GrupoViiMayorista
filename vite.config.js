@@ -24,7 +24,9 @@ export default defineConfig({
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob: https://*.mapbox.com https://*.r2.dev https://placehold.co",
-        "connect-src 'self' blob: https://*.mapbox.com https://*.r2.dev http://192.168.0.68:3102",
+        // api.maxximundo.com y localhost:3202 son el backend de Club Shell Maxx, al que la
+        // pantalla pública de invitación (/auth/registro-shell/:token) llama directamente.
+        "connect-src 'self' blob: https://*.mapbox.com https://*.r2.dev http://192.168.0.68:3102 https://api.maxximundo.com http://localhost:3202",
         "frame-ancestors 'self'",
         "base-uri 'self'",
         "form-action 'self'",
