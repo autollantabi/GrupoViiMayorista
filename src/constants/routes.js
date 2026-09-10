@@ -3,6 +3,9 @@ export const ROUTES = {
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
     FORGOT_PASSWORD: "/auth/forgot-password",
+    // Invitación a Club Shell Maxx. Cuelga de /auth/ a propósito: robots.txt ya trae
+    // "Disallow: /auth/", así que la pantalla queda fuera del rastreo sin tocar nada más.
+    REGISTRO_SHELL: "/auth/registro-shell/:token",
   },
   ADMIN: {
     DASHBOARD_ADMIN: "/admin/dashboard",

@@ -21,6 +21,7 @@ import ClientHomeComponent from "../pages/client/ClientHomeComponent";
 import AppShell from "../pages/client/AppShell";
 import CoordinadorHomeComponent from "../pages/coordinadora/CoordinadorHomeComponent";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import AppShellInvitacion from "../pages/auth/AppShellInvitacion";
 import CoordinadorAdminComponent from "../pages/admin/CoordinadorAdminComponent";
 import AdminDashboardComponent from "../pages/admin/AdminDashboardComponent";
 // Importaciones de páginas de reencauche
@@ -263,6 +264,12 @@ export const publicRoutes = [
   {
     path: ROUTES.AUTH.FORGOT_PASSWORD,
     element: <ForgotPassword />,
+  },
+  {
+    // El invitado llega desde el correo sin sesión. Va en publicRoutes para montarse bajo
+    // CleanLayout y para que no lo intercepte el catch-all que manda a /auth/login.
+    path: ROUTES.AUTH.REGISTRO_SHELL,
+    element: <AppShellInvitacion />,
   },
   {
     path: ROUTES.PUBLIC.NOT_FOUND,
