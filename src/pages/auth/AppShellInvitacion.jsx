@@ -322,12 +322,8 @@ const AppShellInvitacion = () => {
     if (!token || otpRequested.current) return;
     otpRequested.current = true;
 
-    let cancelled = false;
-
     async function iniciar() {
       const invitation = await api_shell_invitation_get(token);
-
-      if (cancelled) return;
 
       if (!invitation.success) {
         setMessage({ type: "error", text: invitation.message });
@@ -340,8 +336,6 @@ const AppShellInvitacion = () => {
 
       const sent = await api_shell_invitation_sendOtp(token);
 
-      if (cancelled) return;
-
       if (!sent.success) {
         setMessage({ type: "error", text: sent.message });
         return;
@@ -353,9 +347,12 @@ const AppShellInvitacion = () => {
 
     iniciar();
 
-    return () => {
-      cancelled = true;
-    };
+    // Sin función de limpieza a propósito. Con el típico flag `cancelled` la pantalla se
+    // quedaba colgada en "Validando tu invitación": StrictMode monta, desmonta y vuelve a
+    // montar, así que la limpieza del primer montaje ponía cancelled = true y descartaba la
+    // respuesta ya en vuelo, mientras el segundo montaje salía antes por otpRequested —los
+    // refs sobreviven al remontaje—. Nadie actualizaba el estado. El ref por sí solo ya
+    // garantiza una única ejecución, que es lo que interesa: cada envío cuesta un WhatsApp.
   }, [token]);
 
   const handleResend = async () => {
