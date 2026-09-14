@@ -1044,8 +1044,10 @@ const ProductCard = ({
   const [quantity, setQuantity] = useState(1);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
 
-  // Buscar el producto en el carrito
-  const cartItem = cart.find((item) => item?.id === product.id);
+  // Buscar el producto en el carrito (por id + empresaId, ya que el mismo código puede venderlo más de una empresa)
+  const cartItem = cart.find(
+    (item) => item?.id === product.id && item?.empresaId === product.empresaId
+  );
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
   

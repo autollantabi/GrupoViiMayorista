@@ -33,4 +33,14 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./src/test/setup.js",
+    // Node 22+ agrega un localStorage/sessionStorage global "experimental" propio
+    // que pisa (rompe) el localStorage real de jsdom si no se desactiva: sin esta
+    // flag, `localStorage.getItem(...)` revienta con "Cannot read properties of
+    // undefined" en cualquier código que lo use (ej. AppThemeContext).
+    execArgv: ["--no-experimental-webstorage"],
+  },
 });
