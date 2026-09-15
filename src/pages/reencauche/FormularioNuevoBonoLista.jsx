@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useAppTheme } from "../../context/AppThemeContext";
 import Button from "../../components/ui/Button";
-import Input from "../../components/ui/Input";
-import Select from "../../components/ui/Select";
 import RenderIcon from "../../components/ui/RenderIcon";
 import {
   api_bonos_getEligibleProducts,
   api_bonos_createBonus,
+  api_bonos_updateMasterItem,
+  api_bonos_generateQRMaster,
 } from "../../api/bonos/apiBonos";
-import { generateAndSendMultipleBonosPDF } from "../../utils/bonoUtils";
+import { ROUTES } from "../../constants/routes";
 import { toast } from "react-toastify";
 
 const ModalOverlay = styled.div`
@@ -31,13 +31,11 @@ const ModalContent = styled.div`
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: ${({ $invoiceConfirmed }) =>
-    $invoiceConfirmed ? "1100px" : "500px"};
+  max-width: 1200px;
   max-height: 90vh;
   overflow: hidden;
   position: relative;
   z-index: 1001;
-  transition: max-width 0.3s ease;
   display: flex;
   flex-direction: column;
 `;
@@ -81,290 +79,120 @@ const CloseButton = styled.button`
 
 const ModalBody = styled.div`
   padding: 16px;
-  display: grid;
-  grid-template-columns: ${({ $invoiceConfirmed }) =>
-    $invoiceConfirmed ? "1fr 1fr" : "1fr"};
-  gap: 16px;
-  overflow: hidden;
-  flex: 1;
-
-  @media (max-width: 968px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const LeftColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-right: 8px;
-  padding-bottom: 8px;
-
-  /* Estilos del scrollbar */
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.textLight};
-  }
-
-  scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border}
-    ${({ theme }) => theme.colors.background};
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  border-left: 1px solid ${({ theme }) => theme.colors.border};
-  padding-left: 16px;
   overflow-y: auto;
-  padding-right: 8px;
-
-  /* Estilos del scrollbar */
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.textLight};
-  }
-
-  scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border}
-    ${({ theme }) => theme.colors.background};
-
-  @media (max-width: 968px) {
-    border-left: none;
-    border-top: 1px solid ${({ theme }) => theme.colors.border};
-    padding-left: 0;
-    padding-top: 16px;
-  }
+  flex: 1;
 `;
 
-const Section = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+const HintText = styled.p`
+  margin: 0 0 12px 0;
+  color: ${({ theme }) => theme.colors.textLight};
+  font-size: 0.85rem;
 `;
 
-const SectionTitle = styled.h3`
-  margin: 0 0 8px 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-`;
-
-const ClientInfo = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
-  padding: 10px 12px;
-  border-radius: 6px;
-  margin-bottom: 12px;
+const TableWrapper = styled.div`
+  overflow-x: auto;
   border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 8px;
 `;
 
-const ClientName = styled.div`
+const StyledTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+`;
+
+const Thead = styled.thead`
+  background-color: ${({ theme }) => theme.colors.background};
+  position: sticky;
+  top: 0;
+`;
+
+const Th = styled.th`
+  text-align: left;
+  padding: 10px 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: ${({ theme }) => theme.colors.textLight};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  white-space: nowrap;
+`;
+
+const Td = styled.td`
+  padding: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  vertical-align: middle;
+`;
+
+const Tr = styled.tr`
+  ${({ $error, theme }) =>
+    $error &&
+    `background-color: ${theme.colors.error}10;`}
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.background};
+  }
+`;
+
+const BrandCell = styled.div`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
-  margin-bottom: 2px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 `;
 
-const ClientCiRuc = styled.div`
+const RinCell = styled.div`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const InvoiceNumberContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
-  padding: 10px 12px;
+const CellInput = styled.input`
+  width: 100%;
+  min-width: 90px;
+  padding: 6px 8px;
   border-radius: 6px;
-  border: 2px solid ${({ theme }) => theme.colors.primary};
-  margin-bottom: 12px;
-`;
-
-const InvoiceNumber = styled.div`
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const FormGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 10px;
-
-  @media (max-width: 568px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const TireList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  padding-right: 4px;
-  flex: 1;
-
-  /* Estilos del scrollbar */
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.colors.background};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.colors.border};
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.colors.textLight};
-  }
-
-  scrollbar-width: thin;
-  scrollbar-color: ${({ theme }) => theme.colors.border}
-    ${({ theme }) => theme.colors.background};
-`;
-
-const TireItem = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.2s ease;
-  position: relative;
-  padding: 20px 20px;
-
-  &:hover {
-    border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-`;
-
-const TireInfo = styled.div`
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-`;
-
-const TireField = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const TireFieldLabel = styled.span`
-  font-size: 0.7rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  font-weight: 500;
-`;
-
-const TireFieldValue = styled.span`
-  font-size: 0.85rem;
+  background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
-  font-weight: 500;
-`;
+  font-size: 0.85rem;
 
-const TireActions = styled.div`
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-  flex-direction: column;
-  position: absolute;
-  right: 5px;
-  top: 5px;
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
 
-  @media (min-width: 1200px) {
-    flex-direction: row;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
-const StatusBadge = styled.span`
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
+const FechaCell = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.textLight};
   white-space: nowrap;
-  background-color: ${({ status, theme }) => {
-    if (status === "saved") return theme.colors.success + "20";
-    if (status === "error") return theme.colors.error + "20";
-    return theme.colors.warning + "20";
-  }};
-  color: ${({ status, theme }) => {
-    if (status === "saved") return theme.colors.success;
-    if (status === "error") return theme.colors.error;
-    return theme.colors.warning;
-  }};
-  border: 1px solid
-    ${({ status, theme }) => {
-      if (status === "saved") return theme.colors.success;
-      if (status === "error") return theme.colors.error;
-      return theme.colors.warning;
-    }};
+`;
+
+const IncluirCheckbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+`;
+
+const RowErrorText = styled.div`
+  color: ${({ theme }) => theme.colors.error};
+  font-size: 0.7rem;
+  margin-top: 2px;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 30px 20px;
+  padding: 40px 20px;
   color: ${({ theme }) => theme.colors.textLight};
-  font-size: 0.9rem;
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 10px;
-  flex-wrap: wrap;
 `;
 
 const ModalFooter = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
@@ -376,821 +204,372 @@ const ModalFooter = styled.div`
   flex-wrap: wrap;
 `;
 
-const FooterLeft = styled.div`
-  display: flex;
-  gap: 10px;
-  align-items: center;
+const SelectionSummary = styled.span`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const FooterRight = styled.div`
+const FooterActions = styled.div`
   display: flex;
   gap: 10px;
-  align-items: center;
+  flex-wrap: wrap;
 `;
+
+/**
+ * Dado un diseño elegible, resuelve la medida (RINSIZE) que el backend
+ * requiere para validar la combinación BRAND/SIZE/DESIGN/RINSIZE contra el
+ * maestro de llantas. El diseño y la medida no se seleccionan manualmente:
+ * se auto-resuelven a partir del catálogo elegible.
+ */
+const resolveRinsize = (eligibleCatalog, brand, rin, design) => {
+  const catalogEntries = eligibleCatalog.filter(
+    (p) => p.BRAND === brand && p.SIZE === rin
+  );
+
+  for (const entry of catalogEntries) {
+    const designSizes = entry?.DESIGNS?.[design];
+    if (!Array.isArray(designSizes)) continue;
+
+    const match = designSizes.find(
+      (s) => typeof s === "string" && s.trim().endsWith(rin)
+    );
+    if (match) {
+      const escapedRin = rin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const measure = match.replace(new RegExp(`\\s*${escapedRin}$`), "").trim();
+      if (measure) return measure;
+    }
+  }
+
+  return null;
+};
+
+const groupKeyOf = (entry) =>
+  `${entry.BRAND}|${entry.SIZE}|${entry.DESIGN}|${entry.ENTERPRISE}`;
+
+/**
+ * Expande el desglose de disponibilidad (uno por marca/rin/diseño, con un
+ * conteo agregado) en N filas individuales -- una por cada bono disponible,
+ * cada una representando cantidad 1. Se genera una sola vez, al abrir el
+ * modal (ver useState perezoso más abajo): los ids son estables durante toda
+ * la sesión, así que activar una fila nunca desordena ni borra los datos que
+ * el usuario ya escribió en otras filas del mismo grupo.
+ */
+const buildUnitRows = (breakdown) => {
+  const expanded = [];
+
+  (breakdown || []).forEach((entry) => {
+    const available = Number(entry.AVAILABLE_BONUSES ?? 0);
+    const groupKey = groupKeyOf(entry);
+
+    for (let i = 0; i < available; i++) {
+      expanded.push({
+        id: `${groupKey}__${i}`,
+        groupKey,
+        BRAND: entry.BRAND,
+        SIZE: entry.SIZE,
+        DESIGN: entry.DESIGN,
+        ENTERPRISE: entry.ENTERPRISE,
+      });
+    }
+  });
+
+  return expanded.sort(
+    (a, b) => a.BRAND.localeCompare(b.BRAND) || a.SIZE.localeCompare(b.SIZE)
+  );
+};
+
+const DEFAULT_ROW_INPUT = { maestro: "", item: "", selected: false };
+
+const todayLabel = () => {
+  const date = new Date();
+  const monthNames = [
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  ];
+  return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+};
 
 const FormularioNuevoBonoLista = ({
-  selectedClient,
   onClose,
   onBonoCreated,
   bonosDisponiblesData,
+  mayoristaUserId,
 }) => {
   const { theme } = useAppTheme();
 
-  // Estado para el número de factura
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceConfirmed, setInvoiceConfirmed] = useState(false);
-
-  // Estado para el formulario de llanta
-  const [tireForm, setTireForm] = useState({
-    brand: "",
-    size: "",
-    model: "",
-    measure: "",
-    quantity: "1",
-  });
-
-  // Lista de llantas agregadas
-  const [tireList, setTireList] = useState([]);
-
-  // Estados para productos elegibles
-  const [eligibleProducts, setEligibleProducts] = useState([]);
+  // Se genera una sola vez, a partir de la disponibilidad con la que se abrió
+  // el modal (useState perezoso: no se recalcula si bonosDisponiblesData
+  // cambia de referencia por un refetch del padre mientras el modal sigue
+  // abierto). Cada fila = un bono disponible individual (cantidad 1).
+  const [rows, setRows] = useState(() =>
+    buildUnitRows(bonosDisponiblesData?.BREAKDOWN_BY_DESIGN)
+  );
   const [eligibleCatalog, setEligibleCatalog] = useState([]);
-  const [brandOptions, setBrandOptions] = useState([]);
-  const [sizeOptions, setSizeOptions] = useState([]);
-  const [modelOptions, setModelOptions] = useState([]);
-  const [measureOptions, setMeasureOptions] = useState([]);
+  const [rowInputs, setRowInputs] = useState({});
+  const [rowErrors, setRowErrors] = useState({});
+  const [saving, setSaving] = useState(false);
 
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fechaHoy = useMemo(() => todayLabel(), []);
 
-  // Cargar breakdown disponible desde bonos
-  useEffect(() => {
-    if (bonosDisponiblesData?.BREAKDOWN_BY_DESIGN) {
-      setEligibleProducts(bonosDisponiblesData.BREAKDOWN_BY_DESIGN);
-    } else {
-      setEligibleProducts([]);
-    }
-  }, [bonosDisponiblesData]);
-
-  // Cargar catálogo elegible desde API (base para selects)
   useEffect(() => {
     const fetchEligible = async () => {
       try {
         const resp = await api_bonos_getEligibleProducts();
-        if (resp.success && Array.isArray(resp.data)) {
-          setEligibleCatalog(resp.data);
-          const uniqueBrands = [...new Set(resp.data.map((p) => p.BRAND))];
-          setBrandOptions(uniqueBrands.map((b) => ({ label: b, value: b })));
-        } else {
-          setEligibleCatalog([]);
-          setBrandOptions([]);
-        }
-      } catch (e) {
+        setEligibleCatalog(resp.success && Array.isArray(resp.data) ? resp.data : []);
+      } catch {
         setEligibleCatalog([]);
-        setBrandOptions([]);
       }
     };
     fetchEligible();
   }, []);
 
-  // Función para verificar si hay bonos disponibles para un producto específico
-  // La medida es solo informativa, no afecta el conteo de disponibles
-  const getAvailableBonusesForProduct = (brand, size, design) => {
-    if (!bonosDisponiblesData?.BREAKDOWN_BY_DESIGN) return 0;
+  const getRowInput = (key) => rowInputs[key] || DEFAULT_ROW_INPUT;
 
-    const product = bonosDisponiblesData.BREAKDOWN_BY_DESIGN.find(
-      (p) => p.BRAND === brand && p.SIZE === size && p.DESIGN === design
-    );
-
-    if (!product) return 0;
-
-    const available = Number(product.AVAILABLE_BONUSES ?? 0);
-
-    const usedInList = tireList
-      .filter(
-        (tire) =>
-          tire.brand === brand && tire.size === size && tire.model === design
-      )
-      .reduce((sum, tire) => sum + tire.quantity, 0);
-
-    return Math.max(0, available - usedInList);
+  const updateRowInput = (key, patch) => {
+    setRowInputs((prev) => ({
+      ...prev,
+      [key]: { ...getRowInput(key), ...patch },
+    }));
+    setRowErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
-  // Actualizar opciones de SIZE cuando se selecciona BRAND (desde catálogo elegible)
-  useEffect(() => {
-    if (tireForm.brand && eligibleCatalog.length > 0) {
-      const filteredByBrand = eligibleCatalog.filter(
-        (p) => p.BRAND === tireForm.brand
-      );
-      const uniqueSizes = [...new Set(filteredByBrand.map((p) => p.SIZE))];
-      setSizeOptions(uniqueSizes.map((size) => ({ label: size, value: size })));
-    } else {
-      setSizeOptions([]);
-      setModelOptions([]);
-      setMeasureOptions([]);
+  const isRowComplete = (input) => !!input.maestro?.trim() && !!input.item?.trim();
+
+  const selectedCount = rows.filter((row) => getRowInput(row.id).selected).length;
+
+  const handleGuardarTodo = async () => {
+    const selectedRows = rows.filter((row) => getRowInput(row.id).selected);
+
+    if (selectedRows.length === 0) {
+      toast.info("Seleccione al menos un bono completo para guardar");
+      return;
     }
-  }, [tireForm.brand, eligibleCatalog]);
 
-  // Actualizar opciones de DESIGN cuando se seleccionan BRAND y SIZE
-  // Diseños base del catálogo, filtrados por disponibilidad (AVAILABLE_BONUSES > 0)
-  useEffect(() => {
-    if (tireForm.brand && tireForm.size) {
-      const catalogByBrandSize = eligibleCatalog.filter(
-        (p) => p.BRAND === tireForm.brand && p.SIZE === tireForm.size
-      );
-      const designsFromCatalog = new Set();
-      catalogByBrandSize.forEach((item) => {
-        const d = item?.DESIGNS || {};
-        Object.keys(d).forEach((k) => designsFromCatalog.add(k));
-      });
+    setSaving(true);
+    let successCount = 0;
+    let failedCount = 0;
+    const qrLinkCache = new Map();
 
-      const availableByBrandSize = eligibleProducts.filter(
-        (p) =>
-          p.BRAND === tireForm.brand &&
-          p.SIZE === tireForm.size &&
-          (p.AVAILABLE_BONUSES ?? 0) > 0
-      );
-      const availableDesigns = new Set(
-        availableByBrandSize.map((p) => p.DESIGN)
-      );
+    for (const row of selectedRows) {
+      const key = row.id;
+      const input = getRowInput(key);
 
-      const filteredDesigns = [...designsFromCatalog].filter((d) =>
-        availableDesigns.has(d)
-      );
+      try {
+        const rinsize = resolveRinsize(eligibleCatalog, row.BRAND, row.SIZE, row.DESIGN);
+        if (!rinsize) {
+          throw new Error("No se pudo resolver la medida para este producto");
+        }
 
-      setModelOptions(
-        filteredDesigns.map((design) => ({ label: design, value: design }))
-      );
-    } else {
-      setModelOptions([]);
-      setMeasureOptions([]);
-    }
-  }, [tireForm.brand, tireForm.size, eligibleCatalog, eligibleProducts]);
+        const maestro = input.maestro.trim();
 
-  // Actualizar opciones de MEASURE cuando se seleccionan BRAND, SIZE y MODEL
-  // Priorizar DESIGNS[MODEL] del catálogo; fallback: RINSIZE del breakdown
-  useEffect(() => {
-    if (
-      tireForm.brand &&
-      tireForm.size &&
-      tireForm.model &&
-      (eligibleCatalog.length > 0 || eligibleProducts.length > 0)
-    ) {
-      // 1) Intentar construir opciones desde DESIGNS[model] del catálogo
-      const catalogByBrandSize = eligibleCatalog.filter(
-        (p) => p.BRAND === tireForm.brand && p.SIZE === tireForm.size
-      );
-      const sizesForDesign = catalogByBrandSize.flatMap((item) => {
-        const map = item?.DESIGNS || {};
-        const arr = map[tireForm.model];
-        return Array.isArray(arr) ? arr : [];
-      });
-      if (sizesForDesign.length > 0) {
-        const filteredByRin = sizesForDesign.filter(
-          (s) => typeof s === "string" && s.trim().endsWith(tireForm.size)
+        const createResponse = await api_bonos_createBonus({
+          ID_USER: mayoristaUserId,
+          INVOICENUMBER: maestro,
+          products: [
+            {
+              BRAND: row.BRAND,
+              SIZE: row.SIZE,
+              DESIGN: row.DESIGN,
+              RINSIZE: rinsize,
+              QUANTITY: 1,
+            },
+          ],
+        });
+
+        if (!createResponse.success) {
+          throw new Error(createResponse.message || "Error al crear el bono");
+        }
+
+        const createdBonuses = createResponse.data?.bonuses || [];
+        if (createdBonuses.length === 0) {
+          throw new Error("No se pudo crear el bono");
+        }
+
+        let verifyUrl = qrLinkCache.get(maestro);
+        if (verifyUrl === undefined) {
+          const qrResponse = await api_bonos_generateQRMaster(maestro);
+          verifyUrl =
+            qrResponse.success && qrResponse.data?.qrCode
+              ? `${window.location.origin}${
+                  ROUTES.REENCAUCHE.VERIFICAR
+                }?mstr=${encodeURIComponent(qrResponse.data.qrCode)}`
+              : null;
+          qrLinkCache.set(maestro, verifyUrl);
+        }
+
+        const updateResponse = await api_bonos_updateMasterItem(
+          [
+            {
+              ID_BONUS: createdBonuses[0].ID_BONUS,
+              MASTER: maestro,
+              ITEM: input.item.trim(),
+            },
+          ],
+          verifyUrl ? [verifyUrl] : ["N/A"]
         );
 
-        const options = filteredByRin
-          .map((s) => {
-            const measure = s
-              .replace(
-                new RegExp(
-                  `\\s*${tireForm.size.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`
-                ),
-                ""
-              )
-              .trim();
-            return measure ? { label: measure, value: measure } : null;
-          })
-          .filter(Boolean);
-
-        if (options.length > 0) {
-          setMeasureOptions(options);
-          return;
+        if (!updateResponse.success) {
+          throw new Error(
+            updateResponse.message || "Error al activar el bono (master/item)"
+          );
         }
-      }
 
-      // 2) Fallback: usar RINSIZE del breakdown si existe
-      const filteredProduct = eligibleProducts.find(
-        (p) =>
-          p.BRAND === tireForm.brand &&
-          p.SIZE === tireForm.size &&
-          p.DESIGN === tireForm.model
-      );
+        // La fila queda consumida: desaparece de la lista de disponibles.
+        setRows((prev) => prev.filter((r) => r.id !== key));
 
-      if (filteredProduct && filteredProduct.RINSIZE) {
-        setMeasureOptions([
-          { label: filteredProduct.RINSIZE, value: filteredProduct.RINSIZE },
-        ]);
-      } else {
-        setMeasureOptions([]);
-      }
-    } else {
-      setMeasureOptions([]);
-    }
-  }, [
-    tireForm.brand,
-    tireForm.size,
-    tireForm.model,
-    eligibleCatalog,
-    eligibleProducts,
-  ]);
+        setRowInputs((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
 
-  // Actualizar el formulario cuando cambie la lista de llantas para recalcular disponibles
-  useEffect(() => {
-    // Si hay un producto seleccionado, recalcular los disponibles
-    if (tireForm.brand && tireForm.size && tireForm.model) {
-      const availableBonuses = getAvailableBonusesForProduct(
-        tireForm.brand,
-        tireForm.size,
-        tireForm.model
-      );
-
-      // Si la cantidad actual excede los disponibles, ajustarla
-      if (parseInt(tireForm.quantity) > availableBonuses) {
-        setTireForm((prev) => ({
+        successCount++;
+      } catch (error) {
+        console.error("Error activando bono:", error);
+        failedCount++;
+        setRowErrors((prev) => ({ ...prev, [key]: error.message || "Error al activar" }));
+        setRowInputs((prev) => ({
           ...prev,
-          quantity: availableBonuses.toString(),
+          [key]: { ...getRowInput(key), selected: false },
         }));
       }
     }
-  }, [tireList, tireForm.brand, tireForm.size, tireForm.model]);
 
-  const handleInvoiceSubmit = () => {
-    if (!invoiceNumber.trim()) {
-      setErrors({ invoice: "El número de factura es requerido" });
-      return;
-    }
-    setInvoiceConfirmed(true);
-    setErrors({});
-  };
+    setSaving(false);
 
-  const handleInvoiceChange = (e) => {
-    setInvoiceNumber(e.target.value);
-    if (errors.invoice) {
-      setErrors((prev) => ({ ...prev, invoice: "" }));
-    }
-  };
-
-  const handleTireInputChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "brand") {
-      setTireForm((prev) => ({
-        ...prev,
-        brand: value,
-        size: "",
-        model: "",
-        measure: "",
-      }));
-    } else if (name === "size") {
-      setTireForm((prev) => ({
-        ...prev,
-        size: value,
-        model: "",
-        measure: "",
-      }));
-    } else if (name === "model") {
-      setTireForm((prev) => ({
-        ...prev,
-        model: value,
-        measure: "",
-      }));
-    } else {
-      setTireForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const validateTireForm = () => {
-    const newErrors = {};
-
-    if (!tireForm.brand) newErrors.brand = "La marca es requerida";
-    if (!tireForm.size) newErrors.size = "El Aro/Rin es requerido";
-    if (!tireForm.model) newErrors.model = "El diseño es requerido";
-    if (!tireForm.measure) newErrors.measure = "La medida es requerida";
-    if (!tireForm.quantity || parseInt(tireForm.quantity) < 1) {
-      newErrors.quantity = "La cantidad debe ser mayor a 0";
-    } else {
-      const availableBonuses = getAvailableBonusesForProduct(
-        tireForm.brand,
-        tireForm.size,
-        tireForm.model
-      );
-      if (parseInt(tireForm.quantity) > availableBonuses) {
-        newErrors.quantity = `La cantidad no puede ser mayor a ${availableBonuses} bonos disponibles`;
+    if (successCount > 0) {
+      toast.success(`${successCount} bono(s) activado(s) correctamente`);
+      if (onBonoCreated) {
+        await onBonoCreated();
       }
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleAddTire = () => {
-    if (!validateTireForm()) {
-      return;
-    }
-
-    // Verificar si hay bonos disponibles para este producto
-    const availableBonuses = getAvailableBonusesForProduct(
-      tireForm.brand,
-      tireForm.size,
-      tireForm.model
-    );
-    if (availableBonuses <= 0) {
-      toast.error(
-        `No hay bonos disponibles para ${tireForm.brand} ${tireForm.size} ${tireForm.model}`
-      );
-      return;
-    }
-
-    const newTire = {
-      id: Date.now(),
-      brand: tireForm.brand,
-      size: tireForm.size,
-      model: tireForm.model,
-      measure: tireForm.measure,
-      quantity: parseInt(tireForm.quantity),
-    };
-
-    setTireList((prev) => [...prev, newTire]);
-
-    // Limpiar formulario
-    setTireForm({
-      brand: "",
-      size: "",
-      model: "",
-      measure: "",
-      quantity: "1",
-    });
-    setErrors({});
-
-    toast.success("Llanta agregada a la lista");
-  };
-
-  const handleRemoveTire = (tireId) => {
-    setTireList((prev) => prev.filter((t) => t.id !== tireId));
-    toast.info("Llanta eliminada de la lista");
-  };
-
-  const handleSaveAll = async () => {
-    if (tireList.length === 0) {
-      toast.info("No hay llantas para guardar");
-      return;
-    }
-
-    if (!selectedClient) {
-      toast.error("No se ha seleccionado un cliente");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Preparar el formato de productos
-      const products = tireList.map((tire) => ({
-        BRAND: tire.brand,
-        SIZE: tire.size,
-        DESIGN: tire.model,
-        RINSIZE: tire.measure,
-        QUANTITY: tire.quantity,
-      }));
-
-      // Crear el objeto de datos en el nuevo formato
-      const bonusData = {
-        ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
-        INVOICENUMBER: invoiceNumber,
-        products: products,
-      };
-
-      // Enviar todos los bonos en una sola petición
-      const response = await api_bonos_createBonus(bonusData);
-
-      if (response.success) {
-        toast.success("Bonos creados exitosamente");
-
-        // Obtener los bonos creados de la respuesta
-        const bonosCreados = response.data.bonuses || response.data.data || [];
-
-        // Notificar al componente padre
-        if (onBonoCreated) {
-          tireList.forEach((tire) => {
-            onBonoCreated({
-              ...tire,
-              invoiceNumber,
-              cliente: {
-                ID_CUSTOMERRETREAD: selectedClient.ID_CUSTOMERRETREAD,
-                CUSTOMER_NAME: selectedClient.CUSTOMER_NAME,
-                CUSTOMER_LASTNAME: selectedClient.CUSTOMER_LASTNAME,
-                CUSTOMER_IDENTIFICATION: selectedClient.CUSTOMER_IDENTIFICATION,
-              },
-            });
-          });
-        }
-
-        // Generar y enviar PDF con todos los bonos
-        if (bonosCreados.length > 0) {
-          try {
-            toast.info("Generando PDF con todos los bonos...");
-
-            const sendResponse = await generateAndSendMultipleBonosPDF(
-              bonosCreados,
-              selectedClient,
-              invoiceNumber
-            );
-
-            if (sendResponse.success) {
-              toast.success(
-                "PDF con todos los bonos enviado por email y WhatsApp"
-              );
-            } else {
-              toast.warning(
-                "Bonos creados pero hubo un error al enviar el PDF"
-              );
-            }
-          } catch (pdfError) {
-            console.error("Error al generar/enviar PDF:", pdfError);
-            toast.warning("Bonos creados pero hubo un error al enviar el PDF");
-          }
-        }
-
-        // Limpiar la lista y cerrar después de un delay
-        setTimeout(() => {
-          toast.success(`${products.length} bonos fueron creados exitosamente`);
-          setTireList([]);
-          if (onClose) {
-            onClose();
-          }
-        }, 1500);
-      } else {
-        throw new Error(response.message || "Error al crear los bonos");
-      }
-    } catch (error) {
-      console.error("Error al guardar los bonos:", error);
-      toast.error(`Error al crear los bonos: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
+    if (failedCount > 0) {
+      toast.error(`${failedCount} bono(s) no se pudieron activar`);
     }
   };
 
   return (
     <ModalOverlay onClick={onClose}>
-      <ModalContent
-        $invoiceConfirmed={invoiceConfirmed}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
           <ModalTitle>
             <RenderIcon name="FaTicket" size={18} />
             Nuevo Bono
-            {selectedClient &&
-              ` - ${selectedClient.CUSTOMER_NAME} ${selectedClient.CUSTOMER_LASTNAME}`}
           </ModalTitle>
           <CloseButton onClick={onClose}>
             <RenderIcon name="FaXmark" size={14} />
           </CloseButton>
         </ModalHeader>
 
-        <ModalBody $invoiceConfirmed={invoiceConfirmed}>
-          {/* Columna Izquierda: Formulario */}
-          <LeftColumn>
-            {selectedClient && (
-              <ClientInfo>
-                <ClientName>
-                  {selectedClient.CUSTOMER_NAME}{" "}
-                  {selectedClient.CUSTOMER_LASTNAME}
-                </ClientName>
-                <ClientCiRuc>
-                  CI/RUC: {selectedClient.CUSTOMER_IDENTIFICATION}
-                </ClientCiRuc>
-              </ClientInfo>
-            )}
+        <ModalBody>
+          <HintText>
+            Complete Maestro e Item para cada bono que desea activar, marque
+            la casilla "ACTIVAR" y presione "Guardar" para activarlos todos
+            en una sola acción.
+          </HintText>
 
-            {/* Sección 1: Número de Factura */}
-            <Section>
-              <SectionTitle>
-                <RenderIcon name="FaFileInvoice" size={16} />
-                Paso 1: Número de Factura
-              </SectionTitle>
+          {rows.length === 0 ? (
+            <EmptyState>
+              <RenderIcon name="FaBoxOpen" size={48} />
+              <p>No tiene bonos disponibles para activar.</p>
+            </EmptyState>
+          ) : (
+            <TableWrapper>
+              <StyledTable>
+                <Thead>
+                  <tr>
+                    <Th>Marca</Th>
+                    <Th>Aro/Rin</Th>
+                    <Th>Maestro *</Th>
+                    <Th>Item *</Th>
+                    <Th>Fecha</Th>
+                    <Th>ACTIVAR</Th>
+                  </tr>
+                </Thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const key = row.id;
+                    const input = getRowInput(key);
+                    const complete = isRowComplete(input);
 
-              {!invoiceConfirmed ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: "10px",
-                    alignItems: "center",
-                  }}
-                >
-                  <Input
-                    label="Número de Factura *"
-                    type="text"
-                    name="invoiceNumber"
-                    value={invoiceNumber}
-                    onChange={handleInvoiceChange}
-                    placeholder="Ingrese el número de factura"
-                    errorMessage={errors.invoice}
-                    fullWidth
-                  />
-                  <FormActions>
-                    <Button
-                      type="button"
-                      text="Confirmar Factura"
-                      variant="solid"
-                      backgroundColor={theme.colors.primary}
-                      leftIconName="FaCheck"
-                      onClick={handleInvoiceSubmit}
-                    />
-                  </FormActions>
-                </div>
-              ) : (
-                <InvoiceNumberContainer>
-                  <InvoiceNumber>
-                    <RenderIcon name="FaFileInvoice" size={16} />
-                    Factura: {invoiceNumber}
-                  </InvoiceNumber>
-                </InvoiceNumberContainer>
-              )}
-            </Section>
-
-            {/* Sección 2: Agregar Llantas */}
-            {invoiceConfirmed && (
-              <Section>
-                <SectionTitle>
-                  <RenderIcon name="FaPlus" size={16} />
-                  Paso 2: Agregar Llantas
-                </SectionTitle>
-
-                <FormGrid>
-                  <div>
-                    <Select
-                      label="Marca *"
-                      options={brandOptions}
-                      value={tireForm.brand}
-                      onChange={handleTireInputChange}
-                      placeholder="Seleccione la marca"
-                      name="brand"
-                      width="100%"
-                      maxHeight={200}
-                      dropDirection="down"
-                    />
-                    {errors.brand && (
-                      <div
-                        style={{
-                          color: theme.colors.error,
-                          fontSize: "10px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {errors.brand}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Select
-                      label="Aro/Rin *"
-                      options={sizeOptions}
-                      value={tireForm.size}
-                      onChange={handleTireInputChange}
-                      placeholder="Seleccione el Aro/Rin"
-                      name="size"
-                      width="100%"
-                      maxHeight={200}
-                      dropDirection="down"
-                      disabled={!tireForm.brand}
-                    />
-                    {errors.size && (
-                      <div
-                        style={{
-                          color: theme.colors.error,
-                          fontSize: "10px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {errors.size}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Select
-                      label="Diseño *"
-                      options={modelOptions}
-                      value={tireForm.model}
-                      onChange={handleTireInputChange}
-                      placeholder="Seleccione el diseño"
-                      name="model"
-                      withSearch={true}
-                      width="100%"
-                      maxHeight={200}
-                      dropDirection="up"
-                      disabled={!tireForm.brand || !tireForm.size}
-                    />
-                    {errors.model && (
-                      <div
-                        style={{
-                          color: theme.colors.error,
-                          fontSize: "10px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {errors.model}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Select
-                      label="Medida *"
-                      options={measureOptions}
-                      value={tireForm.measure}
-                      onChange={handleTireInputChange}
-                      placeholder="Seleccione la medida"
-                      name="measure"
-                      withSearch={true}
-                      width="100%"
-                      maxHeight={200}
-                      dropDirection="up"
-                      disabled={
-                        !tireForm.brand || !tireForm.size || !tireForm.model
-                      }
-                    />
-                    {errors.measure && (
-                      <div
-                        style={{
-                          color: theme.colors.error,
-                          fontSize: "10px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {errors.measure}
-                      </div>
-                    )}
-                  </div>
-
-                  <Input
-                    label={`Cantidad * (Disponibles: ${
-                      tireForm.brand && tireForm.size && tireForm.model
-                        ? getAvailableBonusesForProduct(
-                            tireForm.brand,
-                            tireForm.size,
-                            tireForm.model
-                          )
-                        : 0
-                    })`}
-                    type="number"
-                    name="quantity"
-                    value={tireForm.quantity}
-                    onChange={handleTireInputChange}
-                    placeholder="Cantidad"
-                    errorMessage={errors.quantity}
-                    min="1"
-                    max={
-                      tireForm.brand && tireForm.size && tireForm.model
-                        ? getAvailableBonusesForProduct(
-                            tireForm.brand,
-                            tireForm.size,
-                            tireForm.model
-                          )
-                        : undefined
-                    }
-                    disabled={
-                      !tireForm.brand || !tireForm.size || !tireForm.model
-                    }
-                    fullWidth
-                  />
-                </FormGrid>
-
-                <FormActions>
-                  <Button
-                    type="button"
-                    text="Agregar Llanta a la Lista"
-                    variant="solid"
-                    backgroundColor={theme.colors.success}
-                    leftIconName="FaPlus"
-                    onClick={handleAddTire}
-                  />
-                </FormActions>
-              </Section>
-            )}
-          </LeftColumn>
-
-          {/* Columna Derecha: Lista de Llantas */}
-          {invoiceConfirmed && (
-            <RightColumn>
-              <SectionTitle>
-                <RenderIcon name="FaList" size={16} />
-                Llantas Agregadas ({tireList.length})
-              </SectionTitle>
-
-              {tireList.length === 0 ? (
-                <EmptyState>
-                  <RenderIcon name="FaBoxOpen" size={48} />
-                  <p>
-                    No hay llantas agregadas. Agregue llantas usando el
-                    formulario de la izquierda.
-                  </p>
-                </EmptyState>
-              ) : (
-                <TireList>
-                  {tireList.map((tire) => (
-                    <TireItem key={tire.id}>
-                      <TireInfo>
-                        <TireField>
-                          <TireFieldLabel>Marca</TireFieldLabel>
-                          <TireFieldValue>{tire.brand}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Aro/Rin</TireFieldLabel>
-                          <TireFieldValue>{tire.size}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Diseño</TireFieldLabel>
-                          <TireFieldValue>{tire.model}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Medida</TireFieldLabel>
-                          <TireFieldValue>{tire.measure}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Cantidad</TireFieldLabel>
-                          <TireFieldValue>{tire.quantity}</TireFieldValue>
-                        </TireField>
-                        <TireField>
-                          <TireFieldLabel>Bonos Disponibles</TireFieldLabel>
-                          <TireFieldValue
-                            style={{
-                              color:
-                                getAvailableBonusesForProduct(
-                                  tire.brand,
-                                  tire.size,
-                                  tire.model
-                                ) > 0
-                                  ? theme.colors.success
-                                  : theme.colors.error,
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {getAvailableBonusesForProduct(
-                              tire.brand,
-                              tire.size,
-                              tire.model
-                            )}
-                          </TireFieldValue>
-                        </TireField>
-                      </TireInfo>
-                      <TireActions>
-                        <Button
-                          type="button"
-                          variant="text"
-                          color={theme.colors.error}
-                          leftIconName="FaTrash"
-                          onClick={() => handleRemoveTire(tire.id)}
-                          disabled={isSubmitting}
-                          size="small"
-                        />
-                      </TireActions>
-                    </TireItem>
-                  ))}
-                </TireList>
-              )}
-            </RightColumn>
+                    return (
+                      <Tr key={key} $error={!!rowErrors[key]}>
+                        <Td>
+                          <BrandCell>{row.BRAND}</BrandCell>
+                        </Td>
+                        <Td>
+                          <RinCell>{row.SIZE}</RinCell>
+                        </Td>
+                        <Td>
+                          <CellInput
+                            type="text"
+                            placeholder="Maestro"
+                            value={input.maestro}
+                            onChange={(e) =>
+                              updateRowInput(key, { maestro: e.target.value })
+                            }
+                            disabled={saving}
+                          />
+                        </Td>
+                        <Td>
+                          <CellInput
+                            type="text"
+                            placeholder="N° item"
+                            value={input.item}
+                            onChange={(e) =>
+                              updateRowInput(key, { item: e.target.value })
+                            }
+                            disabled={saving}
+                          />
+                        </Td>
+                        <Td>
+                          <FechaCell>{fechaHoy}</FechaCell>
+                        </Td>
+                        <Td>
+                          <IncluirCheckbox
+                            type="checkbox"
+                            checked={!!input.selected}
+                            disabled={!complete || saving}
+                            onChange={(e) =>
+                              updateRowInput(key, { selected: e.target.checked })
+                            }
+                          />
+                          {rowErrors[key] && (
+                            <RowErrorText>{rowErrors[key]}</RowErrorText>
+                          )}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </tbody>
+              </StyledTable>
+            </TableWrapper>
           )}
         </ModalBody>
 
-        {/* Footer con acciones */}
         <ModalFooter>
-          {tireList.length > 0 && (
+          <SelectionSummary>
+            {selectedCount} bono(s) seleccionado(s) para guardar
+          </SelectionSummary>
+          <FooterActions>
             <Button
               type="button"
-              text="Cancelar"
+              text="Cerrar"
               variant="outlined"
               onClick={onClose}
+              disabled={saving}
               leftIconName="FaXmark"
-              disabled={isSubmitting}
             />
-          )}
-          {tireList.length > 0 && (
             <Button
               type="button"
-              text={isSubmitting ? "Guardando..." : "Guardar Todas"}
+              text={saving ? "Guardando..." : "Guardar"}
               variant="solid"
               backgroundColor={theme.colors.primary}
               leftIconName="FaSave"
-              onClick={handleSaveAll}
-              disabled={isSubmitting}
+              onClick={handleGuardarTodo}
+              disabled={saving || selectedCount === 0}
             />
-          )}
+          </FooterActions>
         </ModalFooter>
       </ModalContent>
     </ModalOverlay>

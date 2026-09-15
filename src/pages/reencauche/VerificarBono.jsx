@@ -395,13 +395,11 @@ const VerificarBono = () => {
         setLoading(true);
         setError(null);
 
-        // Validar que el rol tenga acceso al tipo de URL correcto
-        if (user?.ROLE_NAME === ROLES.CLIENTE && !code && mstr) {
-          throw new Error(
-            "No se encontró información relacionada. Los clientes solo pueden acceder con código de factura."
-          );
-        }
-
+        // Validar que el rol tenga acceso al tipo de URL correcto.
+        // Nota: los mayoristas (CLIENTE) ahora pueden verificar tanto por
+        // código de factura como por código de master -- desde que los bonos
+        // se crean sin cliente final asociado, el "Ver" del historial de
+        // bonos siempre genera un enlace de master (ver ClientesReencauche.jsx).
         if (user?.ROLE_NAME === ROLES.REENCAUCHE_USER && code && !mstr) {
           throw new Error(
             "No se encontró información relacionada. Los usuarios de reencauche solo pueden acceder con código de master."
@@ -858,9 +856,9 @@ const VerificarBono = () => {
           } - Sistema de Bonos`}
           description={`Sistema de verificación y activación de bonos de reencauche. ${
             isMaster ? "Master" : "Factura"
-          }: ${verificationData.invoiceNumber} con ${
-            verificationData.totalBonuses
-          } bonos disponibles.`}
+          }: ${
+            isMaster ? verificationData.master : verificationData.invoiceNumber
+          } con ${verificationData.totalBonuses} bonos disponibles.`}
           keywords="bonos, reencauche, verificación, activación, llantas, neumáticos"
         />
         <PageContainer fullWidth>
@@ -878,8 +876,9 @@ const VerificarBono = () => {
                   name={isMaster ? "FaQrcode" : "FaFileInvoice"}
                   size={20}
                 />
-                {isMaster ? "Master: " : "Factura: "}
-                {verificationData.invoiceNumber}
+                {isMaster
+                  ? `Master: ${verificationData.master}`
+                  : `Factura: ${verificationData.invoiceNumber}`}
               </Title>
               <Subtitle>
                 {verificationData.totalBonuses} bonos disponibles
@@ -1145,9 +1144,9 @@ const VerificarBono = () => {
           } - Sistema de Bonos`}
           description={`Sistema de verificación y gestión de bonos de reencauche. ${
             isMaster ? "Master" : "Factura"
-          }: ${verificationData.invoiceNumber} con ${
-            filteredBonos.length
-          } bonos activos, usados y rechazados.`}
+          }: ${
+            isMaster ? verificationData.master : verificationData.invoiceNumber
+          } con ${filteredBonos.length} bonos activos, usados y rechazados.`}
           keywords="bonos, reencauche, verificación, activación, llantas, neumáticos, gestión"
         />
         <PageContainer fullWidth>

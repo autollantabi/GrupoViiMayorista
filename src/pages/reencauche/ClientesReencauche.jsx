@@ -6,19 +6,16 @@ import Button from "../../components/ui/Button";
 import RenderIcon from "../../components/ui/RenderIcon";
 import SEO from "../../components/seo/SEO";
 import { useNavigate } from "react-router-dom";
-import FormularioNuevoCliente from "./FormularioNuevoCliente";
 import FormularioNuevoBonoLista from "./FormularioNuevoBonoLista";
 import PDFGenerator from "../../components/pdf/PDFGenerator";
 import {
-  api_bonos_getClientesByMayorista,
-  api_bonos_getBonosByCustomer,
-  api_bonos_generateQR,
+  api_bonos_getBonosByMayoristaUser,
+  api_bonos_generateQRMaster,
   api_bonos_getSalesDataForBonus,
 } from "../../api/bonos/apiBonos";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import {
-  generateAndSendMultipleBonosPDF,
   downloadMultipleBonosPDF,
   previewBonosHTML,
 } from "../../utils/bonoUtils";
@@ -70,124 +67,6 @@ const SearchInput = styled.input`
   }
 `;
 
-const ClientsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
-`;
-
-const ClientCard = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 12px ${({ theme }) => theme.colors.shadow};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px ${({ theme }) => theme.colors.shadow};
-  }
-`;
-
-const ClientHeader = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-const ClientAvatar = styled.div`
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(
-    135deg,
-    ${({ theme }) => theme.colors.primary},
-    ${({ theme }) => theme.colors.primaryDark || theme.colors.primary}
-  );
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-right: 16px;
-`;
-
-const ClientInfo = styled.div`
-  flex: 1;
-`;
-
-const ClientName = styled.h3`
-  margin: 0 0 4px 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 1.1rem;
-`;
-
-const ClientCompany = styled.p`
-  margin: 0;
-  color: ${({ theme }) => theme.colors.textLight};
-  font-size: 0.9rem;
-`;
-
-const ClientDetails = styled.div`
-  margin-bottom: 20px;
-`;
-
-const DetailRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-`;
-
-const DetailLabel = styled.span`
-  color: ${({ theme }) => theme.colors.textLight};
-  font-weight: 500;
-`;
-
-const DetailValue = styled.span`
-  color: ${({ theme }) => theme.colors.text};
-`;
-
-const StatusBadge = styled.span`
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background-color: ${({ theme, $status }) => {
-    switch ($status) {
-      case "activo":
-        return theme.colors.success + "20";
-      case "inactivo":
-        return theme.colors.error + "20";
-      case "pendiente":
-        return theme.colors.warning + "20";
-      default:
-        return theme.colors.textLight + "20";
-    }
-  }};
-  color: ${({ theme, $status }) => {
-    switch ($status) {
-      case "activo":
-        return theme.colors.success;
-      case "inactivo":
-        return theme.colors.error;
-      case "pendiente":
-        return theme.colors.warning;
-      default:
-        return theme.colors.textLight;
-    }
-  }};
-`;
-
-const ClientActions = styled.div`
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-`;
-
 const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
@@ -207,107 +86,6 @@ const EmptyIcon = styled.div`
       transform: rotate(360deg);
     }
   }
-`;
-
-// Estilos para el modal de detalles
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-`;
-
-const ModalContent = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const ModalTitle = styled.h2`
-  margin: 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.text};
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 24px;
-`;
-
-const ModalClientInfo = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const ModalClientName = styled.h3`
-  margin: 0 0 8px 0;
-  color: ${({ theme }) => theme.colors.text};
-  font-size: 1.3rem;
-`;
-
-const ModalClientDetails = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-`;
-
-const ModalDetailItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const ModalDetailLabel = styled.span`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.colors.textLight};
-  font-weight: 500;
-`;
-
-const ModalDetailValue = styled.span`
-  font-size: 1rem;
-  color: ${({ theme }) => theme.colors.text};
 `;
 
 const BonosSection = styled.div`
@@ -330,7 +108,7 @@ const BonosList = styled.div`
 `;
 
 const FacturaGroup = styled.div`
-  background-color: ${({ theme }) => theme.colors.background};
+  background-color: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   padding: 16px;
@@ -348,6 +126,8 @@ const FacturaHeader = styled.div`
   margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
+  flex-wrap: wrap;
+  gap: 12px;
 `;
 
 const FacturaInfo = styled.div`
@@ -380,7 +160,7 @@ const BonosGrid = styled.div`
 `;
 
 const BonoCard = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
+  background-color: ${({ theme }) => theme.colors.background};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 6px;
   padding: 10px;
@@ -451,86 +231,11 @@ const EmptyBonosIcon = styled.div`
   opacity: 0.5;
 `;
 
-const BonoActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-  gap: 8px;
-`;
-
-const PDFButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.error};
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.error}dd;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const PreviewButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.primary}dd;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const ViewButton = styled.button`
-  background-color: #10b981;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #059669;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
 const ButtonsContainer = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 const BonosDisponiblesContainer = styled.div`
@@ -550,6 +255,7 @@ const BonosDisponiblesInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 `;
 
 const BonosDisponiblesLabel = styled.span`
@@ -618,15 +324,11 @@ const AlertaBonos0 = styled.div`
 const ClientesReencauche = () => {
   const { theme } = useAppTheme();
   const [searchTerm, setSearchTerm] = useState("");
-  const [showClientModal, setShowClientModal] = useState(false);
   const [showBonoModal, setShowBonoModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   const [selectedBono, setSelectedBono] = useState(null);
-  const [clientes, setClientes] = useState([]);
-  const [bonos, setBonos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [bonosMayorista, setBonosMayorista] = useState([]);
+  const [loadingBonos, setLoadingBonos] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -634,19 +336,19 @@ const ClientesReencauche = () => {
   const [bonosDisponiblesData, setBonosDisponiblesData] = useState(null);
   const [loadingBonosDisponibles, setLoadingBonosDisponibles] = useState(false);
 
-  const obtenerClientesDeMayorista = async () => {
+  const obtenerBonosMayorista = async () => {
     try {
-      setLoading(true);
-      const response = await api_bonos_getClientesByMayorista(user.ID_USER);
+      setLoadingBonos(true);
+      const response = await api_bonos_getBonosByMayoristaUser(user.ID_USER);
       if (response.success) {
-        setClientes(response.data);
+        setBonosMayorista(response.data);
       } else {
-        console.error("Error obteniendo clientes:", response.message);
+        console.error("Error obteniendo bonos del mayorista:", response.message);
       }
     } catch (error) {
       console.error("Error en la API:", error);
     } finally {
-      setLoading(false);
+      setLoadingBonos(false);
     }
   };
 
@@ -676,41 +378,11 @@ const ClientesReencauche = () => {
     }
   };
 
-  const obtenerBonosDeCliente = async (idCliente) => {
-    try {
-      const response = await api_bonos_getBonosByCustomer(idCliente);
-      if (response.success) {
-        setBonos(response.data);
-      } else {
-        console.error("Error obteniendo bonos:", response.message);
-        setBonos([]);
-      }
-    } catch (error) {
-      console.error("Error en la API de bonos:", error);
-      setBonos([]);
-    }
-  };
-
   useEffect(() => {
-    obtenerClientesDeMayorista();
+    obtenerBonosMayorista();
     obtenerBonosDisponibles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const filteredClients = clientes.filter(
-    (client) =>
-      client.CUSTOMER_NAME.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.CUSTOMER_LASTNAME.toLowerCase().includes(
-        searchTerm.toLowerCase()
-      ) ||
-      client.CUSTOMER_IDENTIFICATION.includes(searchTerm)
-  );
-
-  const getInitials = (nombre, apellido) => {
-    const first = String(nombre || "").trim().charAt(0);
-    const last = String(apellido || "").trim().charAt(0);
-    if (!first && !last) return "??";
-    return (first + last).toUpperCase();
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -735,25 +407,6 @@ const ClientesReencauche = () => {
     return `${day} ${month} ${year}`;
   };
 
-  const getClientBonos = (clientId) => {
-    return bonos.filter((bono) => bono.ID_CUSTOMERRETREAD === clientId);
-  };
-
-  const groupBonosByInvoice = (clientId) => {
-    const clientBonos = getClientBonos(clientId);
-    const grouped = {};
-
-    clientBonos.forEach((bono) => {
-      const invoiceNumber = bono.INVOICENUMBER || "Sin Factura";
-      if (!grouped[invoiceNumber]) {
-        grouped[invoiceNumber] = [];
-      }
-      grouped[invoiceNumber].push(bono);
-    });
-
-    return grouped;
-  };
-
   const parseProductSpecification = (specification) => {
     if (!specification || specification === "") {
       return { brand: "N/A", size: "N/A", design: "N/A" };
@@ -766,56 +419,63 @@ const ClientesReencauche = () => {
     };
   };
 
-  const handleViewClient = (clientId) => {
-    const client = clientes.find((c) => c.ID_CUSTOMERRETREAD === clientId);
-    setSelectedClient(client);
+  const groupBonosByMaster = () => {
+    const grouped = {};
 
-    setShowDetailsModal(true);
-    // Obtener bonos del cliente
-    obtenerBonosDeCliente(clientId);
+    bonosMayorista.forEach((bono) => {
+      const master = bono.MASTER || bono.INVOICENUMBER || "Sin Master";
+      if (!grouped[master]) {
+        grouped[master] = [];
+      }
+      grouped[master].push(bono);
+    });
+
+    return grouped;
   };
 
-  const handleNewBono = (clientId) => {
+  const filteredGroupEntries = Object.entries(groupBonosByMaster()).filter(
+    ([master, bonosDelGrupo]) => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        master.toLowerCase().includes(term) ||
+        bonosDelGrupo.some((bono) =>
+          (bono.INVOICENUMBER || "").toLowerCase().includes(term)
+        )
+      );
+    }
+  );
+
+  const handleNewBono = () => {
     if (!hayBonosDisponibles) {
-      toast.error("No tiene bonos disponibles para crear nuevos bonos");
+      toast.error("No tiene bonos disponibles para activar");
       return;
     }
-    const client = clientes.find((c) => c.ID_CUSTOMERRETREAD === clientId);
-    setSelectedClient(client);
     setShowBonoModal(true);
-  };
-
-  const handleNewClient = () => {
-    setShowClientModal(true);
   };
 
   const handleCloseBonoModal = () => {
     setShowBonoModal(false);
-    setSelectedClient(null);
   };
 
-  const handleCloseClientModal = () => {
-    setShowClientModal(false);
-  };
-
-  const handleCloseDetailsModal = () => {
-    setShowDetailsModal(false);
-    setSelectedClient(null);
-  };
-
-  const handleGeneratePDF = async (invoiceNumber, bonosDeFactura) => {
+  const handleBonoCreated = async () => {
     try {
-      toast.info("Generando PDF con todos los bonos de la factura...");
+      await obtenerBonosDisponibles();
+      await obtenerBonosMayorista();
+    } catch (error) {
+      console.error("Error actualizando datos:", error);
+    }
+  };
 
+  const handleGeneratePDF = async (master, bonosDeFactura) => {
+    try {
       const downloadResponse = await downloadMultipleBonosPDF(
         bonosDeFactura,
-        selectedClient,
-        invoiceNumber
+        null,
+        master
       );
 
-      if (downloadResponse.success) {
-        toast.success("PDF descargado exitosamente");
-      } else {
+      if (!downloadResponse.success) {
         toast.error("Error al descargar el PDF");
       }
     } catch (error) {
@@ -824,22 +484,18 @@ const ClientesReencauche = () => {
     }
   };
 
-  const handleRedirectToVerificarBono = async (invoiceNumber) => {
+  const handleRedirectToVerificarBono = async (master) => {
     try {
       toast.info("Generando código de verificación...");
 
-      // Generar el QR code para obtener el código encriptado
-      const response = await api_bonos_generateQR(invoiceNumber);
+      const response = await api_bonos_generateQRMaster(master);
 
       if (response.success && response.data.qrCode) {
-        const encryptedCode = response.data.qrCode;
+        const encryptedMaster = response.data.qrCode;
 
-        // Abrir en nueva pestaña
-        // Usar window.location.origin asegura que usemos el mismo dominio/protocolo actual, 
-        // evitando problemas con variables de entorno mal configuradas en producción.
         const verifyUrl = `${window.location.origin}${
           ROUTES.REENCAUCHE.VERIFICAR
-        }?code=${encodeURIComponent(encryptedCode)}`;
+        }?mstr=${encodeURIComponent(encryptedMaster)}`;
         window.open(verifyUrl, "_blank");
 
         toast.success("Página de verificación abierta");
@@ -852,19 +508,15 @@ const ClientesReencauche = () => {
     }
   };
 
-  const handlePreviewPDF = async (invoiceNumber, bonosDeFactura) => {
+  const handlePreviewPDF = async (master, bonosDeFactura) => {
     try {
-      toast.info("Abriendo previsualización...");
-
       const previewResponse = await previewBonosHTML(
         bonosDeFactura,
-        selectedClient,
-        invoiceNumber
+        null,
+        master
       );
 
-      if (previewResponse.success) {
-        toast.success("Previsualización abierta exitosamente");
-      } else {
+      if (!previewResponse.success) {
         toast.error("Error al abrir la previsualización");
       }
     } catch (error) {
@@ -876,30 +528,6 @@ const ClientesReencauche = () => {
   const handleClosePDFGenerator = () => {
     setShowPDFGenerator(false);
     setSelectedBono(null);
-  };
-
-  const handleClientCreated = async (newClient) => {
-    // El cliente ya fue creado en el formulario, solo recargar la lista
-    await obtenerClientesDeMayorista();
-  };
-
-  const handleBonoCreated = async (newBono) => {
-    try {
-      // El bono ya fue creado en el formulario, solo recargar los datos
-
-      // Recargar los bonos disponibles para actualizar los contadores
-      await obtenerBonosDisponibles();
-
-      // Si hay un cliente seleccionado, recargar sus bonos
-      if (selectedClient) {
-        await obtenerBonosDeCliente(selectedClient.ID_CUSTOMERRETREAD);
-      }
-
-      // Recargar la lista de clientes para actualizar estadísticas
-      await obtenerClientesDeMayorista();
-    } catch (error) {
-      console.error("Error actualizando datos:", error);
-    }
   };
 
   // Función para verificar si hay bonos disponibles
@@ -917,9 +545,9 @@ const ClientesReencauche = () => {
   return (
     <>
       <SEO
-        title="Gestión de Clientes y Bonos - Sistema de Reencauche"
-        description={`Sistema de gestión de clientes y bonos de reencauche. Administra ${clientes.length} clientes y genera códigos QR para verificación de bonos. Crea, gestiona y descarga bonos en formato PDF.`}
-        keywords="gestión clientes, bonos reencauche, códigos QR, generación PDF, llantas, neumáticos, clientes"
+        title="Gestión de Bonos - Sistema de Reencauche"
+        description="Sistema de activación de bonos de reencauche. Activa bonos por Aro/Rin y genera códigos QR para verificación, sin necesidad de asociar un cliente final."
+        keywords="gestión bonos, bonos reencauche, códigos QR, llantas, neumáticos"
       />
       <PageContainer
         backButtonOnClick={() => navigate("/")}
@@ -927,22 +555,26 @@ const ClientesReencauche = () => {
       >
         <PageHeader>
           <PageTitle>
-            <RenderIcon name="FaUsers" size={32} />
-            Clientes de Bonos
+            <RenderIcon name="FaTicket" size={32} />
+            Bonos de Reencauche
           </PageTitle>
           <SearchContainer>
             <SearchInput
               type="text"
-              placeholder="Buscar clientes..."
+              placeholder="Buscar por Master o Factura..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <Button
-              text="Nuevo Cliente"
+              text="Nuevo Bono"
               variant="solid"
-              backgroundColor={theme.colors.primary}
-              leftIconName="FaPlus"
-              onClick={handleNewClient}
+              backgroundColor={
+                hayBonosDisponibles ? theme.colors.success : theme.colors.textLight
+              }
+              leftIconName="FaTicket"
+              onClick={handleNewBono}
+              disabled={!hayBonosDisponibles}
+              title={!hayBonosDisponibles ? "No hay bonos disponibles" : undefined}
             />
           </SearchContainer>
         </PageHeader>
@@ -997,7 +629,7 @@ const ClientesReencauche = () => {
             <div>
               <strong>No tiene bonos disponibles</strong>
               <div style={{ fontSize: "0.9rem", marginTop: "4px" }}>
-                No puede crear nuevos bonos hasta que haga una compra de la
+                No puede activar nuevos bonos hasta que haga una compra de la
                 marca y rin seleccionada.
               </div>
             </div>
@@ -1015,329 +647,158 @@ const ClientesReencauche = () => {
           </AlertaBonos>
         )}
 
-        {loading ? (
-          <EmptyState>
-            <EmptyIcon>
-              <RenderIcon
-                name="FaSpinner"
-                size={64}
-                style={{ animation: "spin 1s linear infinite" }}
-              />
-            </EmptyIcon>
-            <h3>Cargando clientes...</h3>
-            <p>Obteniendo información de la base de datos.</p>
-          </EmptyState>
-        ) : filteredClients.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>
-              <RenderIcon name="FaMagnifyingGlass" size={64} />
-            </EmptyIcon>
-            <h3>No se encontraron clientes</h3>
-            <p>
-              {!hayBonosDisponibles
-                ? "No tiene bonos disponibles para asignar. Contacte con el administrador."
-                : searchTerm
-                ? "Intenta con otros términos de búsqueda o agrega un nuevo cliente."
-                : "Aún no has agregado ningún cliente. Agrega tu primer cliente para comenzar."}
-            </p>
-          </EmptyState>
-        ) : (
-          <ClientsGrid>
-            {filteredClients.map((client) => (
-              <ClientCard key={client.ID_CUSTOMERRETREAD}>
-                <ClientHeader>
-                  <ClientAvatar>
-                    {getInitials(
-                      client.CUSTOMER_NAME,
-                      client.CUSTOMER_LASTNAME
-                    )}
-                  </ClientAvatar>
-                  <ClientInfo>
-                    <ClientName>
-                      {client.CUSTOMER_NAME} {client.CUSTOMER_LASTNAME}
-                    </ClientName>
-                    <ClientCompany>
-                      CI/RUC: {client.CUSTOMER_IDENTIFICATION}
-                    </ClientCompany>
-                  </ClientInfo>
-                </ClientHeader>
+        <BonosSection>
+          <SectionTitle>
+            <RenderIcon name="FaHistory" size={20} />
+            Historial de Bonos Activados ({bonosMayorista.length} bonos)
+          </SectionTitle>
 
-                <ClientDetails>
-                  <DetailRow>
-                    <DetailLabel>Último Bono:</DetailLabel>
-                    <DetailValue>
-                      {formatDate(client.LASTACTIVEBONUS)}
-                    </DetailValue>
-                  </DetailRow>
-                  <DetailRow>
-                    <DetailLabel>Total Bonos:</DetailLabel>
-                    <DetailValue>{client.TOTALBONUS}</DetailValue>
-                  </DetailRow>
-                </ClientDetails>
+          {loadingBonos ? (
+            <EmptyState>
+              <EmptyIcon>
+                <RenderIcon
+                  name="FaSpinner"
+                  size={64}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+              </EmptyIcon>
+              <h3>Cargando bonos...</h3>
+            </EmptyState>
+          ) : filteredGroupEntries.length === 0 ? (
+            <EmptyBonos>
+              <EmptyBonosIcon>
+                <RenderIcon name="FaTicket" size={48} />
+              </EmptyBonosIcon>
+              <h4>No hay bonos registrados</h4>
+              <p>
+                {searchTerm
+                  ? "Intenta con otros términos de búsqueda."
+                  : "Aún no ha activado ningún bono. Usa el botón 'Nuevo Bono' para comenzar."}
+              </p>
+            </EmptyBonos>
+          ) : (
+            <BonosList>
+              {filteredGroupEntries.map(([master, bonosDelGrupo]) => (
+                <FacturaGroup key={master}>
+                  <FacturaHeader>
+                    <FacturaInfo>
+                      <FacturaNumber>
+                        <RenderIcon name="FaFileInvoice" size={16} />
+                        {master}
+                      </FacturaNumber>
+                      <BonosCount>{bonosDelGrupo.length} bonos</BonosCount>
+                    </FacturaInfo>
+                    <ButtonsContainer>
+                      <Button
+                        text="Ver"
+                        leftIconName="FaEye"
+                        size="small"
+                        backgroundColor="#10b981"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleRedirectToVerificarBono(master);
+                        }}
+                      />
+                      <Button
+                        text="Visualizar PDF"
+                        leftIconName="FaEye"
+                        size="small"
+                        variant="solid"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handlePreviewPDF(master, bonosDelGrupo);
+                        }}
+                      />
+                      <Button
+                        text="Descargar PDF"
+                        leftIconName="FaFilePdf"
+                        size="small"
+                        backgroundColor="#ef4444"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleGeneratePDF(master, bonosDelGrupo);
+                        }}
+                      />
+                    </ButtonsContainer>
+                  </FacturaHeader>
 
-                <ClientActions>
-                  <Button
-                    text="Ver Detalles"
-                    variant="outlined"
-                    size="small"
-                    leftIconName="FaEye"
-                    onClick={() => handleViewClient(client.ID_CUSTOMERRETREAD)}
-                  />
-                  <Button
-                    text="Nuevo Bono"
-                    variant="solid"
-                    size="small"
-                    backgroundColor={
-                      hayBonosDisponibles
-                        ? theme.colors.success
-                        : theme.colors.textLight
-                    }
-                    leftIconName="FaTicket"
-                    onClick={() => handleNewBono(client.ID_CUSTOMERRETREAD)}
-                    disabled={!hayBonosDisponibles}
-                    title={
-                      !hayBonosDisponibles
-                        ? "No hay bonos disponibles"
-                        : undefined
-                    }
-                  />
-                </ClientActions>
-              </ClientCard>
-            ))}
-          </ClientsGrid>
-        )}
-
-        {/* Formulario de nuevo cliente */}
-        {showClientModal && (
-          <FormularioNuevoCliente
-            onClose={handleCloseClientModal}
-            onClientCreated={handleClientCreated}
-          />
-        )}
+                  <BonosGrid>
+                    {bonosDelGrupo
+                      .sort((a, b) => a.ID_BONUS - b.ID_BONUS)
+                      .map((bono) => {
+                        const producto = parseProductSpecification(
+                          bono.PRODUCT_SPECIFICATION
+                        );
+                        return (
+                          <BonoCard key={bono.ID_BONUS}>
+                            <BonoHeader>
+                              <BonoNumber>#{bono.ID_BONUS}</BonoNumber>
+                              <EstadoBadge $estado={bono.STATUS}>
+                                {getBonoStateLabel(bono.STATUS)}
+                              </EstadoBadge>
+                            </BonoHeader>
+                            <BonoDetails>
+                              <BonoDetailItem>
+                                <BonoDetailLabel>Marca:</BonoDetailLabel>
+                                <BonoDetailValue>
+                                  {producto.brand}
+                                </BonoDetailValue>
+                              </BonoDetailItem>
+                              <BonoDetailItem>
+                                <BonoDetailLabel>Aro/Rin:</BonoDetailLabel>
+                                <BonoDetailValue>
+                                  {producto.size}
+                                </BonoDetailValue>
+                              </BonoDetailItem>
+                              <BonoDetailItem>
+                                <BonoDetailLabel>
+                                  Factura:
+                                </BonoDetailLabel>
+                                <BonoDetailValue>
+                                  {bono.INVOICENUMBER || "N/A"}
+                                </BonoDetailValue>
+                              </BonoDetailItem>
+                              {bono.ITEM && (
+                                <BonoDetailItem>
+                                  <BonoDetailLabel>Item:</BonoDetailLabel>
+                                  <BonoDetailValue>
+                                    {bono.ITEM}
+                                  </BonoDetailValue>
+                                </BonoDetailItem>
+                              )}
+                              <BonoDetailItem>
+                                <BonoDetailLabel>Fecha:</BonoDetailLabel>
+                                <BonoDetailValue>
+                                  {formatDate(bono.createdAt)}
+                                </BonoDetailValue>
+                              </BonoDetailItem>
+                            </BonoDetails>
+                          </BonoCard>
+                        );
+                      })}
+                  </BonosGrid>
+                </FacturaGroup>
+              ))}
+            </BonosList>
+          )}
+        </BonosSection>
 
         {/* Formulario de nuevo bono */}
         {showBonoModal && (
           <FormularioNuevoBonoLista
-            selectedClient={selectedClient}
             onClose={handleCloseBonoModal}
             onBonoCreated={handleBonoCreated}
             bonosDisponiblesData={bonosDisponiblesData}
+            mayoristaUserId={user.ID_USER}
           />
         )}
 
         {/* Generador de PDF */}
         {showPDFGenerator && selectedBono && (
           <PDFGenerator bono={selectedBono} onClose={handleClosePDFGenerator} />
-        )}
-
-        {/* Modal de detalles del cliente */}
-        {showDetailsModal && selectedClient && (
-          <ModalOverlay onClick={handleCloseDetailsModal}>
-            <ModalContent onClick={(e) => e.stopPropagation()}>
-              <ModalHeader>
-                <ModalTitle>
-                  <RenderIcon name="FaUser" size={24} />
-                  Detalles del Cliente
-                </ModalTitle>
-                <CloseButton onClick={handleCloseDetailsModal}>
-                  <RenderIcon name="FaXmark" size={16} />
-                </CloseButton>
-              </ModalHeader>
-              <ModalBody>
-                <ModalClientInfo>
-                  <ModalClientName>
-                    {selectedClient.CUSTOMER_NAME}{" "}
-                    {selectedClient.CUSTOMER_LASTNAME}
-                  </ModalClientName>
-                  <ModalClientDetails>
-                    <ModalDetailItem>
-                      <ModalDetailLabel>CI/RUC:</ModalDetailLabel>
-                      <ModalDetailValue>
-                        {selectedClient.CUSTOMER_IDENTIFICATION}
-                      </ModalDetailValue>
-                    </ModalDetailItem>
-                    <ModalDetailItem>
-                      <ModalDetailLabel>Correo Electrónico:</ModalDetailLabel>
-                      <ModalDetailValue>
-                        {selectedClient.CUSTOMER_EMAIL || "No registrado"}
-                      </ModalDetailValue>
-                    </ModalDetailItem>
-                    <ModalDetailItem>
-                      <ModalDetailLabel>Número de Celular:</ModalDetailLabel>
-                      <ModalDetailValue>
-                        {selectedClient.CUSTOMER_PHONE || "No registrado"}
-                      </ModalDetailValue>
-                    </ModalDetailItem>
-                    <ModalDetailItem>
-                      <ModalDetailLabel>Total Bonos:</ModalDetailLabel>
-                      <ModalDetailValue>
-                        {selectedClient.TOTALBONUS}
-                      </ModalDetailValue>
-                    </ModalDetailItem>
-                    <ModalDetailItem>
-                      <ModalDetailLabel>Último Bono:</ModalDetailLabel>
-                      <ModalDetailValue>
-                        {formatDate(selectedClient.LASTACTIVEBONUS)}
-                      </ModalDetailValue>
-                    </ModalDetailItem>
-                  </ModalClientDetails>
-                </ModalClientInfo>
-
-                <BonosSection>
-                  <SectionTitle>
-                    <RenderIcon name="FaTicket" size={20} />
-                    Bonos por Factura (
-                    {
-                      getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length
-                    }{" "}
-                    bonos)
-                  </SectionTitle>
-
-                  {getClientBonos(selectedClient.ID_CUSTOMERRETREAD).length >
-                  0 ? (
-                    <BonosList>
-                      {Object.entries(
-                        groupBonosByInvoice(selectedClient.ID_CUSTOMERRETREAD)
-                      ).map(([invoiceNumber, bonosFactura]) => (
-                        <FacturaGroup key={invoiceNumber}>
-                          <FacturaHeader>
-                            <FacturaInfo>
-                              <FacturaNumber>
-                                <RenderIcon name="FaFileInvoice" size={16} />
-                                {invoiceNumber}
-                              </FacturaNumber>
-                              <BonosCount>
-                                {bonosFactura.length} bonos
-                              </BonosCount>
-                            </FacturaInfo>
-                            <ButtonsContainer>
-                              <Button
-                                text="Ver"
-                                leftIconName="FaEye"
-                                size="small"
-                                backgroundColor="#10b981"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleRedirectToVerificarBono(invoiceNumber);
-                                }}
-                              />
-                              <Button
-                                text="Preview PDF"
-                                leftIconName="FaEye"
-                                size="small"
-                                variant="solid"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handlePreviewPDF(invoiceNumber, bonosFactura);
-                                }}
-                              />
-                              <Button
-                                text="Descargar PDF"
-                                leftIconName="FaFilePdf"
-                                size="small"
-                                backgroundColor="#ef4444"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleGeneratePDF(invoiceNumber, bonosFactura);
-                                }}
-                              />
-                            </ButtonsContainer>
-                          </FacturaHeader>
-
-                          <BonosGrid>
-                            {bonosFactura
-                              .sort((a, b) => a.ID_BONUS - b.ID_BONUS)
-                              .map((bono) => {
-                                const producto = parseProductSpecification(
-                                  bono.PRODUCT_SPECIFICATION
-                                );
-                                return (
-                                  <BonoCard key={bono.ID_BONUS}>
-                                    <BonoHeader>
-                                      <BonoNumber>#{bono.ID_BONUS}</BonoNumber>
-                                      <EstadoBadge $estado={bono.STATUS}>
-                                        {getBonoStateLabel(bono.STATUS)}
-                                      </EstadoBadge>
-                                    </BonoHeader>
-                                    <BonoDetails>
-                                      <BonoDetailItem>
-                                        <BonoDetailLabel>
-                                          Marca:
-                                        </BonoDetailLabel>
-                                        <BonoDetailValue>
-                                          {producto.brand}
-                                        </BonoDetailValue>
-                                      </BonoDetailItem>
-                                      <BonoDetailItem>
-                                        <BonoDetailLabel>
-                                          Aro/Rin:
-                                        </BonoDetailLabel>
-                                        <BonoDetailValue>
-                                          {producto.size}
-                                        </BonoDetailValue>
-                                      </BonoDetailItem>
-                                      <BonoDetailItem>
-                                        <BonoDetailLabel>
-                                          Diseño:
-                                        </BonoDetailLabel>
-                                        <BonoDetailValue>
-                                          {producto.design}
-                                        </BonoDetailValue>
-                                      </BonoDetailItem>
-                                      {bono.QUANTITY && (
-                                        <BonoDetailItem>
-                                          <BonoDetailLabel>
-                                            Cant:
-                                          </BonoDetailLabel>
-                                          <BonoDetailValue>
-                                            {bono.QUANTITY}
-                                          </BonoDetailValue>
-                                        </BonoDetailItem>
-                                      )}
-                                      {bono.MASTER && (
-                                        <BonoDetailItem>
-                                          <BonoDetailLabel>
-                                            Master:
-                                          </BonoDetailLabel>
-                                          <BonoDetailValue>
-                                            {bono.MASTER}
-                                          </BonoDetailValue>
-                                        </BonoDetailItem>
-                                      )}
-                                      {bono.ITEM && (
-                                        <BonoDetailItem>
-                                          <BonoDetailLabel>
-                                            Item:
-                                          </BonoDetailLabel>
-                                          <BonoDetailValue>
-                                            {bono.ITEM}
-                                          </BonoDetailValue>
-                                        </BonoDetailItem>
-                                      )}
-                                    </BonoDetails>
-                                  </BonoCard>
-                                );
-                              })}
-                          </BonosGrid>
-                        </FacturaGroup>
-                      ))}
-                    </BonosList>
-                  ) : (
-                    <EmptyBonos>
-                      <EmptyBonosIcon>
-                        <RenderIcon name="FaTicket" size={48} />
-                      </EmptyBonosIcon>
-                      <h4>No hay bonos registrados</h4>
-                      <p>Este cliente aún no tiene bonos asociados.</p>
-                    </EmptyBonos>
-                  )}
-                </BonosSection>
-              </ModalBody>
-            </ModalContent>
-          </ModalOverlay>
         )}
       </PageContainer>
     </>

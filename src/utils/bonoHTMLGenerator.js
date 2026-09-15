@@ -1,7 +1,10 @@
 import { parseProductSpecification } from "./bonoUtils";
 
 /**
- * Genera el HTML de una tarjeta de bono
+ * Genera el HTML de una tarjeta de bono, con aspecto de ticket/voucher: un
+ * encabezado con la marca del sistema y el número de bono, y un cuerpo con
+ * solo los 4 datos que identifican la activación (Marca, Aro/Rin, Master,
+ * Item) -- ni Diseño ni Cantidad se muestran en el detalle.
  */
 export const generateBonoCard = (bono) => {
   const productoAplicable = parseProductSpecification(
@@ -10,58 +13,36 @@ export const generateBonoCard = (bono) => {
 
   return `
     <div class="bono-card">
-      <div class="bono-header">
-        <div class="bono-title">BONO DE REENCAUCHE</div>
-        <div class="bono-subtitle">MISTOX</div>
+      <div class="bono-card-header">
+        <div class="bono-brand">
+          <div class="bono-title">BONO DE REENCAUCHE</div>
+          <div class="bono-subtitle">MISTOX</div>
+        </div>
+        <div class="bono-id-badge">
+          <span class="bono-id-label">Bono</span>
+          <span class="bono-id-number">#${bono.ID_BONUS}</span>
+        </div>
       </div>
-      
-      <div class="bono-id">
-        <div class="bono-id-text">BONO #${bono.ID_BONUS}</div>
-      </div>
-      
-      <div class="bono-info">
-        <div class="info-row">
-          <span class="info-label">Marca:</span>
+
+      <div class="bono-divider"></div>
+
+      <div class="bono-info-grid">
+        <div class="info-cell">
+          <span class="info-label">Marca</span>
           <span class="info-value brand">${productoAplicable.brand}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Aro/Rin:</span>
+        <div class="info-cell">
+          <span class="info-label">Aro/Rin</span>
           <span class="info-value size">${productoAplicable.size}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Diseño:</span>
-          <span class="info-value design">${productoAplicable.design}</span>
+        <div class="info-cell">
+          <span class="info-label">Master</span>
+          <span class="info-value master">${bono.MASTER || "N/A"}</span>
         </div>
-        ${
-          bono.QUANTITY
-            ? `
-        <div class="info-row">
-          <span class="info-label">Cantidad:</span>
-          <span class="info-value quantity">${bono.QUANTITY}</span>
+        <div class="info-cell">
+          <span class="info-label">Item</span>
+          <span class="info-value item">${bono.ITEM || "N/A"}</span>
         </div>
-        `
-            : ""
-        }
-        ${
-          bono.MASTER
-            ? `
-        <div class="info-row">
-          <span class="info-label">Master:</span>
-          <span class="info-value master">${bono.MASTER}</span>
-        </div>
-        `
-            : ""
-        }
-        ${
-          bono.ITEM
-            ? `
-        <div class="info-row">
-          <span class="info-label">Item:</span>
-          <span class="info-value item">${bono.ITEM}</span>
-        </div>
-        `
-            : ""
-        }
       </div>
     </div>
   `;
@@ -88,12 +69,15 @@ export const generatePageHeader = (
             <div class="bono-count">🎫 ${bonos.length} BONOS</div>
             <div class="emission-date">📅 Emisión: ${fechaEmision}</div>
           </div>
+          ${
+            cliente
+              ? `
           <div class="client-info">
             <div class="client-row">
               <span class="client-label" style="color: #fd4703;">Cliente:</span>
               <span class="client-value">${cliente.CUSTOMER_NAME} ${
-    cliente.CUSTOMER_LASTNAME
-  }</span>
+                  cliente.CUSTOMER_LASTNAME
+                }</span>
             </div>
             <div class="client-row">
               <span class="client-label" style="color: #fd4703;">CI/RUC:</span>
@@ -114,6 +98,9 @@ export const generatePageHeader = (
               }</span>
             </div>
           </div>
+          `
+              : ""
+          }
         </div>
       </div>
     </div>
@@ -153,11 +140,9 @@ export const generateBonoPage = (
   qrCodeDataURL,
   formatDate
 ) => {
-  // Organizar bonos en filas de 2
-  const bonosInRows = [];
-  for (let i = 0; i < bonosPage.length; i += 2) {
-    bonosInRows.push(bonosPage.slice(i, i + 2));
-  }
+  // Una tarjeta por fila: al agrandar el diseño tipo ticket, ya no entran
+  // dos tarjetas una junto a otra sin verse apretadas.
+  const bonosInRows = bonosPage.map((bono) => [bono]);
 
   const bonosRowsHTML = bonosInRows
     .map(
@@ -210,8 +195,8 @@ export const generateCompleteBonosHTML = async (
     });
   };
 
-  // Calcular bonos por página (2x4 = 8 bonos por página A4)
-  const bonosPerPage = 8;
+  // Tarjetas más grandes (tipo ticket) => menos bonos entran por página A4.
+  const bonosPerPage = 3;
 
   // Dividir bonos en páginas
   const bonosPages = [];
@@ -259,25 +244,24 @@ export const generateCompleteBonosHTML = async (
             .client-label { font-weight: 700; margin-right: 2mm; font-size: 7px; }
             .client-value { font-weight: 600; color: #1e293b; font-size: 7px; }
             .emission-date { background: linear-gradient(135deg, #fd4703 0%, #c93602 100%); color: white; padding: 1.5mm 3mm; border-radius: 6px; font-size: 8px; font-weight: 700; text-align: center; box-shadow: 0 2px 8px rgba(253, 71, 3, 0.3); display: inline-block; }
-            .content { padding: 3mm; flex: 1; display: flex; flex-direction: column; gap: 2mm; overflow: hidden; }
-            .bono-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 3mm; width: 100%; margin-bottom: 2.5mm; }
-            .bono-card { width: 82mm; min-height: 40mm; max-height: 50mm; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 8px; padding: 2.5mm; box-sizing: border-box; position: relative; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.03); border-left: 3px solid #fd4703; flex-shrink: 0; overflow: hidden; }
-            .bono-header { text-align: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 1.5mm; margin: -2.5mm -2.5mm 1.5mm -2.5mm; border-radius: 5px 5px 0 0; position: relative; overflow: hidden; }
-            .bono-title { margin: 0; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; position: relative; z-index: 1; }
-            .bono-subtitle { margin: 0.3mm 0 0 0; font-size: 5.5px; color: #94a3b8; font-weight: 500; position: relative; z-index: 1; }
-            .bono-id { text-align: center; background: linear-gradient(135deg, #fd4703 0%, #c93602 100%); color: white; padding: 1.2mm; margin-bottom: 1.5mm; border-radius: 5px; position: relative; box-shadow: 0 2px 8px rgba(253, 71, 3, 0.3); }
-            .bono-id-text { margin: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
-            .bono-info { margin-bottom: 0; font-size: 7px; line-height: 1.25; background: rgba(248, 250, 252, 0.8); padding: 1.2mm; border-radius: 4px; border: 1px solid #e2e8f0; overflow-y: auto; max-height: 35mm; }
-            .info-row { margin-bottom: 0.8mm; display: flex; justify-content: space-between; align-items: center; }
-            .info-row:last-child { margin-bottom: 0; }
-            .info-label { color: #475569; font-weight: 600; font-size: 6px; text-transform: uppercase; letter-spacing: 0.1px; }
-            .info-value { color: #1e293b; font-weight: 700; padding: 0.6mm 1.2mm; border-radius: 3px; font-size: 7px; }
-            .info-value.brand { background: rgba(253, 71, 3, 0.15); }
-            .info-value.size { background: rgba(253, 71, 3, 0.1); }
-            .info-value.design { background: rgba(248, 249, 250, 0.8); }
-            .info-value.quantity { background: rgba(253, 71, 3, 0.08); }
+            .content { padding: 4mm; flex: 1; display: flex; flex-direction: column; gap: 6mm; overflow: hidden; }
+            .bono-row { display: flex; justify-content: center; align-items: flex-start; width: 100%; }
+            .bono-card { width: 100%; max-width: 175mm; min-height: 55mm; margin: 0 auto; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 14px; box-sizing: border-box; position: relative; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04); border-left: 6mm solid #fd4703; flex-shrink: 0; overflow: hidden; }
+            .bono-card-header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 5mm 6mm; }
+            .bono-title { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+            .bono-subtitle { margin: 1mm 0 0 0; font-size: 10px; color: #94a3b8; font-weight: 500; letter-spacing: 1px; }
+            .bono-id-badge { text-align: right; }
+            .bono-id-label { display: block; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #cbd5e1; }
+            .bono-id-number { display: block; font-size: 26px; font-weight: 800; color: #fd7e33; letter-spacing: 0.5px; }
+            .bono-divider { border-top: 2px dashed #e2e8f0; margin: 0 6mm; }
+            .bono-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm 8mm; padding: 6mm; }
+            .info-cell { display: flex; flex-direction: column; gap: 1.5mm; }
+            .info-label { color: #64748b; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .info-value { color: #1e293b; font-weight: 700; padding: 2mm 3mm; border-radius: 6px; font-size: 18px; }
+            .info-value.brand { background: rgba(253, 71, 3, 0.12); }
+            .info-value.size { background: rgba(253, 71, 3, 0.08); }
             .info-value.master { background: rgba(248, 249, 250, 0.9); }
-            .info-value.item { background: rgba(253, 71, 3, 0.05); }
+            .info-value.item { background: rgba(253, 71, 3, 0.06); }
             .footer { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 2.5mm; border-top: 1px solid #cbd5e1; box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05); position: relative; overflow: hidden; flex-shrink: 0; }
             .footer-content { text-align: center; font-size: 7px; color: #64748b; position: relative; z-index: 1; }
             .footer-text { margin: 0; display: flex; align-items: center; justify-content: center; gap: 2mm; font-weight: 600; }

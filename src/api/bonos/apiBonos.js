@@ -81,30 +81,6 @@ export const api_bonos_getEligibleProducts = async () => {
 };
 
 /**
- * Crear un cliente
- * @param {Object} customerData - Datos del cliente
- * @return {Promise<Object>} Respuesta de la API
- */
-export const api_bonos_createCustomer = async (customerData) => {
-  try {
-    const response = await api.post("/bonos/createCustomer", customerData);
-    return {
-      success: true,
-      message: response.data.message || "Cliente creado correctamente",
-      data: response.data.data || {},
-    };
-  } catch (error) {
-    const message =
-      error.response?.data?.message || "Ocurrió un error al crear el cliente";
-    return {
-      success: false,
-      message,
-      error: error.response?.data || null,
-    };
-  }
-};
-
-/**
  * Crear un bono
  * @param {Object} bonusData - Datos del bono
  * @return {Promise<Object>} Respuesta de la API
@@ -246,6 +222,30 @@ export const api_bonos_getBonusByInvoiceNumber = async (invoiceNumber) => {
     const response = await api.get(
       `/bonos/getBonusByInvoiceNumber/${invoiceNumber}`
     );
+    return {
+      success: true,
+      message: response.data.message || "Bonos obtenidos correctamente",
+      data: response.data.data || [],
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al obtener los bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
+ * Obtener bonos creados directamente por un mayorista, sin cliente final asociado
+ * @param {string} idUser - ID_USER del mayorista
+ * @returns {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_getBonosByMayoristaUser = async (idUser) => {
+  try {
+    const response = await api.get(`/bonos/getBonusByMayoristaId/${idUser}`);
     return {
       success: true,
       message: response.data.message || "Bonos obtenidos correctamente",
