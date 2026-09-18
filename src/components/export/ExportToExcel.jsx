@@ -251,7 +251,7 @@ const ExportToExcel = ({
         views: [{ state: "frozen", xSplit: 0, ySplit: 1 }],
       });
 
-      // Definir columnas (sin información del cliente ni número de factura)
+      // Definir columnas (sin información del cliente final ni número de factura)
       worksheet.columns = [
         { header: "N° Bono", key: "bonoNumber", width: 12 },
         { header: "Estado", key: "status", width: 12 },
@@ -261,9 +261,9 @@ const ExportToExcel = ({
         { header: "Master", key: "master", width: 15 },
         { header: "Item", key: "item", width: 15 },
         { header: "Factura Reencauche", key: "retreadInvoice", width: 20 },
-        { header: "Mayorista", key: "businessPartner", width: 30 },
-        { header: "RUC Mayorista", key: "businessPartnerRuc", width: 18 },
-        { header: "Email Mayorista", key: "businessPartnerEmail", width: 30 },
+        { header: "Usuario que activó", key: "activatedByName", width: 30 },
+        { header: "Cuenta", key: "activatedByAccount", width: 18 },
+        { header: "Email", key: "activatedByEmail", width: 30 },
         { header: "Fecha Creación", key: "createdAt", width: 18 },
         { header: "Fecha Actualización", key: "updatedAt", width: 18 },
       ];
@@ -288,14 +288,14 @@ const ExportToExcel = ({
             bonoNumber: bono.ID_BONUS || "N/A",
             status: getBonoStateLabel(bono.STATUS),
             brand: bono.parsedProduct?.BRAND || "N/A",
-            size: bono.parsedProduct?.SIZE || "N/A",
+            size: bono.parsedProduct?.RINSIZE || "N/A",
             design: bono.parsedProduct?.DESIGN || "N/A",
             master: bono.MASTER || "N/A",
             item: bono.ITEM || "N/A",
             retreadInvoice: bono.RETREADINVOICE || "N/A",
-            businessPartner: grupo.businessPartner?.NAME_USER || "N/A",
-            businessPartnerRuc: grupo.businessPartner?.ACCOUNT_USER || "N/A",
-            businessPartnerEmail: grupo.businessPartner?.EMAIL || "N/A",
+            activatedByName: grupo.activatedBy?.NAME_USER || "N/A",
+            activatedByAccount: grupo.activatedBy?.ACCOUNT_USER || "N/A",
+            activatedByEmail: grupo.activatedBy?.EMAIL || "N/A",
             createdAt: formatDate(bono.createdAt),
             updatedAt: formatDate(bono.updatedAt),
           });

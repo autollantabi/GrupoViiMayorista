@@ -267,6 +267,34 @@ export const api_bonos_getBonosByMayoristaUser = async (idUser) => {
  * @param {string} idUser - ID del usuario Reencauchador
  * @returns {Promise<Object>} Respuesta de la API
  */
+/**
+ * Obtener bonos de un usuario reencauchador agrupados por Marca + Rin + Usuario que activó el bono
+ * No depende de cliente final: si el bono fue activado sin cliente, el usuario
+ * que activó se obtiene directamente del bono.
+ * @param {string} idUser - ID_USER del reencauchador
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_getBonosByUserGroupedByActivator = async (idUser) => {
+  try {
+    const response = await api.get(
+      `/bonos/getBonusByUserGroupedByActivator/${idUser}`
+    );
+    return {
+      success: true,
+      message: response.data.message || "Bonos obtenidos correctamente",
+      data: response.data.data || [],
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al obtener los bonos";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
 export const api_bonos_getBonosByReencaucheUser = async (idUser) => {
   try {
     const response = await api.get(`/bonos/getBonusByUser/${idUser}`);
