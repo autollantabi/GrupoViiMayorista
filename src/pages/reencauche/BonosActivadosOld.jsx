@@ -7,7 +7,7 @@ import SEO from "../../components/seo/SEO";
 import { ROUTES } from "../../constants/routes";
 import { useNavigate } from "react-router-dom";
 import {
-  api_bonos_getBonosByUserGroupedByActivator,
+  api_bonos_getBonosByReencaucheUser,
   api_bonos_generateQRMaster,
   api_bonos_processBonusExcel,
   api_bonos_processRejectBonusExcel,
@@ -18,7 +18,7 @@ import {
   getBonoStateBackgroundColor,
   getBonoStateColor,
 } from "../../constants/bonoStates";
-import ExportToExcel from "../../components/export/ExportToExcel";
+import ExportToExcelOld from "../../components/export/ExportToExcelOld";
 import { toast } from "react-toastify";
 import Button from "../../components/ui/Button";
 
@@ -505,7 +505,7 @@ const RejectReasonContainer = styled.div`
   width: 100%;
 `;
 
-const BonosActivados = () => {
+const BonosActivadosOld = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -520,12 +520,10 @@ const BonosActivados = () => {
   const { user } = useAuth();
 
   const obtenerBonosActivados = async () => {
-    const response = await api_bonos_getBonosByUserGroupedByActivator(
-      user.ID_USER
-    );
+    const response = await api_bonos_getBonosByReencaucheUser(user.ID_USER);
 
     if (response.success) {
-      // La API ya envía los datos agrupados por Marca + Rin + Usuario que activó
+      // La API ya envía los datos agrupados por master
       setBonosActivados(response.data);
     }
   };
@@ -545,17 +543,19 @@ const BonosActivados = () => {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  // Filtrar grupos por Marca + Rin + Usuario que activó (la API ya viene agrupada)
+  // Filtrar grupos por Master (la API ya viene agrupada)
   const filteredGrupos = bonosActivados.filter((grupo) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      grupo.marca?.toLowerCase().includes(searchLower) ||
-      grupo.rin?.toLowerCase().includes(searchLower) ||
+      grupo.master.toLowerCase().includes(searchLower) ||
       grupo.bonuses.some((bono) =>
-        bono.INVOICENUMBER?.toLowerCase().includes(searchLower)
+        bono.INVOICENUMBER.toLowerCase().includes(searchLower)
       ) ||
-      grupo.activatedBy?.NAME_USER?.toLowerCase().includes(searchLower) ||
-      grupo.activatedBy?.ACCOUNT_USER?.includes(searchTerm)
+      grupo.customer?.CUSTOMER_NAME.toLowerCase().includes(searchLower) ||
+      grupo.customer?.CUSTOMER_LASTNAME.toLowerCase().includes(searchLower) ||
+      grupo.customer?.CUSTOMER_IDENTIFICATION.includes(searchTerm) ||
+      grupo.businessPartner?.NAME_USER.toLowerCase().includes(searchLower) ||
+      grupo.businessPartner?.ACCOUNT_USER.includes(searchTerm)
     );
   });
 
@@ -576,8 +576,8 @@ const BonosActivados = () => {
     0
   );
 
-  // Calcular total de grupos (Marca + Rin + Usuario que activó)
-  const totalGrupos = filteredGrupos.length;
+  // Calcular total de grupos Master
+  const totalGruposMaster = filteredGrupos.length;
 
   const handleRedirectToVerificarBono = async (master) => {
     try {
@@ -706,7 +706,7 @@ const BonosActivados = () => {
     <>
       <SEO
         title="Historial de Bonos - Sistema de Reencauche"
-        description={`Historial de bonos de reencauche. ${totalBonos} bonos agrupados en ${totalGrupos} grupos por Marca, Rin y Usuario que activó. Visualiza, gestiona y exporta el historial completo de bonos activados.`}
+        description={`Historial de bonos de reencauche. ${totalBonos} bonos agrupados en ${totalGruposMaster} grupos por Master. Visualiza, gestiona y exporta el historial completo de bonos activados.`}
         keywords="historial bonos, reencauche, bonos activados, gestión bonos, llantas, neumáticos, exportar excel"
       />
       <PageContainer
@@ -721,15 +721,14 @@ const BonosActivados = () => {
                 Historial de Bonos
               </Title>
               <StatsText>
-                {totalBonos} bonos agrupados en {totalGrupos} grupo
-                {totalGrupos !== 1 ? "s" : ""} por Marca, Rin y Usuario que
-                activó
+                {totalBonos} bonos agrupados en {totalGruposMaster} grupo
+                {totalGruposMaster !== 1 ? "s" : ""} por Master
               </StatsText>
             </TitleContainer>
             <SearchContainer>
               <Input
                 type="text"
-                placeholder="Buscar por marca, rin, factura o usuario..."
+                placeholder="Buscar por Master, factura, cliente o CI/RUC..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 leftIconName="FaMagnifyingGlass"
@@ -739,7 +738,7 @@ const BonosActivados = () => {
                 }}
                 fullWidth={isMobile}
               />
-              <ExportToExcel
+              <ExportToExcelOld
                 data={bonosActivados}
                 fileName="historial_bonos_reencauche"
                 buttonText={isMobile ? "Excel" : "Exportar a Excel"}
@@ -754,11 +753,11 @@ const BonosActivados = () => {
                 leftIconName="FaFileImport"
               />
               <Button
-                text="Ver bonos por clientes"
+                text="Ver listado nuevo (Marca/Rin)"
                 variant="outlined"
                 size="medium"
-                onClick={() => navigate(ROUTES.REENCAUCHE.CLIENTES_OLD)}
-                leftIconName="FaUsers"
+                onClick={() => navigate(ROUTES.REENCAUCHE.CLIENTES)}
+                leftIconName="FaTags"
               />
             </SearchContainer>
           </Header>
@@ -777,18 +776,34 @@ const BonosActivados = () => {
             </EmptyState>
           ) : (
             <BonosList>
-              {filteredGrupos.map((grupo, index) => (
-                <FacturaGroup
-                  key={`${grupo.marca}-${grupo.rin}-${
-                    grupo.activatedBy?.ID_USER || index
-                  }`}
-                >
+              {filteredGrupos.map((grupo) => (
+                <FacturaGroup key={grupo.master}>
                   <FacturaHeader>
                     <div style={{ flex: 1 }}>
-                      <FacturaTitle>
-                        <RenderIcon name="FaTag" size={18} />
-                        {grupo.marca} · Rin {grupo.rin}
-                      </FacturaTitle>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <FacturaTitle>
+                          <RenderIcon name="FaTag" size={18} />
+                          Master: {grupo.master}
+                        </FacturaTitle>
+                        <Button
+                          text="Ver"
+                          leftIconName="FaEye"
+                          size="small"
+                          backgroundColor="#10b981"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRedirectToVerificarBono(grupo.master);
+                          }}
+                        />
+                      </div>
                       <FacturaStats>
                         {grupo.totalBonuses} bono
                         {grupo.totalBonuses > 1 ? "s" : ""} (Activos:{" "}
@@ -797,7 +812,7 @@ const BonosActivados = () => {
                         {grupo.bonusTypes?.rechazados || 0})
                       </FacturaStats>
                     </div>
-                    {grupo.activatedBy && (
+                    {grupo.businessPartner && (
                       <div
                         style={{
                           display: "flex",
@@ -809,17 +824,17 @@ const BonosActivados = () => {
                       >
                         <div style={{ fontWeight: "600" }}>
                           <RenderIcon
-                            name="FaUser"
+                            name="FaBuilding"
                             size={14}
                             style={{ marginRight: "6px" }}
                           />
-                          {grupo.activatedBy.NAME_USER}
+                          {grupo.businessPartner.NAME_USER}
                         </div>
                         <div style={{ fontSize: "0.8rem" }}>
-                          Cuenta: {grupo.activatedBy.ACCOUNT_USER}
+                          RUC: {grupo.businessPartner.ACCOUNT_USER}
                         </div>
                         <div style={{ fontSize: "0.8rem" }}>
-                          Email: {grupo.activatedBy.EMAIL}
+                          Email: {grupo.businessPartner.EMAIL}
                         </div>
                       </div>
                     )}
@@ -853,7 +868,7 @@ const BonosActivados = () => {
                           <BonoDetailItem>
                             <BonoDetailLabel>Aro/Rin</BonoDetailLabel>
                             <BonoDetailValue>
-                              {bono.parsedProduct?.RINSIZE || "N/A"}
+                              {bono.parsedProduct?.SIZE || "N/A"}
                             </BonoDetailValue>
                           </BonoDetailItem>
 
@@ -864,28 +879,6 @@ const BonosActivados = () => {
                             </BonoDetailValue>
                           </BonoDetailItem>
                         </BonoDetails>
-
-                        {bono.MASTER && (
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <Button
-                              text="Ver"
-                              leftIconName="FaEye"
-                              size="small"
-                              backgroundColor="#10b981"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleRedirectToVerificarBono(bono.MASTER);
-                              }}
-                            />
-                          </div>
-                        )}
 
                         {/* Información adicional según el estado */}
                         {(bono.ITEM ||
@@ -1258,4 +1251,4 @@ const BonosActivados = () => {
   );
 };
 
-export default BonosActivados;
+export default BonosActivadosOld;

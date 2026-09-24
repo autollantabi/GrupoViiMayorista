@@ -576,6 +576,12 @@ const ClientesReencauche = () => {
               disabled={!hayBonosDisponibles}
               title={!hayBonosDisponibles ? "No hay bonos disponibles" : undefined}
             />
+            <Button
+              text="Ver bonos por clientes"
+              variant="outlined"
+              leftIconName="FaUsers"
+              onClick={() => navigate(ROUTES.ECOMMERCE.REENCAUCHE_CLIENTES)}
+            />
           </SearchContainer>
         </PageHeader>
 

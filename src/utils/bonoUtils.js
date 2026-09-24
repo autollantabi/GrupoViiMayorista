@@ -1,7 +1,10 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
-import { api_bonos_generateQR } from "../api/bonos/apiBonos";
+import {
+  api_bonos_generateQR,
+  api_bonos_sendBonusFile,
+} from "../api/bonos/apiBonos";
 import { generateCompleteBonosHTML } from "./bonoHTMLGenerator";
 
 /**
@@ -383,5 +386,49 @@ export const generateMultipleBonosPDFBlob = async (
     if (tempDiv && tempDiv.parentNode) {
       document.body.removeChild(tempDiv);
     }
+  }
+};
+
+/**
+ * Genera el PDF con múltiples bonos y lo envía por email/WhatsApp al cliente.
+ * Usado por el flujo clásico de bonos con cliente final (FormularioNuevoBonoListaOld).
+ */
+export const generateAndSendMultipleBonosPDF = async (
+  bonos,
+  cliente,
+  invoiceNumber
+) => {
+  try {
+    // Validar que el cliente tenga email o teléfono
+    if (!cliente.CUSTOMER_EMAIL && !cliente.CUSTOMER_PHONE) {
+      throw new Error("El cliente debe tener email o teléfono registrado");
+    }
+
+    if (!bonos || bonos.length === 0) {
+      throw new Error("Debe proporcionar al menos un bono");
+    }
+
+    // Generar PDF con múltiples bonos
+    const { blob, fileName } = await generateMultipleBonosPDFBlob(
+      bonos,
+      cliente,
+      invoiceNumber
+    );
+
+    // Crear archivo File desde Blob
+    const file = new File([blob], fileName, { type: "application/pdf" });
+
+    // Enviar archivo
+    const response = await api_bonos_sendBonusFile(
+      file,
+      cliente.CUSTOMER_EMAIL || "",
+      cliente.CUSTOMER_PHONE || "",
+      `${cliente.CUSTOMER_NAME} ${cliente.CUSTOMER_LASTNAME}`
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Error generando y enviando PDF de bonos múltiples:", error);
+    throw error;
   }
 };

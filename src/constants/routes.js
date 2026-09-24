@@ -31,6 +31,7 @@ export const ROUTES = {
     SELECCION_EMPRESA: "/seleccion-empresa",
     SEARCH: "/busqueda",
     REENCAUCHE: "/reencauche",
+    REENCAUCHE_CLIENTES: "/reencauche/clientes",
     APP_SHELL: "/app-shell",
     XCOIN: "/xcoin",
     CONTACTO: "/contacto",
@@ -38,6 +39,7 @@ export const ROUTES = {
   REENCAUCHE: {
     HOME: "/reencauche/home",
     CLIENTES: "/reencauchador/bonos",
+    CLIENTES_OLD: "/reencauchador/bonos/clientes",
     ACTIVACION: "/reencauche/activacion",
     VERIFICAR: "/reencauche/verificacion",
   },

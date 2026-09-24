@@ -81,6 +81,30 @@ export const api_bonos_getEligibleProducts = async () => {
 };
 
 /**
+ * Crear un cliente final (flujo clásico de bonos por cliente)
+ * @param {Object} customerData - Datos del cliente
+ * @return {Promise<Object>} Respuesta de la API
+ */
+export const api_bonos_createCustomer = async (customerData) => {
+  try {
+    const response = await api.post("/bonos/createCustomer", customerData);
+    return {
+      success: true,
+      message: response.data.message || "Cliente creado correctamente",
+      data: response.data.data || {},
+    };
+  } catch (error) {
+    const message =
+      error.response?.data?.message || "Ocurrió un error al crear el cliente";
+    return {
+      success: false,
+      message,
+      error: error.response?.data || null,
+    };
+  }
+};
+
+/**
  * Crear un bono
  * @param {Object} bonusData - Datos del bono
  * @return {Promise<Object>} Respuesta de la API

@@ -27,7 +27,9 @@ import AdminDashboardComponent from "../pages/admin/AdminDashboardComponent";
 // Importaciones de páginas de reencauche
 import ReencaucheHome from "../pages/reencauche/ReencaucheHome";
 import ClientesReencauche from "../pages/reencauche/ClientesReencauche";
+import ClientesReencaucheOld from "../pages/reencauche/ClientesReencaucheOld";
 import BonosActivados from "../pages/reencauche/BonosActivados";
+import BonosActivadosOld from "../pages/reencauche/BonosActivadosOld";
 import ActivacionBonos from "../pages/reencauche/ActivacionBonos";
 import VerificarBono from "../pages/reencauche/VerificarBono";
 // Importaciones de páginas de XCoin
@@ -129,6 +131,19 @@ export const ecommerceRoutes = [
     ],
   },
   {
+    // Vista clásica de bonos por cliente final (previa a la activación sin cliente).
+    // Se mantiene como página separada, accesible desde un botón en ClientesReencauche.
+    path: ROUTES.ECOMMERCE.REENCAUCHE_CLIENTES,
+    element: <ClientesReencaucheOld />,
+    allowedRoles: [
+      ROLES.CLIENTE,
+      ROLES.ADMIN,
+      ROLES.COORDINADOR,
+      ROLES.VISUALIZACION,
+      ROLES.VENDEDOR_B2B
+    ],
+  },
+  {
     path: ROUTES.ECOMMERCE.APP_SHELL,
     element: <AppShell />,
     allowedRoles: [
@@ -219,6 +234,13 @@ export const reencaucheRoutes = [
   {
     path: ROUTES.REENCAUCHE.CLIENTES,
     element: <BonosActivados />,
+    allowedRoles: [ROLES.REENCAUCHE_USER],
+  },
+  {
+    // Vista clásica del historial de bonos, agrupada por Master con datos
+    // de cliente/mayorista. Accesible desde un botón en BonosActivados.
+    path: ROUTES.REENCAUCHE.CLIENTES_OLD,
+    element: <BonosActivadosOld />,
     allowedRoles: [ROLES.REENCAUCHE_USER],
   },
   {
