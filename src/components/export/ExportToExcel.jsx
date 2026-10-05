@@ -162,6 +162,63 @@ const CancelButton = styled.button`
   }
 `;
 
+const CustomRangeBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 2px solid ${({ theme }) => theme.colors.primary};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.background};
+`;
+
+const DateField = styled.label`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+
+  input {
+    padding: 8px 10px;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: 6px;
+    background-color: ${({ theme }) => theme.colors.surface};
+    color: ${({ theme }) => theme.colors.text};
+    font-size: 0.95rem;
+  }
+`;
+
+const RangeError = styled.div`
+  font-size: 0.85rem;
+  color: #dc2626;
+`;
+
+const ApplyButton = styled.button`
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+// Formatea una fecha local como YYYY-MM-DD (valor de <input type="date">)
+const toInputDate = (date) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}`;
+};
+
 /**
  * Componente para exportar datos de bonos a Excel
  * @param {Object} props
@@ -185,19 +242,47 @@ const ExportToExcel = ({
   const [exporting, setExporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const filterDataByDateRange = (days) => {
-    const now = new Date();
-    const cutoffDate = new Date(now.setDate(now.getDate() - days));
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-    return data
+  const todayStr = toInputDate(new Date());
+  const isRangeInvalid = !!startDate && !!endDate && endDate < startDate;
+  const canExportCustom = !!startDate && !!endDate && !isRangeInvalid;
+
+  const closeModal = () => {
+    setShowModal(false);
+    setShowCustomRange(false);
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const handleStartChange = (value) => {
+    setStartDate(value);
+    // Si la fecha hasta quedó antes de la nueva fecha desde, se limpia
+    if (endDate && value && endDate < value) setEndDate("");
+  };
+
+  const filterByBounds = (from, to) =>
+    data
       .map((grupo) => ({
         ...grupo,
         bonuses: grupo.bonuses.filter((bono) => {
           const bonoDate = new Date(bono.updatedAt || bono.createdAt);
-          return bonoDate >= cutoffDate;
+          return bonoDate >= from && (!to || bonoDate <= to);
         }),
       }))
       .filter((grupo) => grupo.bonuses.length > 0);
+
+  const filterDataByDateRange = (days) => {
+    const now = new Date();
+    return filterByBounds(new Date(now.setDate(now.getDate() - days)));
+  };
+
+  const filterDataByCustomRange = (start, end) => {
+    const from = new Date(`${start}T00:00:00`);
+    const to = new Date(`${end}T23:59:59.999`);
+    return filterByBounds(from, to);
   };
 
   const formatDate = (dateString) => {
@@ -220,13 +305,16 @@ const ExportToExcel = ({
 
     try {
       setExporting(true);
-      setShowModal(false);
+      closeModal();
 
       // Filtrar datos según la opción seleccionada
       let filteredData = data;
       let rangeLabel = "";
 
-      if (dateRangeOption === "week") {
+      if (dateRangeOption === "custom") {
+        filteredData = filterDataByCustomRange(startDate, endDate);
+        rangeLabel = `${startDate}_a_${endDate}`;
+      } else if (dateRangeOption === "week") {
         filteredData = filterDataByDateRange(7);
         rangeLabel = "ultima_semana";
       } else if (dateRangeOption === "month") {
@@ -370,14 +458,14 @@ const ExportToExcel = ({
       </ExportButton>
 
       {showModal && (
-        <ModalOverlay onClick={() => setShowModal(false)}>
+        <ModalOverlay onClick={closeModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
                 <RenderIcon name="FaCalendarAlt" size={24} />
                 Seleccionar Rango de Fecha
               </ModalTitle>
-              <CloseButton onClick={() => setShowModal(false)}>
+              <CloseButton onClick={closeModal}>
                 <RenderIcon name="FaXmark" size={16} />
               </CloseButton>
             </ModalHeader>
@@ -426,11 +514,59 @@ const ExportToExcel = ({
                   </OptionContent>
                   <RenderIcon name="FaChevronRight" size={16} />
                 </OptionButton>
+
+                <OptionButton onClick={() => setShowCustomRange((v) => !v)}>
+                  <OptionContent>
+                    <OptionIcon>
+                      <RenderIcon name="FaCalendarAlt" size={20} />
+                    </OptionIcon>
+                    <OptionText>
+                      <OptionTitle>Rango Personalizado</OptionTitle>
+                      <OptionSubtitle>Elige fecha desde y hasta</OptionSubtitle>
+                    </OptionText>
+                  </OptionContent>
+                  <RenderIcon name="FaChevronRight" size={16} />
+                </OptionButton>
+
+                {showCustomRange && (
+                  <CustomRangeBox>
+                    <DateField>
+                      Desde
+                      <input
+                        type="date"
+                        value={startDate}
+                        max={endDate || todayStr}
+                        onChange={(e) => handleStartChange(e.target.value)}
+                      />
+                    </DateField>
+                    <DateField>
+                      Hasta
+                      <input
+                        type="date"
+                        value={endDate}
+                        min={startDate || undefined}
+                        max={todayStr}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </DateField>
+                    {isRangeInvalid && (
+                      <RangeError>
+                        La fecha hasta no puede ser anterior a la fecha desde.
+                      </RangeError>
+                    )}
+                    <ApplyButton
+                      disabled={!canExportCustom}
+                      onClick={() => handleExport("custom")}
+                    >
+                      Exportar rango
+                    </ApplyButton>
+                  </CustomRangeBox>
+                )}
               </OptionsContainer>
             </ModalBody>
 
             <ModalFooter>
-              <CancelButton onClick={() => setShowModal(false)}>
+              <CancelButton onClick={closeModal}>
                 Cancelar
               </CancelButton>
             </ModalFooter>
